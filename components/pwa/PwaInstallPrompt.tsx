@@ -3,7 +3,6 @@
 import * as React from 'react';
 import { Button } from '@/components/ui/Button';
 
-// Standard DOM event interface extension for BeforeInstallPromptEvent
 interface BeforeInstallPromptEvent extends Event {
   readonly platforms: string[];
   readonly userChoice: Promise<{
@@ -19,11 +18,8 @@ export function PwaInstallPrompt() {
 
   React.useEffect(() => {
     const handler = (e: Event) => {
-      // Prevent default mini-infobar from appearing on mobile
       e.preventDefault();
-      // Stash the event so it can be triggered later.
       setDeferredPrompt(e as BeforeInstallPromptEvent);
-      // Show the custom install UI
       setShowPrompt(true);
     };
 
@@ -37,15 +33,11 @@ export function PwaInstallPrompt() {
   const handleInstallClick = async () => {
     if (!deferredPrompt) return;
     
-    // Hide our user interface that shows our install button
     setShowPrompt(false);
-    // Show the install prompt
     deferredPrompt.prompt();
     
-    // Wait for the user to respond to the prompt
-    const { outcome } = await deferredPrompt.userChoice;
+    await deferredPrompt.userChoice;
     
-    // We no longer need the prompt. Clear it up
     setDeferredPrompt(null);
   };
 

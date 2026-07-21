@@ -17,7 +17,6 @@ export default function StyleGuidePage() {
           </p>
         </div>
 
-        {/* Buttons */}
         <section className="space-y-4">
           <h2 className="text-h2 text-text-main border-b border-border pb-2">Buttons</h2>
           <div className="flex flex-wrap gap-4">
@@ -28,7 +27,6 @@ export default function StyleGuidePage() {
           </div>
         </section>
 
-        {/* Badges */}
         <section className="space-y-4">
           <h2 className="text-h2 text-text-main border-b border-border pb-2">Badges (Status)</h2>
           <div className="flex flex-wrap gap-4">
@@ -41,7 +39,6 @@ export default function StyleGuidePage() {
           </div>
         </section>
 
-        {/* Inputs */}
         <section className="space-y-4">
           <h2 className="text-h2 text-text-main border-b border-border pb-2">Input Form</h2>
           <div className="max-w-md space-y-4">
@@ -51,7 +48,6 @@ export default function StyleGuidePage() {
           </div>
         </section>
 
-        {/* ScoreCard */}
         <section className="space-y-4">
           <h2 className="text-h2 text-text-main border-b border-border pb-2">ScoreCard (Peternak Card)</h2>
           <div className="grid gap-6 sm:grid-cols-2">
@@ -81,7 +77,6 @@ export default function StyleGuidePage() {
           </div>
         </section>
 
-        {/* Card */}
         <section className="space-y-4">
           <h2 className="text-h2 text-text-main border-b border-border pb-2">Generic Card</h2>
           <div className="max-w-md">

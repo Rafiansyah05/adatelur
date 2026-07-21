@@ -12,7 +12,6 @@ export default function RegisterRoleSelectionPage() {
         </div>
 
         <div className="space-y-4">
-          {/* Opsi Konsumen */}
           <Link href="/register/consumer" className="block">
             <Card className="flex items-center hover:border-primary-400 cursor-pointer">
               <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary-100 text-[20px]">
@@ -25,7 +24,6 @@ export default function RegisterRoleSelectionPage() {
             </Card>
           </Link>
 
-          {/* Opsi Peternak */}
           <Link href="/register/peternak" className="block">
             <Card className="flex items-center hover:border-primary-400 cursor-pointer">
               <div className="flex h-12 w-12 items-center justify-center rounded-full bg-success-bg text-[20px]">

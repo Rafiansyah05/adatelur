@@ -228,11 +228,10 @@ Termasuk tetapi tidak terbatas pada:
  */
 <!-- ... -->
 
-Seluruh komentar khas hasil AI juga tidak diperbolehkan.
+Seluruh komentar khas hasil AI ataupun instruksi tidak juga tidak diperbolehkan.
 
 Apabila suatu bagian terasa membutuhkan komentar, lakukan refactor terhadap nama function, nama variable, atau struktur logic hingga maksud kode dapat dipahami tanpa komentar.
 
-Komentar hanya diperbolehkan apabila diwajibkan oleh framework, compiler, tooling, atau lisensi open source.
 
 Selain itu, seluruh source code harus bebas dari komentar.
 
