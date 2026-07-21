@@ -294,3 +294,5 @@ seluruh implementasi mengikuti design system project
 hasil akhir harus terasa seperti ditulis langsung oleh programmer profesional, bukan hasil generasi AI
 
 Prinsip utama: Jika sebuah solusi dapat diselesaikan dengan cara yang lebih sederhana, lebih mudah dibaca, dan lebih mudah dipelihara tanpa mengurangi kualitas, maka gunakan solusi tersebut. Clean code selalu lebih diutamakan daripada kode yang terlalu kompleks.
+
+dan yang paling penting silahkan buat dengan layout yang responsive, adaptive dan mobile first.
