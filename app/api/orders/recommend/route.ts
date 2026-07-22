@@ -6,11 +6,6 @@ export async function POST(request: Request) {
   try {
     const supabase = createClient();
     
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
     const body = await request.json();
     const { rak_quantity, fulfillment_method, consumer_lat, consumer_lng } = body;
 

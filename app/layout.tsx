@@ -23,6 +23,8 @@ export const metadata: Metadata = {
   },
 };
 
+import Providers from './providers';
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -31,8 +33,10 @@ export default function RootLayout({
   return (
     <html lang="id">
       <body className={`${plusJakartaSans.variable} font-sans antialiased bg-white text-text-main`}>
-        {children}
-        <PwaInstallPrompt />
+        <Providers>
+          {children}
+          <PwaInstallPrompt />
+        </Providers>
       </body>
     </html>
   );
