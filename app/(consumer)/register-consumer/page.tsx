@@ -61,11 +61,11 @@ export default function ConsumerRegisterPage() {
       return;
     }
 
-    router.push(`/register/consumer/verify?email=${encodeURIComponent(email)}`);
+    router.push(`/register-consumer/verify?email=${encodeURIComponent(email)}`);
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-cream p-4">
+    <div className="flex w-full items-center justify-center bg-cream p-4 h-full min-h-[60vh] mt-4 rounded-md">
       <div className="w-full max-w-md">
         <div className="mb-4 text-center">
           <h1 className="text-h1 text-text-main mb-2">Daftar sebagai Konsumen</h1>

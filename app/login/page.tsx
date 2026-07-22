@@ -133,11 +133,19 @@ export default function LoginPage() {
           </Button>
         </Card>
 
-        <div className="mt-4 text-center text-body text-text-main">
-          Belum punya akun?{' '}
-          <Link href="/register" className="font-semibold text-primary-600 hover:underline">
-            Daftar di sini
-          </Link>
+        <div className="mt-4 text-center text-body text-text-main flex flex-col gap-2">
+          <span>
+            Konsumen baru?{' '}
+            <Link href="/register-consumer" className="font-semibold text-primary-600 hover:underline">
+              Daftar di sini
+            </Link>
+          </span>
+          <span>
+            Peternak baru?{' '}
+            <Link href="/register" className="font-semibold text-primary-600 hover:underline">
+              Daftar Mitra Peternak
+            </Link>
+          </span>
         </div>
       </div>
     </div>

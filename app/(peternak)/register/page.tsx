@@ -8,12 +8,12 @@ import { Label } from '@/components/ui/Label';
 import { CameraCapture } from '@/components/CameraCapture';
 import { createClient } from '@/lib/supabase/client';
 import { MapPin, PhoneCall } from 'lucide-react';
+import { AddressAutocomplete } from '@/components/ui/AddressAutocomplete';
 
 export default function RegisterPeternakPage() {
   const [step, setStep] = React.useState(1);
   const [loading, setLoading] = React.useState(false);
-  
-  // State Tahap 1
+
   const [nama, setNama] = React.useState('');
   const [phone, setPhone] = React.useState('');
   const [birthDate, setBirthDate] = React.useState('');
@@ -21,7 +21,6 @@ export default function RegisterPeternakPage() {
   const [lat, setLat] = React.useState<number | null>(null);
   const [lng, setLng] = React.useState<number | null>(null);
 
-  // State Tahap 2
   const [registrationMethod, setRegistrationMethod] = React.useState<'self_form' | 'video_call_cs' | null>(null);
   const [chickenCount, setChickenCount] = React.useState('');
   const [eggProd, setEggProd] = React.useState('');
@@ -33,27 +32,10 @@ export default function RegisterPeternakPage() {
   const [vehicleType, setVehicleType] = React.useState('');
   const [experience, setExperience] = React.useState('');
 
-  // State Tahap 3
   const [fotoLuar, setFotoLuar] = React.useState<string | null>(null);
   const [fotoDalam, setFotoDalam] = React.useState<string | null>(null);
   const [fotoAyam, setFotoAyam] = React.useState<string | null>(null);
   const [fotoTelur, setFotoTelur] = React.useState<string | null>(null);
-
-  const getGeolocation = () => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setLat(position.coords.latitude);
-          setLng(position.coords.longitude);
-        },
-        () => {
-          alert('Gagal mengambil lokasi. Pastikan izin lokasi diberikan.');
-        }
-      );
-    } else {
-      alert('Geolocation tidak didukung di browser ini.');
-    }
-  };
 
   const handleNextStep1 = () => {
     if (!nama || !phone || !birthDate || !address || lat === null || lng === null) {
@@ -88,13 +70,11 @@ export default function RegisterPeternakPage() {
     setLoading(true);
     try {
       const supabase = createClient();
-      // 1. Get or create user
       const { data: { user } } = await supabase.auth.getUser();
       let profileId = user?.id;
 
-      // Dummy creation if no user for demo purposes
       if (!profileId) {
-        // Generate a random email for dummy signup
+
         const dummyEmail = `peternak_${Date.now()}@demo.adatelur.com`;
         const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
           email: dummyEmail,
@@ -102,21 +82,21 @@ export default function RegisterPeternakPage() {
         });
         if (signUpError) throw signUpError;
         profileId = signUpData.user?.id;
-        
+
         if (profileId) {
-            // Insert profile
-            await supabase.from('profiles').insert({
-                id: profileId,
-                role: 'peternak',
-                full_name: nama,
-                phone_number: phone,
-            });
+
+          await supabase.from('profiles').insert({
+            id: profileId,
+            role: 'peternak',
+            full_name: nama,
+            phone_number: phone,
+          });
         }
       }
 
       if (!profileId) throw new Error("Gagal mendapatkan/membuat user.");
 
-      // 2. Insert Peternak Details
+
       const { data: peternakData, error: peternakError } = await supabase
         .from('peternak_details')
         .insert({
@@ -139,13 +119,12 @@ export default function RegisterPeternakPage() {
         .single();
 
       if (peternakError) {
-         console.error(peternakError);
-         throw new Error("Gagal menyimpan data peternak: " + peternakError.message);
+        console.error(peternakError);
+        throw new Error("Gagal menyimpan data peternak: " + peternakError.message);
       }
 
       const peternakId = peternakData.id;
 
-      // 3. Insert Vehicle if any
       if (hasVehicle && vehicleType) {
         await supabase.from('vehicles').insert({
           peternak_id: peternakId,
@@ -153,7 +132,6 @@ export default function RegisterPeternakPage() {
         });
       }
 
-      // 4. Upload Photos
       const photos = [
         { type: 'kandang_luar', src: fotoLuar },
         { type: 'kandang_dalam', src: fotoDalam },
@@ -164,7 +142,7 @@ export default function RegisterPeternakPage() {
       for (const p of photos) {
         const file = await urlToFile(p.src!, `${peternakId}_${p.type}.jpg`, 'image/jpeg');
         const filePath = `${peternakId}/${p.type}_${Date.now()}.jpg`;
-        
+
         const { error: uploadError } = await supabase.storage
           .from('verification-photos')
           .upload(filePath, file);
@@ -182,7 +160,7 @@ export default function RegisterPeternakPage() {
         });
       }
 
-      setStep(4); // Success step
+      setStep(4);
     } catch (error) {
       const err = error as Error;
       alert(err.message || 'Terjadi kesalahan saat menyimpan data.');
@@ -192,7 +170,7 @@ export default function RegisterPeternakPage() {
   };
 
   return (
-    <div className="min-h-screen bg-cream p-4 pb-24">
+    <div className="w-full bg-cream p-4">
       <div className="max-w-md mx-auto">
         {step < 4 && (
           <div className="mb-6 flex justify-between items-center text-sm font-medium text-text-desc">
@@ -221,17 +199,17 @@ export default function RegisterPeternakPage() {
                 <Input type="date" value={birthDate} onChange={e => setBirthDate(e.target.value)} />
               </div>
               <div>
-                <Label>Alamat Peternak</Label>
-                <Input value={address} onChange={e => setAddress(e.target.value)} placeholder="Alamat lengkap kandang" />
-              </div>
-              <div>
-                <Label>Koordinat Lokasi</Label>
-                <Button type="button" variant="secondary" onClick={getGeolocation} className="w-full flex justify-center gap-2">
-                  <MapPin className="w-4 h-4" />
-                  {lat && lng ? 'Lokasi Tersimpan' : 'Gunakan Lokasi Saya Saat Ini'}
-                </Button>
+                <Label>Lokasi Kandang</Label>
+                <AddressAutocomplete
+                  defaultValue={address}
+                  onLocationSelect={(addr, lt, ln) => {
+                    setAddress(addr);
+                    setLat(lt);
+                    setLng(ln);
+                  }}
+                />
                 {lat && lng && (
-                  <p className="text-caption text-text-desc mt-1">Lat: {lat.toFixed(5)}, Lng: {lng.toFixed(5)}</p>
+                  <p className="text-caption text-text-desc mt-2">Koordinat tersimpan: Lat {lat.toFixed(5)}, Lng {lng.toFixed(5)}</p>
                 )}
               </div>
               <Button onClick={handleNextStep1} className="w-full mt-4">Lanjut ke Tahap 2</Button>
@@ -243,7 +221,7 @@ export default function RegisterPeternakPage() {
           <Card className="p-6">
             <h2 className="text-h2 text-text-main mb-2">Tahap 2: Data Operasional</h2>
             <p className="text-body text-text-desc mb-6">Pilih metode pengisian data operasional peternakan Anda.</p>
-            
+
             {!registrationMethod && (
               <div className="space-y-4">
                 <Button variant="secondary" onClick={() => setRegistrationMethod('video_call_cs')} className="w-full py-8 flex flex-col gap-2 h-auto">
@@ -325,7 +303,7 @@ export default function RegisterPeternakPage() {
                     <Input value={vehicleType} onChange={e => setVehicleType(e.target.value)} placeholder="Misal: Mobil Pickup, Motor" />
                   </div>
                 )}
-                
+
                 <div className="flex gap-2 pt-4">
                   <Button variant="secondary" onClick={() => setRegistrationMethod(null)} className="flex-1">Ganti Metode</Button>
                   <Button onClick={handleNextStep2} className="flex-1">Lanjut Tahap 3</Button>
@@ -339,7 +317,7 @@ export default function RegisterPeternakPage() {
           <div className="space-y-6">
             <h2 className="text-h2 text-text-main">Tahap 3: Verifikasi Foto</h2>
             <p className="text-body text-text-desc">Ambil foto dokumentasi langsung dari kamera perangkat Anda.</p>
-            
+
             <CameraCapture label="1. Tampak Luar Kandang" onCapture={setFotoLuar} />
             <CameraCapture label="2. Tampak Dalam Kandang" onCapture={setFotoDalam} />
             <CameraCapture label="3. Foto Ayam" onCapture={setFotoAyam} />

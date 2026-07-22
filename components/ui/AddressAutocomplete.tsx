@@ -64,8 +64,7 @@ export function AddressAutocomplete({ onLocationSelect, defaultValue = '' }: Add
       }
       setIsLoading(false);
     }
-    
-    // Only search if user typed something new and didn't just select an item
+
     if (isOpen || document.activeElement?.tagName === 'INPUT') {
       fetchAddresses();
     }
@@ -90,7 +89,7 @@ export function AddressAutocomplete({ onLocationSelect, defaultValue = '' }: Add
               const props = data.features[0].properties;
               const addressParts = [props.name, props.street, props.city, props.state].filter(Boolean);
               const address = Array.from(new Set(addressParts)).join(', ');
-              
+
               setQuery(address);
               onLocationSelect(address, latitude, longitude);
             } else {
@@ -113,9 +112,9 @@ export function AddressAutocomplete({ onLocationSelect, defaultValue = '' }: Add
 
   return (
     <div className="relative flex flex-col gap-3" ref={wrapperRef}>
-      <Button 
-        type="button" 
-        variant="secondary" 
+      <Button
+        type="button"
+        variant="secondary"
         onClick={getCurrentLocation}
         disabled={isLoading}
         className="flex w-full items-center justify-center gap-2 border-primary-400 bg-primary-50 py-3 text-primary-950 hover:bg-primary-100"
@@ -132,7 +131,7 @@ export function AddressAutocomplete({ onLocationSelect, defaultValue = '' }: Add
 
       <div className="relative">
         <MapPin className="absolute left-3 top-3 h-5 w-5 text-text-desc" />
-        <Input 
+        <Input
           type="text"
           placeholder="Ketik nama jalan atau daerah..."
           value={query}
@@ -142,12 +141,12 @@ export function AddressAutocomplete({ onLocationSelect, defaultValue = '' }: Add
           }}
           className="w-full pl-10"
         />
-        
+
         {isOpen && results.length > 0 && (
           <div className="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-md border border-border bg-white shadow-none">
             {results.map((item) => (
-              <div 
-                key={item.place_id} 
+              <div
+                key={item.place_id}
                 className="cursor-pointer border-b border-border p-3 text-[14px] text-text-main last:border-0 hover:bg-primary-50"
                 onClick={() => handleSelect(item)}
               >

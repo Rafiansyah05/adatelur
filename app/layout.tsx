@@ -14,7 +14,7 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: 'Adatelur.com',
+  title: 'Adatelur',
   description: 'Platform pemesanan telur untuk menghubungkan peternak dan konsumen.',
   manifest: '/manifest.json',
   icons: {

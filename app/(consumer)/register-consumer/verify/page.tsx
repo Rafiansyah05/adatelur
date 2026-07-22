@@ -86,7 +86,7 @@ function VerifyForm() {
         <Button
           variant="secondary"
           className="w-full"
-          onClick={() => router.push('/register/consumer')}
+          onClick={() => router.push('/register-consumer')}
         >
           Kembali ke Pendaftaran
         </Button>
@@ -163,7 +163,7 @@ function VerifyForm() {
             type="button"
             variant="secondary"
             className="flex-1"
-            onClick={() => router.push('/register/consumer')}
+            onClick={() => router.push('/register-consumer')}
           >
             Batal
           </Button>
@@ -178,7 +178,7 @@ function VerifyForm() {
 
 export default function VerifyConsumerPage() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-cream p-4">
+    <div className="flex w-full items-center justify-center bg-cream p-4 h-full min-h-[60vh] mt-4 rounded-md">
       <div className="w-full max-w-md">
         <React.Suspense fallback={<p className="text-center text-[14px] text-text-main">Memuat...</p>}>
           <VerifyForm />
