@@ -88,30 +88,14 @@ export default function RegisterPeternakPage() {
     setLoading(true);
     try {
       const supabase = createClient();
-      // 1. Get or create user
+// 1. Get current user (must be logged in)
       const { data: { user } } = await supabase.auth.getUser();
-      let profileId = user?.id;
+      const profileId = user?.id;
 
-      // Dummy creation if no user for demo purposes
       if (!profileId) {
-        // Generate a random email for dummy signup
-        const dummyEmail = `peternak_${Date.now()}@demo.adatelur.com`;
-        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-          email: dummyEmail,
-          password: 'password123',
-        });
-        if (signUpError) throw signUpError;
-        profileId = signUpData.user?.id;
-        
-        if (profileId) {
-            // Insert profile
-            await supabase.from('profiles').insert({
-                id: profileId,
-                role: 'peternak',
-                full_name: nama,
-                phone_number: phone,
-            });
-        }
+        alert('Anda belum masuk. Silakan login terlebih dahulu sebelum mengirim pendaftaran.');
+        setLoading(false);
+        return;
       }
 
       if (!profileId) throw new Error("Gagal mendapatkan/membuat user.");
