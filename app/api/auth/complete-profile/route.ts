@@ -24,6 +24,7 @@ export async function POST(request: Request) {
         role,
         full_name,
         phone_number,
+        email: user.email,
       });
 
     if (insertError) {
