@@ -42,6 +42,9 @@ export default function RegisterPeternakPage() {
   const [fotoAyam, setFotoAyam] = React.useState<string | null>(null);
   const [fotoTelur, setFotoTelur] = React.useState<string | null>(null);
 
+  // State Tahap 4 (OTP)
+  const [otpToken, setOtpToken] = React.useState('');
+
   const handleNextStep1 = () => {
     if (!nama || !phone || !email || !password || !birthDate || !address || lat === null || lng === null) {
       alert('Mohon lengkapi semua data Tahap 1 termasuk email, password, dan lokasi.');
@@ -70,49 +73,93 @@ export default function RegisterPeternakPage() {
     return new File([buf], filename, { type: 'image/jpeg' });
   };
 
-  const handleSubmit = async () => {
+  // Tahap 3: Sign Up untuk mendapatkan OTP via Email
+  const handleSignUp = async () => {
     if (!fotoLuar || !fotoDalam || !fotoAyam || !fotoTelur) {
       alert('Mohon lengkapi semua 4 foto verifikasi.');
       return;
     }
 
     setLoading(true);
+    const supabase = createClient();
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+    });
+
+    setLoading(false);
+
+    if (error) {
+      alert('Gagal mendaftarkan akun: ' + error.message);
+      return;
+    }
+
+    // Jika berhasil, lanjut ke form OTP
+    setStep(4);
+  };
+
+  // Tahap 4: Verifikasi OTP lalu Insert Data (tanpa bypass admin)
+  const handleVerifyOtpAndSubmit = async () => {
+    if (!otpToken || otpToken.length !== 6) {
+      alert('Masukkan 6 digit kode OTP');
+      return;
+    }
+
+    setLoading(true);
     try {
-      // 1. Kirim data teks ke API route (server-side, bypass RLS via service role)
-      const res = await fetch('/api/register/peternak', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email,
-          password,
-          nama,
-          phone,
-          birthDate,
-          address,
-          lat,
-          lng,
-          registrationMethod: registrationMethod || 'self_form',
-          chickenCount,
-          eggProd,
-          eggBroken,
-          eggClean,
-          feedType,
-          cleanliness,
-          hasVehicle,
-          vehicleType,
-          experience,
-        }),
+      const supabase = createClient();
+      
+      // 1. Verifikasi OTP
+      const { data: otpData, error: otpError } = await supabase.auth.verifyOtp({
+        email,
+        token: otpToken,
+        type: 'signup'
       });
 
-      const result = await res.json();
-      if (!res.ok) {
-        throw new Error(result.error || 'Terjadi kesalahan saat registrasi.');
+      if (otpError || !otpData.user) {
+        throw new Error(otpError?.message || 'Verifikasi OTP gagal.');
       }
 
-      const { peternakId } = result;
+      const userId = otpData.user.id;
 
-      // 2. Upload foto langsung dari browser ke Supabase Storage (anon upload diizinkan)
-      const supabase = createClient();
+      // 2. Insert Profile
+      const { error: profileError } = await supabase.from('profiles').insert({
+        id: userId,
+        role: 'peternak',
+        full_name: nama,
+        phone_number: phone,
+        email: email
+      });
+      if (profileError) throw new Error('Gagal menyimpan profil: ' + profileError.message);
+
+      // 3. Insert Peternak Details
+      const { data: pData, error: pError } = await supabase.from('peternak_details').insert({
+        profile_id: userId,
+        birth_date: birthDate,
+        farm_address: address,
+        farm_latitude: lat,
+        farm_longitude: lng,
+        registration_method: registrationMethod || 'self_form',
+        chicken_count: parseInt(chickenCount) || 0,
+        daily_egg_production: parseInt(eggProd) || 0,
+        daily_damaged_eggs: parseInt(eggBroken) || 0,
+        daily_clean_eggs: parseInt(eggClean) || 0,
+        feed_type: feedType || '-',
+        farming_experience_years: parseFloat(experience) || 0,
+        has_vehicle: hasVehicle || false,
+        verification_status: 'pending',
+      }).select().single();
+      if (pError) throw new Error('Gagal menyimpan data peternak: ' + pError.message);
+
+      const peternakId = pData.id;
+
+      // 4. Insert Kendaraan
+      if (hasVehicle && vehicleType) {
+        const { error: vError } = await supabase.from('vehicles').insert({ peternak_id: peternakId, vehicle_type: vehicleType });
+        if (vError) console.warn("Kendaraan gagal disimpan", vError);
+      }
+
+      // 5. Upload Foto & Insert Verification Photos
       const photos = [
         { type: 'kandang_luar', src: fotoLuar },
         { type: 'kandang_dalam', src: fotoDalam },
@@ -128,36 +175,25 @@ export default function RegisterPeternakPage() {
           .from('verification-photos')
           .upload(filePath, file);
 
-        if (uploadError) {
-          console.warn(`Upload foto ${p.type} gagal (non-fatal):`, uploadError.message);
-          continue;
-        }
+        if (!uploadError) {
+          const { data: publicUrlData } = supabase.storage
+            .from('verification-photos')
+            .getPublicUrl(filePath);
 
-        const { data: publicUrlData } = supabase.storage
-          .from('verification-photos')
-          .getPublicUrl(filePath);
-
-        // Insert record foto via API terpisah agar bypass RLS
-        const photoRes = await fetch('/api/register/peternak/photo', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            peternakId,
-            photoType: p.type,
-            photoUrl: publicUrlData.publicUrl,
-          }),
-        });
-
-        if (!photoRes.ok) {
-          const photoData = await photoRes.json();
-          console.warn(`Gagal mencatat data foto ${p.type} di database:`, photoData.error);
+          await supabase.from('peternak_verification_photos').insert({
+            peternak_id: peternakId,
+            photo_type: p.type,
+            photo_url: publicUrlData.publicUrl,
+          });
+        } else {
+          console.warn(`Gagal upload foto ${p.type}`, uploadError);
         }
       }
 
-      setStep(4); // Success step
-    } catch (error) {
-      const err = error as Error;
-      alert(err.message || 'Terjadi kesalahan saat menyimpan data.');
+      // Berhasil, lanjut ke success screen
+      setStep(5);
+    } catch (err) {
+      alert((err as Error).message || 'Terjadi kesalahan saat menyimpan data.');
     } finally {
       setLoading(false);
     }
@@ -167,10 +203,10 @@ export default function RegisterPeternakPage() {
     <div className="w-full bg-cream p-4">
       <div className="max-w-md mx-auto">
         {step < 4 && (
-          <div className="mb-6 flex justify-between items-center text-sm font-medium text-text-desc">
-            <span className={step >= 1 ? 'text-primary-600' : ''}>1. Dasar</span>
+          <div className="mb-6 flex justify-between items-center text-[12px] font-medium text-text-desc">
+            <span className={step >= 1 ? 'text-primary-600' : ''}>1. Akun</span>
             <span className="flex-1 border-t border-border mx-2"></span>
-            <span className={step >= 2 ? 'text-primary-600' : ''}>2. Operasional</span>
+            <span className={step >= 2 ? 'text-primary-600' : ''}>2. Kandang</span>
             <span className="flex-1 border-t border-border mx-2"></span>
             <span className={step >= 3 ? 'text-primary-600' : ''}>3. Foto</span>
           </div>
@@ -326,27 +362,47 @@ export default function RegisterPeternakPage() {
             <CameraCapture label="4. Foto Telur" onCapture={setFotoTelur} />
             <div className="flex gap-4 mt-8">
               <Button variant="secondary" onClick={() => setStep(2)} className="flex-1">Kembali</Button>
-              <Button onClick={handleSubmit} disabled={loading} className="flex-1">
-                {loading ? 'Mendaftar...' : 'Kirim Pendaftaran'}
+              <Button onClick={handleSignUp} disabled={loading} className="flex-1">
+                {loading ? 'Memproses...' : 'Kirim & Dapatkan OTP'}
               </Button>
             </div>
           </div>
         )}
 
         {step === 4 && (
+          <Card className="p-6 text-center">
+            <h2 className="text-h2 text-text-main mb-2">Tahap 4: Verifikasi Email</h2>
+            <p className="text-body text-text-desc mb-6">
+              Kami telah mengirimkan 6 digit kode OTP ke email <strong>{email}</strong>
+            </p>
+            <div className="space-y-4">
+              <div>
+                <Input 
+                  type="text" 
+                  value={otpToken} 
+                  onChange={(e) => setOtpToken(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                  placeholder="Kode OTP (6 Digit)"
+                  className="text-center text-[24px] tracking-[0.5em]"
+                />
+              </div>
+              <Button onClick={handleVerifyOtpAndSubmit} disabled={loading || otpToken.length !== 6} className="w-full">
+                {loading ? 'Menyimpan Semua Data...' : 'Verifikasi & Selesai'}
+              </Button>
+            </div>
+          </Card>
+        )}
+
+        {step === 5 && (
           <Card className="p-8 text-center space-y-4">
             <div className="w-16 h-16 bg-success-bg text-success-text rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">
               ✓
             </div>
-            <h2 className="text-h2 text-text-main">Pendaftaran Berhasil Dikirim!</h2>
+            <h2 className="text-h2 text-text-main">Pendaftaran Selesai!</h2>
             <p className="text-body text-text-desc">
-              Proses verifikasi berjalan maksimal 2x24 jam kerja. Hasil akan dikirim lewat WhatsApp ke nomor yang didaftarkan.
+              Data pendaftaran dan foto Anda berhasil dikirim. Proses verifikasi internal membutuhkan waktu maksimal 2x24 jam kerja.
             </p>
-            <p className="text-caption text-text-desc">
-              Cek email Anda untuk konfirmasi akun, lalu masuk ke aplikasi.
-            </p>
-            <Button onClick={() => window.location.href = '/login'} className="mt-4">
-              Masuk ke Aplikasi
+            <Button onClick={() => window.location.href = '/dashboard'} className="mt-4">
+              Masuk ke Dashboard
             </Button>
           </Card>
         )}
