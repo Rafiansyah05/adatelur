@@ -16,7 +16,9 @@ export async function GET(request: Request) {
     return NextResponse.redirect(`${origin}/login?error=oauth`);
   }
 
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
   if (!user) {
     return NextResponse.redirect(`${origin}/login?error=oauth`);
@@ -36,6 +38,7 @@ export async function GET(request: Request) {
     id: user.id,
     role: 'consumer',
     full_name: user.user_metadata.full_name ?? 'Pengguna Adatelur',
+    email: user.email,
   });
 
   if (insertError) {
