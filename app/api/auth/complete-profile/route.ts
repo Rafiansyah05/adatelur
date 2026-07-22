@@ -18,14 +18,19 @@ export async function POST(request: Request) {
     }
 
     const { error: insertError } = await supabase
-      .from('profiles')
-      .insert({
-        id: user.id,
-        role,
-        full_name,
-        phone_number,
-        email: user.email,
-      });
+      .from("profiles")
+      .upsert(
+        {
+          id: user.id,
+          role,
+          full_name,
+          phone_number,
+          email: user.email,
+        },
+        {
+          onConflict: "id",
+        }
+      );
 
     if (insertError) {
       return NextResponse.json({ error: insertError.message }, { status: 500 });
