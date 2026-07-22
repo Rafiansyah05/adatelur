@@ -84,7 +84,7 @@ export async function POST(request: Request) {
     processedListings.sort((a, b) => a.total_cost - b.total_cost);
 
     return NextResponse.json({ data: processedListings });
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }

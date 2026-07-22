@@ -10,10 +10,30 @@ interface AddressAutocompleteProps {
   defaultValue?: string;
 }
 
+interface AutocompleteResult {
+  place_id: string;
+  display_name: string;
+  lat: number;
+  lon: number;
+}
+
+interface PhotonFeature {
+  properties: {
+    name?: string;
+    street?: string;
+    city?: string;
+    state?: string;
+    osm_id?: string | number;
+  };
+  geometry: {
+    coordinates: [number, number];
+  };
+}
+
 export function AddressAutocomplete({ onLocationSelect, defaultValue = '' }: AddressAutocompleteProps) {
   const [query, setQuery] = useState(defaultValue);
   const [debouncedQuery, setDebouncedQuery] = useState(defaultValue);
-  const [results, setResults] = useState<any[]>([]);
+  const [results, setResults] = useState<AutocompleteResult[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -46,12 +66,12 @@ export function AddressAutocomplete({ onLocationSelect, defaultValue = '' }: Add
       try {
         const res = await fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(debouncedQuery)}&limit=5`);
         const data = await res.json();
-        const formattedResults = (data.features || []).map((f: any) => {
+        const formattedResults = (data.features || []).map((f: PhotonFeature) => {
           const props = f.properties;
           const addressParts = [props.name, props.street, props.city, props.state].filter(Boolean);
           const uniqueParts = Array.from(new Set(addressParts));
           return {
-            place_id: props.osm_id || Math.random().toString(),
+            place_id: String(props.osm_id || Math.random()),
             display_name: uniqueParts.join(', '),
             lat: f.geometry.coordinates[1],
             lon: f.geometry.coordinates[0]
@@ -64,14 +84,14 @@ export function AddressAutocomplete({ onLocationSelect, defaultValue = '' }: Add
       }
       setIsLoading(false);
     }
-    
-    // Only search if user typed something new and didn't just select an item
+
     if (isOpen || document.activeElement?.tagName === 'INPUT') {
       fetchAddresses();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debouncedQuery]);
 
-  const handleSelect = (item: any) => {
+  const handleSelect = (item: AutocompleteResult) => {
     setQuery(item.display_name);
     setIsOpen(false);
     onLocationSelect(item.display_name, Number(item.lat), Number(item.lon));
@@ -90,13 +110,13 @@ export function AddressAutocomplete({ onLocationSelect, defaultValue = '' }: Add
               const props = data.features[0].properties;
               const addressParts = [props.name, props.street, props.city, props.state].filter(Boolean);
               const address = Array.from(new Set(addressParts)).join(', ');
-              
+
               setQuery(address);
               onLocationSelect(address, latitude, longitude);
             } else {
               alert('Gagal menemukan alamat untuk koordinat Anda.');
             }
-          } catch (e) {
+          } catch {
             alert('Gagal mengambil nama lokasi dari koordinat Anda.');
           }
           setIsLoading(false);
@@ -113,9 +133,9 @@ export function AddressAutocomplete({ onLocationSelect, defaultValue = '' }: Add
 
   return (
     <div className="relative flex flex-col gap-3" ref={wrapperRef}>
-      <Button 
-        type="button" 
-        variant="secondary" 
+      <Button
+        type="button"
+        variant="secondary"
         onClick={getCurrentLocation}
         disabled={isLoading}
         className="flex w-full items-center justify-center gap-2 border-primary-400 bg-primary-50 py-3 text-primary-950 hover:bg-primary-100"
@@ -132,7 +152,7 @@ export function AddressAutocomplete({ onLocationSelect, defaultValue = '' }: Add
 
       <div className="relative">
         <MapPin className="absolute left-3 top-3 h-5 w-5 text-text-desc" />
-        <Input 
+        <Input
           type="text"
           placeholder="Ketik nama jalan atau daerah..."
           value={query}
@@ -142,12 +162,12 @@ export function AddressAutocomplete({ onLocationSelect, defaultValue = '' }: Add
           }}
           className="w-full pl-10"
         />
-        
+
         {isOpen && results.length > 0 && (
           <div className="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-md border border-border bg-white shadow-none">
             {results.map((item) => (
-              <div 
-                key={item.place_id} 
+              <div
+                key={item.place_id}
                 className="cursor-pointer border-b border-border p-3 text-[14px] text-text-main last:border-0 hover:bg-primary-50"
                 onClick={() => handleSelect(item)}
               >

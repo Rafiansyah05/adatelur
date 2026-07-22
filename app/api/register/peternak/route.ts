@@ -1,4 +1,4 @@
-﻿import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { createClient as createBrowserClient } from '@supabase/supabase-js';
 
@@ -20,7 +20,6 @@ export async function POST(req: NextRequest) {
       eggBroken,
       eggClean,
       feedType,
-      cleanliness,
       hasVehicle,
       vehicleType,
       experience,

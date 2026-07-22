@@ -7,13 +7,14 @@ import { Input } from '@/components/ui/Input';
 import { Label } from '@/components/ui/Label';
 import { CameraCapture } from '@/components/CameraCapture';
 import { createClient } from '@/lib/supabase/client';
-import { MapPin, PhoneCall } from 'lucide-react';
+import { PhoneCall } from 'lucide-react';
+import { AddressAutocomplete } from '@/components/ui/AddressAutocomplete';
 
 export default function RegisterPeternakPage() {
   const [step, setStep] = React.useState(1);
   const [loading, setLoading] = React.useState(false);
 
-  // Tahap 1 - Data Dasar & Akun
+  // State Tahap 1
   const [nama, setNama] = React.useState('');
   const [phone, setPhone] = React.useState('');
   const [email, setEmail] = React.useState('');
@@ -23,7 +24,7 @@ export default function RegisterPeternakPage() {
   const [lat, setLat] = React.useState<number | null>(null);
   const [lng, setLng] = React.useState<number | null>(null);
 
-  // Tahap 2 - Data Operasional
+  // State Tahap 2
   const [registrationMethod, setRegistrationMethod] = React.useState<'self_form' | 'video_call_cs' | null>(null);
   const [chickenCount, setChickenCount] = React.useState('');
   const [eggProd, setEggProd] = React.useState('');
@@ -35,27 +36,11 @@ export default function RegisterPeternakPage() {
   const [vehicleType, setVehicleType] = React.useState('');
   const [experience, setExperience] = React.useState('');
 
-  // Tahap 3 - Foto
+  // State Tahap 3
   const [fotoLuar, setFotoLuar] = React.useState<string | null>(null);
   const [fotoDalam, setFotoDalam] = React.useState<string | null>(null);
   const [fotoAyam, setFotoAyam] = React.useState<string | null>(null);
   const [fotoTelur, setFotoTelur] = React.useState<string | null>(null);
-
-  const getGeolocation = () => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setLat(position.coords.latitude);
-          setLng(position.coords.longitude);
-        },
-        () => {
-          alert('Gagal mengambil lokasi. Pastikan izin lokasi diberikan.');
-        }
-      );
-    } else {
-      alert('Geolocation tidak didukung di browser ini.');
-    }
-  };
 
   const handleNextStep1 = () => {
     if (!nama || !phone || !email || !password || !birthDate || !address || lat === null || lng === null) {
@@ -153,7 +138,7 @@ export default function RegisterPeternakPage() {
           .getPublicUrl(filePath);
 
         // Insert record foto via API terpisah agar bypass RLS
-        await fetch('/api/register/peternak/photo', {
+        const photoRes = await fetch('/api/register/peternak/photo', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -162,19 +147,24 @@ export default function RegisterPeternakPage() {
             photoUrl: publicUrlData.publicUrl,
           }),
         });
+
+        if (!photoRes.ok) {
+          const photoData = await photoRes.json();
+          console.warn(`Gagal mencatat data foto ${p.type} di database:`, photoData.error);
+        }
       }
 
-      setStep(4);
-    } catch (err) {
-      const e = err as Error;
-      alert(e.message || 'Terjadi kesalahan saat menyimpan data.');
+      setStep(4); // Success step
+    } catch (error) {
+      const err = error as Error;
+      alert(err.message || 'Terjadi kesalahan saat menyimpan data.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-cream p-4 pb-24">
+    <div className="w-full bg-cream p-4">
       <div className="max-w-md mx-auto">
         {step < 4 && (
           <div className="mb-6 flex justify-between items-center text-sm font-medium text-text-desc">
@@ -211,20 +201,22 @@ export default function RegisterPeternakPage() {
                 <Input type="date" value={birthDate} onChange={e => setBirthDate(e.target.value)} />
               </div>
               <div>
-                <Label>Alamat Kandang</Label>
-                <Input value={address} onChange={e => setAddress(e.target.value)} placeholder="Alamat lengkap kandang" />
-              </div>
-              <div>
-                <Label>Koordinat Lokasi</Label>
-                <Button type="button" variant="secondary" onClick={getGeolocation} className="w-full flex justify-center gap-2">
-                  <MapPin className="w-4 h-4" />
-                  {lat && lng ? 'Lokasi Tersimpan ✓' : 'Gunakan Lokasi Saya Saat Ini'}
-                </Button>
+                <Label className="mb-2 block">Alamat &amp; Lokasi Peternakan</Label>
+                <AddressAutocomplete
+                  defaultValue={address}
+                  onLocationSelect={(addr, latitude, longitude) => {
+                    setAddress(addr);
+                    setLat(latitude);
+                    setLng(longitude);
+                  }}
+                />
                 {lat && lng && (
-                  <p className="text-caption text-text-desc mt-1">Lat: {lat.toFixed(5)}, Lng: {lng.toFixed(5)}</p>
+                  <p className="text-caption text-text-desc mt-2">
+                    Koordinat tersimpan: Lat {lat.toFixed(5)}, Lng {lng.toFixed(5)}
+                  </p>
                 )}
               </div>
-              <Button onClick={handleNextStep1} className="w-full mt-4">Lanjut ke Tahap 2</Button>
+              <Button onClick={handleNextStep1} className="w-full mt-6">Lanjut ke Tahap 2</Button>
             </div>
           </Card>
         )}
@@ -313,6 +305,7 @@ export default function RegisterPeternakPage() {
                     <Input value={vehicleType} onChange={e => setVehicleType(e.target.value)} placeholder="Misal: Mobil Pickup, Motor" />
                   </div>
                 )}
+
                 <div className="flex gap-2 pt-4">
                   <Button variant="secondary" onClick={() => setRegistrationMethod(null)} className="flex-1">Ganti Metode</Button>
                   <Button onClick={handleNextStep2} className="flex-1">Lanjut Tahap 3</Button>
@@ -326,6 +319,7 @@ export default function RegisterPeternakPage() {
           <div className="space-y-6">
             <h2 className="text-h2 text-text-main">Tahap 3: Verifikasi Foto</h2>
             <p className="text-body text-text-desc">Ambil foto dokumentasi langsung dari kamera perangkat Anda.</p>
+
             <CameraCapture label="1. Tampak Luar Kandang" onCapture={setFotoLuar} />
             <CameraCapture label="2. Tampak Dalam Kandang" onCapture={setFotoDalam} />
             <CameraCapture label="3. Foto Ayam" onCapture={setFotoAyam} />
