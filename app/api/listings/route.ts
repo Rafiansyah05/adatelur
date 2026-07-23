@@ -4,7 +4,10 @@ import { createClient } from '@/lib/supabase/server';
 export async function POST(request: Request) {
   try {
     const supabase = createClient();
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
 
     if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -25,11 +28,13 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const pricePerRak = Number(body.price_per_rak !== undefined ? body.price_per_rak : body.pricePerRak);
+    const pricePerRak = Number(
+      body.price_per_rak !== undefined ? body.price_per_rak : body.pricePerRak
+    );
     const stockRak = Number(body.stock_rak !== undefined ? body.stock_rak : body.stockRak);
     const isListingActive = body.is_listing_active ?? body.isListingActive ?? true;
 
-    if (!Number.isFinite(pricePerRak) || pricePerRak < 0) {
+    if (!Number.isFinite(pricePerRak) || pricePerRak <= 0) {
       return NextResponse.json({ error: 'Harga per rak tidak valid' }, { status: 400 });
     }
 
@@ -90,9 +95,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: true, listing: result, data: result });
   } catch (error) {
     const err = error as Error;
-    return NextResponse.json(
-      { error: err.message || 'Internal Server Error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: err.message || 'Internal Server Error' }, { status: 500 });
   }
 }
