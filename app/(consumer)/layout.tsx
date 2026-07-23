@@ -1,6 +1,8 @@
 import { Home, Package, User } from 'lucide-react';
 import { type NavItem } from '@/components/layout/DesktopSidebar';
 import { RoleLayoutWrapper } from '@/components/layout/RoleLayoutWrapper';
+import { createClient } from '@/lib/supabase/server';
+import { redirect } from 'next/navigation';
 
 const consumerNavItems: NavItem[] = [
   { label: 'Beranda', href: '/', icon: <Home className="h-5 w-5" /> },
@@ -9,9 +11,5 @@ const consumerNavItems: NavItem[] = [
 ];
 
 export default function ConsumerLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <RoleLayoutWrapper items={consumerNavItems}>
-      {children}
-    </RoleLayoutWrapper>
-  );
+  return <RoleLayoutWrapper items={consumerNavItems}>{children}</RoleLayoutWrapper>;
 }

@@ -18,6 +18,9 @@ export function PwaInstallPrompt() {
 
   React.useEffect(() => {
     const handler = (e: Event) => {
+      // Only capture the first beforeinstallprompt event to avoid repeated
+      // preventDefault() calls which trigger console warnings.
+      if (deferredPrompt) return;
       e.preventDefault();
       setDeferredPrompt(e as BeforeInstallPromptEvent);
       setShowPrompt(true);
@@ -32,12 +35,12 @@ export function PwaInstallPrompt() {
 
   const handleInstallClick = async () => {
     if (!deferredPrompt) return;
-    
+
     setShowPrompt(false);
     deferredPrompt.prompt();
-    
+
     await deferredPrompt.userChoice;
-    
+
     setDeferredPrompt(null);
   };
 
@@ -48,7 +51,9 @@ export function PwaInstallPrompt() {
       <div className="flex flex-col gap-3">
         <div>
           <h4 className="text-body-medium text-text-main font-semibold">Pasang adatelur.com</h4>
-          <p className="text-caption text-text-desc mt-1">Akses lebih cepat langsung dari layar utama HP Anda.</p>
+          <p className="text-caption text-text-desc mt-1">
+            Akses lebih cepat langsung dari layar utama HP Anda.
+          </p>
         </div>
         <div className="flex items-center gap-2">
           <Button variant="secondary" onClick={() => setShowPrompt(false)} className="flex-1 py-2">

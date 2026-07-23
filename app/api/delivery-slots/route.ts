@@ -4,7 +4,10 @@ import { createClient } from '@/lib/supabase/server';
 export async function POST(request: Request) {
   try {
     const supabase = createClient();
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
 
     if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -32,6 +35,10 @@ export async function POST(request: Request) {
 
     if (!slotDate || !startTime || !endTime) {
       return NextResponse.json({ error: 'Tanggal dan jam slot wajib diisi' }, { status: 400 });
+    }
+
+    if (startTime >= endTime) {
+      return NextResponse.json({ error: 'Jam mulai harus sebelum jam selesai' }, { status: 400 });
     }
 
     const { data: slot, error: slotError } = await supabase

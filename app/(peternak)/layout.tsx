@@ -1,6 +1,8 @@
 import { LayoutDashboard, Inbox, User } from 'lucide-react';
 import { type NavItem } from '@/components/layout/DesktopSidebar';
 import { RoleLayoutWrapper } from '@/components/layout/RoleLayoutWrapper';
+import { createClient } from '@/lib/supabase/server';
+import { redirect } from 'next/navigation';
 
 const peternakNavItems: NavItem[] = [
   { label: 'Dashboard', href: '/dashboard', icon: <LayoutDashboard className="h-5 w-5" /> },
@@ -9,9 +11,5 @@ const peternakNavItems: NavItem[] = [
 ];
 
 export default function PeternakLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <RoleLayoutWrapper items={peternakNavItems}>
-      {children}
-    </RoleLayoutWrapper>
-  );
+  return <RoleLayoutWrapper items={peternakNavItems}>{children}</RoleLayoutWrapper>;
 }
