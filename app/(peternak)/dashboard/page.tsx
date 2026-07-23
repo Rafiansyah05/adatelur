@@ -1,7 +1,6 @@
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
-import { ListingManager } from '@/components/dashboard/ListingManager';
-import { DeliverySlotsManager } from '@/components/dashboard/DeliverySlotsManager';
+import { PeternakDashboard } from '@/components/peternak/PeternakDashboard';
 
 export const dynamic = 'force-dynamic';
 
@@ -53,10 +52,5 @@ export default async function PeternakDashboard() {
     .order('slot_date', { ascending: true })
     .order('start_time', { ascending: true });
 
-  return (
-    <div className="w-full px-6 py-8">
-      <h1 className="text-display text-text-main">Berhasil masuk: Dashboard Peternak</h1>
-      <p className="mt-2 text-text-main">Anda memiliki akses peternak yang terverifikasi.</p>
-    </div>
-  );
+  return <PeternakDashboard initialListing={existingListing ?? null} initialSlots={slots ?? []} />;
 }

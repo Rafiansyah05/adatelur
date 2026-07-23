@@ -1,10 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 
-export async function GET(
-  request: Request,
-  { params }: { params: { id: string } }
-) {
+export async function GET(request: Request, { params }: { params: { id: string } }) {
   try {
     const supabase = createClient();
     const peternakId = params.id;
@@ -35,8 +32,11 @@ export async function GET(
       },
       peternak_scores: {
         final_score: listing.final_score,
-        average_rating: 4.8, 
-      }
+        average_rating: 4.8,
+      },
+      listing_id: listing.listing_id ?? listing.id,
+      price_per_rak: listing.price_per_rak,
+      is_available: listing.is_available,
     };
 
     const todayDateStr = new Date().toISOString().split('T')[0];
@@ -56,7 +56,7 @@ export async function GET(
 
     const responseData = {
       profile: peternak,
-      delivery_slots: deliverySlots || []
+      delivery_slots: deliverySlots || [],
     };
 
     return NextResponse.json({ data: responseData });
