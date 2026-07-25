@@ -31,11 +31,11 @@ const config: Config = {
         border: '#EBEBEB',
         text: {
           main: '#001224',
-          desc: '#CFCFCF',
+          desc: '#4B5563',
         },
       },
       fontFamily: {
-        sans: ['var(--font-plus-jakarta-sans)', 'sans-serif'],
+        sans: ['var(--font-plus-jakarta-sans)'],
       },
       boxShadow: {
         none: 'none',

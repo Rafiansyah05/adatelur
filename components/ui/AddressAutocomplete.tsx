@@ -64,7 +64,7 @@ export function AddressAutocomplete({ onLocationSelect, defaultValue = '' }: Add
       }
       setIsLoading(true);
       try {
-        const res = await fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(debouncedQuery)}&limit=5`);
+        const res = await fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(debouncedQuery)}&limit=5&bbox=95.0,-11.0,141.0,6.0`);
         const data = await res.json();
         const formattedResults = (data.features || []).map((f: PhotonFeature) => {
           const props = f.properties;

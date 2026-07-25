@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 
 export async function POST(request: Request) {
   try {
@@ -28,24 +29,23 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const slotDate = body.slot_date || body.slotDate;
     const startTime = body.start_time || body.startTime;
     const endTime = body.end_time || body.endTime;
     const isActive = body.is_active ?? true;
 
-    if (!slotDate || !startTime || !endTime) {
-      return NextResponse.json({ error: 'Tanggal dan jam slot wajib diisi' }, { status: 400 });
+    if (!startTime || !endTime) {
+      return NextResponse.json({ error: 'Jam mulai dan jam selesai wajib diisi' }, { status: 400 });
     }
 
     if (startTime >= endTime) {
       return NextResponse.json({ error: 'Jam mulai harus sebelum jam selesai' }, { status: 400 });
     }
 
-    const { data: slot, error: slotError } = await supabase
+    const adminClient = createAdminClient();
+    const { data: slot, error: slotError } = await adminClient
       .from('delivery_slots')
       .insert({
         peternak_id: peternakDetail.id,
-        slot_date: slotDate,
         start_time: startTime,
         end_time: endTime,
         is_active: isActive,

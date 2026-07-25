@@ -2,8 +2,9 @@
 
 import * as React from 'react';
 import { usePathname } from 'next/navigation';
-import { DesktopSidebar, NavItem } from '@/components/layout/DesktopSidebar';
+import { TopNavbar, type NavItem } from '@/components/layout/TopNavbar';
 import { MobileBottomNav } from '@/components/layout/MobileBottomNav';
+import { MobileTopNavbar } from '@/components/layout/MobileTopNavbar';
 
 interface RoleLayoutWrapperProps {
   children: React.ReactNode;
@@ -17,15 +18,16 @@ export function RoleLayoutWrapper({ children, items }: RoleLayoutWrapperProps) {
   const isAuthPage = pathname.startsWith('/register') || pathname === '/login';
 
   if (isAuthPage) {
-    return <div className="flex min-h-screen flex-col bg-cream">{children}</div>;
+    return <div className="flex min-h-screen flex-col bg-bg-base">{children}</div>;
   }
 
   return (
-    <div className="flex min-h-screen flex-col md:flex-row bg-white">
-      <DesktopSidebar items={items} />
+    <div className="flex min-h-screen flex-col bg-bg-base overflow-x-clip">
+      <TopNavbar items={items} />
+      {!pathname.startsWith('/dashboard') && !pathname.startsWith('/recommendations') && <MobileTopNavbar />}
       
-      <div className="flex flex-1 flex-col pb-16 md:ml-[240px] md:pb-0">
-        <main className="mx-auto w-full max-w-[1040px] flex-1">
+      <div className="flex flex-1 flex-col pb-20 md:pb-8">
+        <main className="mx-auto w-full max-w-[1200px] flex-1 px-4 py-6 md:px-8 md:py-8">
           {children}
         </main>
       </div>

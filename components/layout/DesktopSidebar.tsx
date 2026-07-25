@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { LogoutButton } from '@/components/ui/LogoutButton';
 
 export interface NavItem {
   label: string;
@@ -38,6 +39,10 @@ export function DesktopSidebar({ items }: { items: NavItem[] }) {
           );
         })}
       </nav>
+      
+      <div className="border-t border-border p-4">
+        <LogoutButton />
+      </div>
     </aside>
   );
 }

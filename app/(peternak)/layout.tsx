@@ -1,5 +1,5 @@
 import { LayoutDashboard, Inbox, User } from 'lucide-react';
-import { type NavItem } from '@/components/layout/DesktopSidebar';
+import { type NavItem } from '@/components/layout/TopNavbar';
 import { RoleLayoutWrapper } from '@/components/layout/RoleLayoutWrapper';
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';

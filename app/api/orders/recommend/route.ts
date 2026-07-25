@@ -39,7 +39,19 @@ export async function POST(request: Request) {
         farm_latitude,
         farm_longitude,
         final_score,
+        average_rating,
+        total_completed_orders,
       } = listing;
+
+      let distanceKm = 0;
+      if (consumer_lat !== undefined && consumer_lng !== undefined) {
+        distanceKm = haversineDistance(
+          Number(consumer_lat),
+          Number(consumer_lng),
+          Number(farm_latitude),
+          Number(farm_longitude)
+        );
+      }
 
       const price = Number(price_per_rak);
       const subtotal = price * Number(rak_quantity);
@@ -52,18 +64,13 @@ export async function POST(request: Request) {
           avatar_url,
           price_per_rak: price,
           final_score,
-          distance_km: 0,
+          average_rating,
+          total_completed_orders,
+          distance_km: distanceKm,
           ongkir_amount: 0,
           total_cost: subtotal,
         };
       }
-
-      const distanceKm = haversineDistance(
-        Number(consumer_lat),
-        Number(consumer_lng),
-        Number(farm_latitude),
-        Number(farm_longitude)
-      );
 
       const ongkirAmount = calculateOngkir(distanceKm);
       const totalCost = subtotal + ongkirAmount;
@@ -75,6 +82,8 @@ export async function POST(request: Request) {
         avatar_url,
         price_per_rak: price,
         final_score,
+        average_rating,
+        total_completed_orders,
         distance_km: distanceKm,
         ongkir_amount: ongkirAmount,
         total_cost: totalCost,

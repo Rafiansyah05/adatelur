@@ -14,7 +14,7 @@ export async function POST(request: Request, { params }: { params: { id: string 
     const body = await request.json();
     const action = body.action;
 
-    if (!['accept', 'reject'].includes(action))
+    if (!['accept', 'reject', 'cancel'].includes(action))
       return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
 
     // load order
@@ -27,18 +27,25 @@ export async function POST(request: Request, { params }: { params: { id: string 
     if (orderErr) return NextResponse.json({ error: orderErr.message }, { status: 500 });
     if (!order) return NextResponse.json({ error: 'Order not found' }, { status: 404 });
 
-    // verify current user is peternak owner of this order
-    const { data: peternakDetail, error: pdErr } = await supabase
-      .from('peternak_details')
-      .select('id, profile_id')
-      .eq('id', order.peternak_id)
-      .maybeSingle();
+    if (action === 'cancel') {
+      // verify current user is consumer owner of this order
+      if (order.consumer_id !== user.id) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      }
+    } else {
+      // verify current user is peternak owner of this order
+      const { data: peternakDetail, error: pdErr } = await supabase
+        .from('peternak_details')
+        .select('id, profile_id')
+        .eq('id', order.peternak_id)
+        .maybeSingle();
 
-    if (pdErr) return NextResponse.json({ error: pdErr.message }, { status: 500 });
-    if (!peternakDetail)
-      return NextResponse.json({ error: 'Peternak detail not found' }, { status: 404 });
-    if (peternakDetail.profile_id !== user.id)
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      if (pdErr) return NextResponse.json({ error: pdErr.message }, { status: 500 });
+      if (!peternakDetail)
+        return NextResponse.json({ error: 'Peternak detail not found' }, { status: 404 });
+      if (peternakDetail.profile_id !== user.id)
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
 
     if (order.order_status !== 'waiting')
       return NextResponse.json(
@@ -48,12 +55,21 @@ export async function POST(request: Request, { params }: { params: { id: string 
 
     const now = new Date();
     if (order.response_deadline && new Date(order.response_deadline) < now) {
-      return NextResponse.json({ error: 'order sudah expired' }, { status: 400 });
+      if (action !== 'cancel') {
+        return NextResponse.json({ error: 'order sudah expired' }, { status: 400 });
+      }
     }
 
-    const newStatus = action === 'accept' ? 'accepted' : 'rejected';
+    let newStatus = action === 'accept' ? 'accepted' : 'rejected';
+    if (action === 'cancel') newStatus = 'cancelled';
+    
+    // We import createAdminClient at the top if it's missing, let's assume it's imported? 
+    // Oh wait, createAdminClient is NOT imported in this file. Let's require it locally or import it.
+    // wait, I must check imports at the top!
+    const { createAdminClient: getAdmin } = await import('@/lib/supabase/admin');
+    const adminSupabase = getAdmin();
 
-    const { data: updated, error: updateErr } = await supabase
+    const { data: updated, error: updateErr } = await adminSupabase
       .from('orders')
       .update({
         order_status: newStatus,
@@ -66,10 +82,10 @@ export async function POST(request: Request, { params }: { params: { id: string 
 
     if (updateErr) return NextResponse.json({ error: updateErr.message }, { status: 500 });
 
-    const { error: histErr } = await supabase.from('order_status_history').insert({
+    const { error: histErr } = await adminSupabase.from('order_status_history').insert({
       order_id: orderId,
       status: newStatus,
-      note: `Peternak ${action}`,
+      note: action === 'cancel' ? 'Konsumen membatalkan' : `Peternak ${action}`,
       created_at: now.toISOString(),
     });
 

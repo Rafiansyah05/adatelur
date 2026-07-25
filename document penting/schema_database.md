@@ -51,7 +51,7 @@ Extend dari `auth.users` Supabase.
 ```sql
 create table profiles (
   id uuid primary key references auth.users(id) on delete cascade,
-  role text not null check (role in ('consumer', 'peternak')),
+  role text not null check (role in ('consumer', 'peternak', 'admin')),
   full_name text not null,
   phone_number text not null unique,
   email text unique,
@@ -159,9 +159,9 @@ create table listings (
   is_available boolean generated always as (stock_rak > 0 and is_listing_active) stored,
   is_listing_active boolean not null default true,   -- peternak bisa manual off/on
 
-  listing_date date not null default current_date,
   created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
+  updated_at timestamptz not null default now(),
+  unique(peternak_id)
 );
 
 create index idx_listings_peternak on listings(peternak_id);
@@ -200,7 +200,6 @@ create table delivery_slots (
   id uuid primary key default gen_random_uuid(),
   peternak_id uuid not null references peternak_details(id) on delete cascade,
 
-  slot_date date not null,
   start_time time not null,
   end_time time not null,
   is_active boolean not null default true,          -- peternak bisa nonaktifkan slot tertentu
@@ -209,7 +208,12 @@ create table delivery_slots (
   created_at timestamptz not null default now()
 );
 
-create index idx_delivery_slots_peternak_date on delivery_slots(peternak_id, slot_date);
+create index idx_delivery_slots_peternak on delivery_slots(peternak_id);
+
+-- RLS (Row Level Security)
+alter table delivery_slots enable row level security;
+create policy "public can view delivery slots" on delivery_slots for select using (true);
+create policy "peternak can manage own delivery slots" on delivery_slots for all using (auth.uid() = (select profile_id from peternak_details where id = peternak_id));
 ```
 
 ---
@@ -249,8 +253,12 @@ create table orders (
   rak_quantity integer not null check (rak_quantity >= 1),
   price_per_rak numeric(10,2) not null,             -- snapshot harga saat order dibuat
   subtotal numeric(10,2) not null,                  -- price_per_rak * rak_quantity
+  
+  -- Rating (hanya diisi setelah order_status = completed)
+  rating smallint check (rating >= 1 and rating <= 5),
 
-  fulfillment_method text not null check (fulfillment_method in ('pickup', 'delivery')),
+  -- Metode & Waktu
+  fulfillment_method varchar(20) not null check (fulfillment_method in ('pickup', 'delivery')),
   distance_km numeric(6,2),                          -- null jika pickup
   ongkir_amount numeric(10,2) not null default 0,
   total_amount numeric(10,2) not null,                -- subtotal + ongkir
@@ -458,7 +466,22 @@ select
   l.is_available,              -- boolean saja, BUKAN stock_rak
   ps.final_score,
   p.full_name as peternak_name,
-  p.avatar_url
+  p.avatar_url,
+  -- Subquery untuk mendapatkan total pesanan selesai per peternak
+  (
+    SELECT count(*)
+    FROM orders o
+    WHERE o.peternak_id = l.peternak_id
+      AND o.order_status = 'completed'
+  )::int AS total_completed_orders,
+  -- Subquery untuk mendapatkan rata-rata rating
+  (
+    SELECT coalesce(avg(o.rating), 0)::numeric(3,2)
+    FROM orders o
+    WHERE o.peternak_id = l.peternak_id
+      AND o.order_status = 'completed'
+      AND o.rating IS NOT NULL
+  ) AS average_rating
 from listings l
 join peternak_details pd on pd.id = l.peternak_id
 join profiles p on p.id = pd.profile_id
@@ -468,6 +491,28 @@ where l.is_available = true
 ```
 
 Frontend konsumen (halaman Home & smart routing) **wajib query dari VIEW ini**, bukan dari tabel `listings` langsung.
+
+---
+
+## 20. Tabel: `otps` (Custom OTP Mechanism)
+
+Tabel ini digunakan untuk mengelola OTP secara kustom dan menghindari konflik dengan tabel `auth.users` sebelum profil resmi terbentuk.
+
+```sql
+create table public.otps (
+  id uuid default gen_random_uuid() primary key,
+  email text not null,
+  otp_code text not null,
+  purpose text not null default 'signup',
+  expires_at timestamp with time zone not null,
+  is_used boolean default false,
+  metadata jsonb, -- Menyimpan data registrasi sementara (password, nama, hp, role)
+  created_at timestamp with time zone default now()
+);
+
+-- Amankan tabel ini agar hanya bisa diakses oleh backend (Service Role)
+alter table public.otps enable row level security;
+```
 
 ---
 

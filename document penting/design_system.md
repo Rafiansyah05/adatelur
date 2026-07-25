@@ -1,347 +1,726 @@
 # Design System — adatelur.com
 
-Versi: 1.0 | Tanggal: 21 Juli 2026
-Rujukan: `prd.md`, `tech_stack.md`
-
-**Prinsip inti:** Flat, jelas, tidak terlihat generic/"AI slop". **Tidak ada shadow. Tidak ada gradasi warna. Tidak ada ungu di mana pun.** Semua kontras dibangun dari warna solid, border, dan whitespace — bukan efek visual dekoratif.
+**Versi:** 2.1 | **Tanggal:** 23 Juli 2026 | **Sprint:** MVP 9-hari  
+**Rujukan:** `prd.md`, `tech_stack.md`, `schema_database.md`
 
 ---
 
-## 1. Warna (Color Tokens)
-
-### 1.1 Primary — Kuning (`#FFDC36`)
-
-```css
---color-50:  #FFFBE6;
---color-100: #FFF3B8;
---color-200: #FFEB8A;
---color-300: #FFE45C;
---color-400: #FFDC36;  /* PRIMARY — dipakai untuk CTA utama, highlight, brand elements */
---color-500: #FFD500;
---color-600: #D1AE00;
---color-700: #A38800;
---color-800: #756200;
---color-900: #473C00;
---color-950: #1A1500;
-```
-
-**Aturan pakai:**
-- `--color-400` (#FFDC36) = warna brand utama. Dipakai di logo, tombol CTA primer, elemen yang butuh perhatian tinggi (badge "Tersedia", tombol "Pesan").
-- `--color-500` = state hover/active dari tombol primer (lebih gelap sedikit, bukan gradasi — solid swap warna).
-- `--color-600`–`700` = teks di atas background kuning terang (kontras cukup untuk aksesibilitas), atau border aktif.
-- `--color-50`–`100` = background section, badge subtle, hover state ringan pada card.
-- `--color-800`–`950` = **dipakai sangat terbatas**, hanya untuk teks kecil di atas background kuning terang jika butuh kontras ekstra tinggi. **Jangan** dipakai sebagai warna dominan (akan terasa gelap & bukan tone brand).
-
-### 1.2 Success (`#00FF6A`)
-
-```css
---color-success: #00FF6A;
---color-success-bg: #E6FFF0;   /* turunan tint ringan untuk background badge, dihitung manual dari base */
---color-success-text: #007A33; /* turunan shade gelap untuk teks di atas background terang, dihitung manual */
-```
-
-Dipakai untuk: status `Diterima`, `Terverifikasi`, `Pembayaran Berhasil`, checkmark konfirmasi. **Jangan** dipakai sebagai warna dekoratif umum — khusus untuk makna "berhasil/positif".
-
-### 1.3 Netral & Background
-
-```css
---color-white:       #FFFFFF;  /* background utama card, form, halaman */
---color-cream:       #FAF6F0;  /* background alternatif (section pembeda, mis. page background di belakang card putih) */
---color-border:      #EBEBEB;  /* seluruh border: card, input, divider */
---color-text-main:   #001224;  /* warna teks utama (heading, body) — bukan hitam pekat #000 */
---color-text-desc:   #CFCFCF; /* teks deskriptif/secondary/placeholder */
---color-text-black:  #000000; /* dipakai sangat spesifik, mis. teks di atas background kuning terang jika #001224 kurang kontras */
-```
-
-**Aturan pakai:**
-- Background halaman default: `#FFFFFF`. Gunakan `#FAF6F0` untuk membedakan section tanpa perlu border/shadow (mis. background di belakang bottom nav, atau section highlight pada landing page).
-- `#001224` adalah warna teks utama di **hampir seluruh UI** (bukan hitam murni — ini keputusan desain sengaja supaya tidak terasa terlalu keras/kontras generic).
-- `#CFCFCF` untuk teks sekunder: caption, timestamp, placeholder input, label kecil di bawah heading.
-- `#EBEBEB` untuk **semua border** — card border, input border, divider antar section. Konsisten di seluruh sistem, jangan improvisasi warna border lain.
-
-### 1.4 Larangan Eksplisit
-
-- ❌ **Tidak ada `box-shadow`** di komponen apa pun (card, button, modal, dropdown). Pemisahan visual antar elemen dilakukan lewat **border `1px solid var(--color-border)`** dan **whitespace**, bukan shadow.
-- ❌ **Tidak ada `linear-gradient` / `radial-gradient`** pada background, tombol, atau elemen apa pun.
-- ❌ **Tidak ada warna ungu** (`purple`, `violet`, `indigo`) dalam bentuk apa pun — termasuk sebagai warna aksen sekunder atau warna error/danger. Jika butuh warna "danger/error" tambahan (untuk kasus seperti "Ditolak"/"Kadaluarsa"), gunakan warna merah solid netral (contoh: `#E23D28`) — bukan bagian dari token resmi di atas, tapi diizinkan sebagai exception khusus status negatif karena tidak ada token merah yang didefinisikan user.
+## 📋 Daftar Isi
+1. [Prinsip Desain Inti](#prinsip-desain-inti)
+2. [Warna (Color Tokens)](#warna-color-tokens)
+3. [Tipografi](#tipografi)
+4. [Spacing, Radius & Shadow](#spacing-radius--shadow)
+5. [Komponen UI Inti](#komponen-ui-inti)
+6. [Layout Mobile & Desktop](#layout-mobile--desktop)
+7. [Aksesibilitas](#aksesibilitas)
+8. [Tailwind Config](#tailwind-config)
+9. [Implementasi & QA](#implementasi--qa)
 
 ---
 
-## 2. Tipografi
+## Prinsip Desain Inti
 
-**Font tunggal untuk seluruh sistem: `Plus Jakarta Sans`.** Tidak ada font kedua (termasuk untuk heading vs body) — variasi hierarki dicapai lewat `font-weight` dan `font-size`, bukan ganti typeface.
+**Adatelur adalah platform premium untuk keputusan penting konsumen & petani.**
+
+Desain harus mencerminkan:
+- ✅ **Modern & Elegan** — Inspirasi dari Gojek, Tokopedia, Bukalapak (UI/UX kelas atas)
+- ✅ **Clean & Minimal** — Tidak ada dekorasi berlebih; setiap elemen punya tujuan
+- ✅ **Lembut & Accessible** — Shadow halus, radius membulat, warna soft, whitespace seimbang
+- ✅ **Responsif Native-like** — Di mobile terasa seperti app native; di desktop rapi & terpadu
+- ✅ **Aksesibel untuk Semua** — Touch target besar (44×44px min), kontras tinggi, font minimal 14px, feedback instan
+
+---
+
+## Warna (Color Tokens)
+
+### 1.1 Primary — Soft Yellow (#FFDE6B)
+
+Kuning yang lembut, premium, mudah dikenali sebagai brand identity adatelur.
 
 ```css
-/* next/font/google */
+--color-50:  #FFFDF5;
+--color-100: #FFF9E1;
+--color-200: #FFF2C2;
+--color-300: #FFEA9D;
+--color-400: #FFDE6B;  /* PRIMARY — Brand identity, CTA utama, highlight */
+--color-500: #FACC15;  /* Hover/Active state (lebih gelap) */
+--color-600: #CA8A04;
+--color-700: #A16207;
+--color-800: #854D0E;
+--color-900: #713F12;
+--color-950: #422006;
+```
+
+**Panduan Penggunaan:**
+- `--color-400` (#FFDE6B) → CTA utama (tombol "Pesan", "Terima Pesanan"), badge "Tersedia", highlight section
+- `--color-500` (#FACC15) → State hover/active tombol
+- `--color-100` → Background soft badge atau section highlight
+- `--color-600`–`700` → Teks kontras tinggi di atas background kuning
+
+### 1.2 Success — Hijau Tokopedia (#00AA5B)
+
+Warna yang familiar untuk pengguna Indonesia (khas Tokopedia/Gojek). Dipakai untuk status positif.
+
+```css
+--color-success: #00AA5B;
+--color-success-bg: #E6F6ED;     /* Background badge hijau */
+--color-success-text: #007A33;   /* Teks dalam badge hijau */
+```
+
+**Panduan Penggunaan:**
+- Status "Terverifikasi", "Diterima", "Pembayaran Berhasil"
+- Checkmark & indikator positif
+
+### 1.3 Danger — Merah Soft (untuk status negatif)
+
+```css
+--color-danger: #E23D28;
+--color-danger-bg: #FBE9E7;
+--color-danger-text: #C1440D;
+```
+
+**Panduan Penggunaan:**
+- Status "Ditolak", "Kadaluarsa", "Error"
+
+### 1.4 Neutral & Background
+
+```css
+--color-white:       #FFFFFF;      /* Card, form, component bg */
+--color-background:  #F7F9FA;      /* Halaman background utama (abu-abu sangat muda) */
+--color-surface:     #FAFBFC;      /* Alternatif background section */
+--color-border:      #E4E7EB;      /* Semua border (halus, minimal) */
+--color-border-dark: #D9DFE5;      /* Border yg butuh lebih kontras */
+--color-text-main:   #212121;      /* Teks utama (heading, body) */
+--color-text-desc:   #6C727C;      /* Teks sekunder (label, caption) */
+--color-text-muted:  #9DA3AF;      /* Teks paling subtle (disabled, placeholder) */
+```
+
+**Panduan Penggunaan:**
+- Halaman default background: `--color-background` (#F7F9FA) → Card putih akan menonjol
+- Semua teks utama: `--color-text-main` (#212121) → kontras AAA terhadap putih
+- Border konsisten: `--color-border` (#E4E7EB) → halus tapi terlihat jelas
+- Jangan gunakan `--color-text-muted` untuk informasi penting
+
+### 1.5 Larangan Eksplisit
+
+- ❌ **TIDAK ada ungu/purple** (same as v1.0)
+- ❌ **TIDAK ada gradient background** pada elemen apa pun
+- ✅ **SHADOW DIPERBOLEHKAN** (soft shadows untuk kedalaman, berbeda dari v1.0)
+- ✅ **BORDER RADIUS lembut** — membulat elegan seperti aplikasi modern
+
+---
+
+## Tipografi
+
+**Font tunggal: `Plus Jakarta Sans`** — modern, clean, cocok untuk UI premium.
+
+Import dari Google Fonts (via `next/font/google`):
+```javascript
 import { Plus_Jakarta_Sans } from 'next/font/google';
 
 const plusJakartaSans = Plus_Jakarta_Sans({
-  subsets: ['latin'],
+  subsets: ['latin', 'latin-ext'],
   weight: ['400', '500', '600', '700', '800'],
   variable: '--font-plus-jakarta-sans',
 });
 ```
 
-```css
---font-family-base: 'Plus Jakarta Sans', sans-serif;
-```
-
-### 2.1 Skala Tipografi
+### Skala Tipografi
 
 | Token | Size | Weight | Line-height | Pemakaian |
 |---|---|---|---|---|
-| `text-display` | 32px | 800 | 1.2 | Hero landing page |
-| `text-h1` | 24px | 700 | 1.3 | Judul halaman (mis. "Pilih Peternak") |
-| `text-h2` | 20px | 700 | 1.3 | Judul section/card besar |
-| `text-h3` | 16px | 600 | 1.4 | Sub-judul, nama peternak di card |
-| `text-body` | 14px | 400 | 1.5 | Teks paragraf umum |
-| `text-body-medium` | 14px | 500 | 1.5 | Label form, teks penting dalam body |
-| `text-caption` | 12px | 400 | 1.4 | Timestamp, keterangan kecil, helper text |
+| `text-display` | 28px | 800 | 1.2 | Hero section, banner besar |
+| `text-h1` | 22px | 700 | 1.3 | Judul halaman utama |
+| `text-h2` | 18px | 700 | 1.3 | Judul section/card besar |
+| `text-h3` | 14px | 600 | 1.4 | Nama peternak, judul produk |
+| `text-body` | 14px | 400 | 1.5 | Body text, paragraf umum |
+| `text-body-medium` | 14px | 500 | 1.5 | Label form penting, caption bold |
+| `text-caption` | 12px | 500 | 1.4 | Timestamp, helper text, hint |
 | `text-button` | 14px | 600 | 1 | Teks di dalam tombol |
 
+**Prinsip:**
+- Minimal font-size di body text: **14px** (tidak boleh lebih kecil)
+- Line-height minimal: **1.4** untuk readability (terutama penting untuk user lansia)
+- Weight: hanya gunakan 400, 500, 600, 700, 800 (tidak ada di antara)
+
 ---
 
-## 3. Spacing & Radius
+## Spacing, Radius & Shadow
+
+### Spacing Scale (4px Base)
 
 ```css
---space-1: 4px;
---space-2: 8px;
---space-3: 12px;
---space-4: 16px;
---space-5: 20px;
---space-6: 24px;
---space-8: 32px;
+--space-1:  4px;
+--space-2:  8px;
+--space-3:  12px;
+--space-4:  16px;
+--space-5:  20px;
+--space-6:  24px;
+--space-8:  32px;
 --space-10: 40px;
-
---radius-sm: 8px;    /* input, badge kecil */
---radius-md: 12px;   /* card, tombol */
---radius-lg: 16px;   /* modal, bottom sheet */
---radius-full: 999px; /* pill/badge status, avatar */
 ```
 
-Konsisten pakai skala 4px/8px increments — tidak ada nilai spacing acak di luar daftar ini.
+**Aturan:** Konsisten pakai skala ini — tidak ada spacing random (e.g., 13px, 18px, 22px).
+
+### Border Radius (Sudut Lembut & Elegan)
+
+```css
+--radius-sm:   8px;   /* Badge kecil, tag, input form */
+--radius-md:   12px;  /* Tombol, card sedang */
+--radius-lg:   16px;  /* Card utama, modal */
+--radius-xl:   24px;  /* Modal besar, bottom sheet */
+--radius-full: 999px; /* Pill badge, avatar circle */
+```
+
+### Soft Shadows (Kedalaman Elegan)
+
+Shadows sekarang **diizinkan** untuk menciptakan kedalaman & hierarki visual yang lebih baik (seperti Gojek/Tokopedia).
+
+```css
+/* Subtle shadow — untuk hover/interactive elements kecil */
+--shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.03);
+
+/* Small shadow — untuk header sticky, tombol statik */
+--shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+
+/* Medium shadow — UNTUK CARD UTAMA (paling sering dipakai) */
+--shadow-md: 0 4px 12px rgba(0, 0, 0, 0.05), 0 1px 4px rgba(0, 0, 0, 0.03);
+
+/* Large shadow — untuk modal, dropdown, bottom sheet */
+--shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.08);
+
+/* Extra large — jarang dipakai, untuk overlay/fokus visual tinggi */
+--shadow-xl: 0 20px 40px rgba(0, 0, 0, 0.12);
+```
+
+**Panduan Penggunaan:**
+- Semua card di halaman: `--shadow-md`
+- Header sticky saat di-scroll: `--shadow-sm`
+- Tombol saat dihover/ditekan: beri feedback visual (ubah warna, tidak perlu shadow ekstra)
+- Modal/overlay: `--shadow-lg`
+- **JANGAN** overdo shadow — maksimal 1-2 elemen shadow per halaman
 
 ---
 
-## 4. Komponen Inti
+## Komponen UI Inti
 
-### 4.1 Tombol (Button)
+### Button (Tombol)
 
-**Primary Button**
+#### Primary Button
+
 ```css
-background: var(--color-400);      /* #FFDC36 */
-color: var(--color-950);            /* #1A1500 — kontras tinggi di atas kuning */
+background: var(--color-400);           /* #FFDE6B */
+color: var(--color-950);                /* #422006 — kontras tinggi */
 border: none;
-border-radius: var(--radius-md);
-padding: 12px 20px;
-font: var(--text-button);
-/* NO shadow, NO gradient */
+border-radius: var(--radius-lg);        /* 16px — membulat elegan */
+padding: 14px 24px;                     /* Minimal 48px height di mobile */
+min-height: 48px;
+font-weight: 700;
+font-size: 14px;
+line-height: 1;
+box-shadow: var(--shadow-sm);           /* Subtle shadow */
+cursor: pointer;
+transition: all 0.2s ease-in-out;
 
-&:hover { background: var(--color-500); }  /* solid swap, bukan gradasi/opacity trick */
-&:active { background: var(--color-600); }
-&:disabled { background: var(--color-100); color: var(--color-text-desc); }
+&:hover {
+  background: var(--color-500);         /* #FACC15 — lebih gelap */
+  transform: translateY(-2px);          /* Lift effect */
+  box-shadow: var(--shadow-md);         /* Shadow lebih kuat saat hover */
+}
+
+&:active {
+  transform: scale(0.98);               /* Tekan-tekan feedback */
+  box-shadow: var(--shadow-sm);
+}
+
+&:disabled {
+  background: var(--color-100);
+  color: var(--color-text-muted);
+  box-shadow: none;
+  cursor: not-allowed;
+  transform: none;
+}
 ```
 
-**Secondary Button (Outline)**
-```css
-background: var(--color-white);
-color: var(--color-text-main);       /* #001224 */
-border: 1px solid var(--color-border); /* #EBEBEB */
-border-radius: var(--radius-md);
-padding: 12px 20px;
-
-&:hover { border-color: var(--color-400); }
-```
-
-**Success Button** (khusus konfirmasi, mis. "Terima Pesanan")
-```css
-background: var(--color-success);    /* #00FF6A */
-color: var(--color-950);
-```
-
-### 4.2 Card (Listing Peternak, Order Card, dll)
-
-```css
-background: var(--color-white);
-border: 1px solid var(--color-border);  /* #EBEBEB — satu-satunya pemisah visual, TANPA shadow */
-border-radius: var(--radius-md);
-padding: var(--space-4);
-```
-
-Card **tidak boleh** menambahkan `box-shadow` sama sekali, termasuk pada state hover. Untuk indikasi interaktif (card bisa diklik), gunakan **perubahan border-color** ke `--color-400` saat hover, bukan elevation/shadow.
-
-### 4.3 Badge Status
-
-Format pill (`border-radius: var(--radius-full)`), background solid tint, teks solid shade — tanpa gradasi.
-
-| Status | Background | Teks |
-|---|---|---|
-| `Tersedia` | `--color-success-bg` | `--color-success-text` |
-| `Menunggu` | `--color-100` | `--color-700` |
-| `Diterima` | `--color-success-bg` | `--color-success-text` |
-| `Ditolak / Kadaluarsa` | `#FBE9E7` (tint merah, exception) | `#E23D28` |
-| `Selesai` | `--color-cream` | `--color-text-main` |
-
-### 4.4 Input Form
+#### Secondary Button (Outline)
 
 ```css
 background: var(--color-white);
-border: 1px solid var(--color-border);
-border-radius: var(--radius-sm);
-padding: 10px 14px;
 color: var(--color-text-main);
-font: var(--text-body);
+border: 1px solid var(--color-border);
+border-radius: var(--radius-lg);
+padding: 14px 24px;
+min-height: 48px;
+font-weight: 600;
+font-size: 14px;
+transition: all 0.2s ease-in-out;
 
-&::placeholder { color: var(--color-text-desc); }
-&:focus { border-color: var(--color-400); outline: none; }
+&:hover {
+  border-color: var(--color-400);
+  background: var(--color-100);
+  box-shadow: var(--shadow-sm);
+}
+
+&:active {
+  transform: scale(0.98);
+}
 ```
 
-### 4.5 Score Card Peternak (Komponen Khusus)
-
-Menampilkan skor 1–100 (PRD §7). Karena ini elemen penting untuk keputusan konsumen, harus menonjol tapi tetap flat:
-
-```
-┌─────────────────────────────┐
-│  [Avatar]  Nama Peternak     │
-│            ⭐ 4.8  |  Score 87│  ← Score dalam badge kuning solid (--color-400 bg, --color-950 text)
-│                               │
-│  Rp 35.000/rak                │
-│  Estimasi ongkir: Rp 12.000   │
-│  ─────────────────────────    │
-│  Total: Rp 47.000  [Pesan →] │
-└─────────────────────────────┘
-```
-
-Border `1px solid var(--color-border)`, tanpa shadow. Jika ini adalah rekomendasi #1 (top pick dari smart routing), tambahkan **border kuning** (`--color-400`, 2px) sebagai satu-satunya bentuk "highlight" — bukan shadow atau glow.
-
----
-
-## 5. Layouting — Mobile vs Desktop
-
-### 5.1 Mobile (Prioritas Utama — layout ala aplikasi native)
-
-- **Bottom Navigation Bar** tetap (fixed), tinggi 64px, background `--color-white`, border-top `1px solid var(--color-border)` (bukan shadow untuk memisahkan dari konten).
-- Struktur bottom nav:
-  - **Konsumen:** Beranda (form order) — Pesanan Saya — Akun
-  - **Peternak:** Beranda (listing/dashboard) — Pesanan Masuk — Akun
-- Icon aktif menggunakan warna `--color-400` (fill) dengan label teks di bawahnya (`text-caption`, weight 600). Icon tidak aktif: `--color-text-desc`.
-- Header halaman (top bar) minimal, sticky, hanya berisi judul halaman + tombol back jika perlu — hindari elemen dekoratif berlebih.
-- Konten utama scroll di antara header & bottom nav, dengan `padding-bottom` cukup supaya tidak tertutup bottom nav.
-
-```
-┌─────────────────────────┐
-│  ← Pilih Peternak        │  ← header sticky
-├─────────────────────────┤
-│                          │
-│   [Score Card]           │
-│   [Score Card]           │  ← scrollable content
-│   [Score Card]           │
-│                          │
-├─────────────────────────┤
-│  🏠      📦      👤      │  ← bottom nav, fixed
-│ Beranda Pesanan  Akun   │
-└─────────────────────────┘
-```
-
-### 5.2 Desktop
-
-Bottom nav **tidak dipakai di desktop** — digantikan **sidebar kiri fixed** (lebar ~240px) dengan menu yang sama (Beranda, Pesanan, Akun), logo di atas sidebar. Konten utama memakai **max-width container** (misal 1040px, centered) supaya tidak melebar penuh di layar besar — form order & card listing ditampilkan dalam grid 2–3 kolom (bukan 1 kolom penuh seperti mobile).
-
-```
-┌────────┬──────────────────────────────────┐
-│  LOGO  │   Pilih Peternak                  │
-│        │                                    │
-│ 🏠 Beranda │  [Score Card] [Score Card]     │
-│ 📦 Pesanan │  [Score Card] [Score Card]     │
-│ 👤 Akun    │                                │
-│        │                                    │
-└────────┴──────────────────────────────────┘
-```
-
-- Sidebar background: `--color-white`, border-right `1px solid var(--color-border)`.
-- Item menu aktif: background `--color-50` (tint kuning sangat terang), teks & icon `--color-700`.
-
-### 5.3 Breakpoint
+#### Success Button (Khusus Konfirmasi Positif)
 
 ```css
---breakpoint-mobile: 0–767px   (bottom nav)
---breakpoint-desktop: 768px+   (sidebar)
+background: var(--color-success);
+color: var(--color-white);              /* Teks putih untuk kontras lebih baik */
+border: none;
+border-radius: var(--radius-lg);
+padding: 14px 24px;
+min-height: 48px;
+font-weight: 700;
+font-size: 14px;
+box-shadow: var(--shadow-sm);
+
+&:hover {
+  background: #008A47;                  /* Shade lebih gelap dari hijau */
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
 ```
 
 ---
 
-## 6. Prinsip Aksesibilitas & Kenyamanan Pengguna
+### Card
 
-Mengingat sebagian pengguna peternak kemungkinan **lansia dan/atau kurang familiar dengan aplikasi digital** (disebutkan eksplisit di PRD — alasan kenapa ada opsi video call CS):
+Card adalah container utama untuk konten. Harus terasa elegan tapi functional.
 
-1. **Touch target minimum 44×44px** untuk semua tombol/elemen interaktif — jangan buat tombol kecil demi estetika.
-2. **Kontras teks wajib tinggi**: `--color-text-main` (#001224) di atas putih sudah AAA-compliant. Hindari memakai `--color-text-desc` (#CFCFCF) untuk teks yang butuh dibaca jelas (informasi penting) — khusus untuk teks sekunder yang memang boleh kurang menonjol.
-3. **Ukuran font dasar minimal 14px** di seluruh body text — jangan turunkan ke 12px kecuali untuk caption/metadata yang memang bukan informasi utama.
-4. **Ikon selalu disertai label teks** (terutama di bottom nav & tombol aksi penting seperti Terima/Tolak pesanan) — jangan mengandalkan ikon saja tanpa penjelasan teks, karena target pengguna peternak.
-5. **Feedback visual instan** untuk setiap aksi (tap tombol → langsung ada perubahan warna/state), penting khusus untuk flow approval 1–5 menit yang butuh kepastian aksi berhasil tercatat.
+```css
+background: var(--color-white);
+border: 1px solid var(--color-border); /* #E4E7EB — border halus minimal */
+border-radius: var(--radius-lg);       /* 16px */
+box-shadow: var(--shadow-md);          /* Kedalaman konsisten */
+padding: 20px;
+overflow: hidden;
+transition: all 0.2s ease-in-out;
+
+/* Jika card interactive (bisa diklik) */
+&:hover {
+  border-color: var(--color-border-dark);
+  box-shadow: var(--shadow-lg);        /* Shadow lebih besar saat hover */
+  transform: translateY(-4px);         /* Lift effect subtle */
+}
+
+/* Jika card ada state aktif/selected */
+&.active {
+  border-color: var(--color-400);
+  box-shadow: 0 0 0 4px var(--color-100), var(--shadow-md);
+}
+```
 
 ---
 
-## 7. Contoh Implementasi Tailwind Config
+### Badge Status
 
-```js
+Format pill (`border-radius: --radius-full`), dengan background color & text color yang sesuai status.
+
+| Status | Background | Text Color |
+|---|---|---|
+| **Tersedia** | `--color-success-bg` | `--color-success-text` |
+| **Menunggu** | `--color-100` | `--color-700` |
+| **Diterima** | `--color-success-bg` | `--color-success-text` |
+| **Ditolak / Kadaluarsa** | `--color-danger-bg` | `--color-danger-text` |
+| **Selesai** | `--color-surface` | `--color-text-main` |
+| **Pending Verifikasi** | `var(--color-white)` border `var(--color-border)` | `--color-text-main` |
+
+```css
+display: inline-flex;
+align-items: center;
+gap: 6px;
+padding: 6px 12px;
+border-radius: var(--radius-full);
+font-size: 12px;
+font-weight: 500;
+line-height: 1.4;
+white-space: nowrap;
+```
+
+---
+
+### Input Form (Gojek-style)
+
+Input harus besar (min 48px), nyaman ditekan di mobile, dengan feedback visual jelas.
+
+```css
+/* Default state */
+min-height: 48px;
+background: #F4F6F8;                    /* Soft gray background seperti Gojek */
+border: 1px solid transparent;
+border-radius: var(--radius-md);        /* 12px */
+padding: 0 16px;
+font-size: 14px;
+font-weight: 400;
+color: var(--color-text-main);
+transition: all 0.2s ease-in-out;
+
+/* Placeholder */
+&::placeholder {
+  color: var(--color-text-muted);
+}
+
+/* Focus state */
+&:focus {
+  outline: none;
+  background: var(--color-white);
+  border: 2px solid var(--color-400);  /* Highlight dengan warna primary */
+  box-shadow: 0 0 0 4px var(--color-100);
+}
+
+/* Error state */
+&[aria-invalid="true"],
+&.error {
+  border-color: var(--color-danger);
+  background: #FBE9E7;
+}
+
+/* Disabled state */
+&:disabled {
+  background: var(--color-background);
+  border-color: var(--color-border);
+  color: var(--color-text-muted);
+  cursor: not-allowed;
+}
+```
+
+---
+
+### Score Card Peternak (Komponen Khusus)
+
+Display skor 1–100 dalam card yang menonjol tapi tetap clean.
+
+```
+┌────────────────────────────────────────┐
+│ [Avatar] Nama Peternak      ⭐ 4.8     │
+│          Score: 87          [Tersedia] │
+│                                        │
+│ Rp 35.000/rak                          │
+│ Estimasi ongkir: Rp 12.000             │
+│ ─────────────────────────────────────  │
+│ Total: Rp 47.000      [Pesan →]        │
+└────────────────────────────────────────┘
+```
+
+**Styling:**
+- Border `2px solid var(--color-400)` jika ini adalah **rekomendasi top pick** dari smart routing (highlight elegan, bukan shadow)
+- Border normal `1px solid var(--color-border)` untuk kartu lainnya
+- Box-shadow: `--shadow-md` untuk semua score card
+
+---
+
+## Layout Mobile & Desktop
+
+### 5.1 Mobile Layout (Prioritas Utama — App-like Experience)
+
+**Viewport:** 360px – 767px (kebanyakan pengguna peternak pakai smartphone)
+
+**Structure:**
+```
+┌──────────────────────────────┐
+│  ← Pilih Peternak (Header)   │  ← Sticky, background white, shadow-sm saat scroll
+├──────────────────────────────┤
+│                              │
+│   [Score Card]               │
+│   [Score Card]               │  ← Scrollable content, bg --color-background
+│   [Score Card]               │
+│                              │
+├──────────────────────────────┤
+│  🏠      📦      👤          │  ← Bottom nav, fixed, 64px height, background white
+│ Beranda Pesanan  Akun       │
+└──────────────────────────────┘
+```
+
+**Bottom Navigation Bar (Fixed):**
+- **Tinggi:** 64px (termasuk safe area iOS)
+- **Background:** `var(--color-white)`
+- **Border:** `1px solid var(--color-border)` di atas (bukan shadow)
+- **Items:** 3 item utama
+  - Konsumen: `Beranda (🏠)` — `Pesanan Saya (📦)` — `Akun (👤)`
+  - Peternak: `Dashboard (📊)` — `Pesanan Masuk (📬)` — `Akun (👤)`
+- **Icon aktif:** Fill dengan `var(--color-400)`, label text 10px weight 600
+- **Icon tidak aktif:** `var(--color-text-muted)`
+- **Padding konten:** Tambahkan `padding-bottom: 80px` di halaman utama agar konten tidak tertutup bottom nav
+
+**Header Sticky:**
+- **Tinggi:** 56px
+- **Background:** `var(--color-white)`
+- **Border:** `1px solid var(--color-border)` (shadow-sm muncul saat scroll)
+- **Padding:** `--space-4` horizontal, centered vertically
+- **Title:** `text-h2` weight 700
+- **Back button:** Icon 24px, button transparent, minimal padding 8px
+
+### 5.2 Desktop Layout (768px+)
+
+Desktop **TIDAK menggunakan bottom navigation.** Gunakan **Sidebar kiri fixed** atau **Top navbar** tergantung desain final.
+
+**Option A: Sidebar Left (Recommended untuk admin-like interface)**
+```
+┌──────────┬────────────────────────────────────────┐
+│  LOGO    │ Pilih Peternak                         │
+│ (80px)   │                                        │
+│          │ [Score Card]  [Score Card]             │
+│ 🏠 Beranda │ [Score Card]  [Score Card]             │
+│ 📦 Pesanan │                                        │
+│ 👤 Akun    │                                        │
+│          │                                        │
+│          │                                        │
+└──────────┴────────────────────────────────────────┘
+```
+
+**Option B: Top Navbar (Recommended untuk consumer-facing)**
+```
+┌────────────────────────────────────────────────────┐
+│ LOGO   Pilih Peternak              🏠 📦 👤 ⋯     │
+└────────────────────────────────────────────────────┘
+│                                                    │
+│  [Score Card]  [Score Card]                       │
+│  [Score Card]  [Score Card]                       │
+│                                                    │
+```
+
+**Container Max-width:** `1200px` centered, tidak full-width
+
+**Sidebar Styling (jika pakai Option A):**
+- Width: `240px` fixed
+- Background: `var(--color-white)`
+- Border-right: `1px solid var(--color-border)`
+- Menu item aktif: background `var(--color-100)`, text `var(--color-700)`
+- Padding item: `--space-3` vertical, `--space-4` horizontal
+
+---
+
+## Aksesibilitas
+
+Sebagian pengguna peternak kemungkinan **lansia & kurang familiar aplikasi digital** (disebutkan di PRD). Design harus accessible & nyaman.
+
+1. **Touch Target:** Minimum **44×44px** untuk semua interaktif elemen (tombol, link, card yang clickable)
+   - Tombol: min-height 48px, padding 14px 24px
+   - Bottom nav item: 64px height, icon + label centered
+
+2. **Kontras Teks (WCAG AAA):**
+   - `--color-text-main` (#212121) di atas putih: ✅ **16.5:1 ratio** (AAA)
+   - `--color-text-desc` (#6C727C) di atas putih: ✅ **8:1 ratio** (AA)
+   - `--color-950` (#422006) di atas `--color-400`: ✅ tinggi
+   - Hanya gunakan `--color-text-muted` untuk teks non-essential (placeholder, disabled)
+
+3. **Font Size:**
+   - Body text: minimum **14px** di seluruh UI
+   - Caption: 12px maksimal, hanya untuk metadata/timestamp
+   - Heading: 18px ke atas untuk jelas terlihat
+
+4. **Icon + Label:**
+   - **SELALU** sertai ikon dengan teks label (terutama di bottom nav, tombol aksi penting)
+   - Jangan andalkan ikon saja — pengguna lansia kemungkinan kurang familiar dengan ikon universal
+
+5. **Feedback Instan:**
+   - Setiap aksi (tap tombol, input field) harus ada visual feedback langsung
+   - Color change, shadow change, atau subtle animation (tidak lebih dari 200ms)
+   - Penting untuk flow approval 1–5 menit yang butuh kepastian aksi tercatat
+
+6. **Whitespace & Readability:**
+   - Line-height minimal 1.4 untuk semua teks
+   - Padding/margin konsisten dari spacing scale
+   - Hindari text berdempet — gunakan whitespace untuk "respiro" visual
+
+---
+
+## Tailwind Config
+
+```javascript
 // tailwind.config.ts
+import type { Config } from "tailwindcss";
+
 export default {
+  content: [
+    "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
+    "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
+    "./src/app/**/*.{js,ts,jsx,tsx,mdx}",
+  ],
   theme: {
     extend: {
       colors: {
         primary: {
-          50: '#FFFBE6',
-          100: '#FFF3B8',
-          200: '#FFEB8A',
-          300: '#FFE45C',
-          400: '#FFDC36',
-          500: '#FFD500',
-          600: '#D1AE00',
-          700: '#A38800',
-          800: '#756200',
-          900: '#473C00',
-          950: '#1A1500',
+          50: "#FFFDF5",
+          100: "#FFF9E1",
+          200: "#FFF2C2",
+          300: "#FFEA9D",
+          400: "#FFDE6B",  // PRIMARY
+          500: "#FACC15",  // HOVER
+          600: "#CA8A04",
+          700: "#A16207",
+          800: "#854D0E",
+          900: "#713F12",
+          950: "#422006",
         },
         success: {
-          DEFAULT: '#00FF6A',
-          bg: '#E6FFF0',
-          text: '#007A33',
+          DEFAULT: "#00AA5B",
+          light: "#E6F6ED",
+          text: "#007A33",
         },
-        cream: '#FAF6F0',
-        border: '#EBEBEB',
+        danger: {
+          DEFAULT: "#E23D28",
+          light: "#FBE9E7",
+          text: "#C1440D",
+        },
+        bg: {
+          base: "#F7F9FA",      // Page background
+          surface: "#FAFBFC",
+          card: "#FFFFFF",
+        },
+        border: {
+          light: "#E4E7EB",
+          DEFAULT: "#E4E7EB",
+          dark: "#D9DFE5",
+        },
         text: {
-          main: '#001224',
-          desc: '#CFCFCF',
+          main: "#212121",
+          desc: "#6C727C",
+          muted: "#9DA3AF",
         },
       },
       fontFamily: {
-        sans: ['var(--font-plus-jakarta-sans)', 'sans-serif'],
+        sans: ["var(--font-plus-jakarta-sans)", "sans-serif"],
       },
-      boxShadow: {
-        none: 'none', // eksplisit override — pastikan tidak ada default shadow Tailwind yang lolos
+      fontSize: {
+        display: ["28px", { lineHeight: "1.2", fontWeight: "800" }],
+        h1: ["22px", { lineHeight: "1.3", fontWeight: "700" }],
+        h2: ["18px", { lineHeight: "1.3", fontWeight: "700" }],
+        h3: ["14px", { lineHeight: "1.4", fontWeight: "600" }],
+        body: ["14px", { lineHeight: "1.5", fontWeight: "400" }],
+        caption: ["12px", { lineHeight: "1.4", fontWeight: "500" }],
+        button: ["14px", { lineHeight: "1", fontWeight: "600" }],
+      },
+      spacing: {
+        "space-1": "4px",
+        "space-2": "8px",
+        "space-3": "12px",
+        "space-4": "16px",
+        "space-5": "20px",
+        "space-6": "24px",
+        "space-8": "32px",
+        "space-10": "40px",
       },
       borderRadius: {
-        sm: '8px',
-        md: '12px',
-        lg: '16px',
+        sm: "8px",
+        md: "12px",
+        lg: "16px",
+        xl: "24px",
+        full: "999px",
+      },
+      boxShadow: {
+        xs: "0 1px 2px 0 rgba(0, 0, 0, 0.03)",
+        sm: "0 1px 2px 0 rgba(0, 0, 0, 0.05)",
+        md: "0 4px 12px rgba(0, 0, 0, 0.05), 0 1px 4px rgba(0, 0, 0, 0.03)",
+        lg: "0 10px 25px rgba(0, 0, 0, 0.08)",
+        xl: "0 20px 40px rgba(0, 0, 0, 0.12)",
+        none: "none",
       },
     },
   },
-};
+  plugins: [],
+} satisfies Config;
 ```
 
-> **Catatan build:** Tambahkan aturan lint/review manual sebelum merge PR: **cek tidak ada class `shadow-*` Tailwind default yang terpakai**, dan **tidak ada `bg-gradient-*`** di seluruh komponen. Ini kecil tapi penting untuk konsistensi keseluruhan "flat design" yang jadi identitas visual adatelur.com.
+**Catatan Build:**
+- Install: `npm install -D tailwindcss postcss autoprefixer`
+- Setup `tailwind.config.ts` & `postcss.config.js` di root project
+- **QA Check sebelum merge:** Tidak boleh ada custom box-shadow di luar token yang terdaftar, semua spacing harus dari skala 4px
 
 ---
 
-## 8. Rekomendasi Tambahan
+## Implementasi & QA
 
-1. **Buat 1 file `components/ui/` berisi base component** (Button, Card, Badge, Input) di **Hari 1** sebelum siapa pun mulai membangun halaman — supaya seluruh tim (Rian & Alvin, yang masing-masing pegang sisi konsumen & peternak) pakai komponen yang sama persis, bukan reinvent styling masing-masing.
-2. **Buat 1 halaman "Style Guide" internal** (`/dev/style-guide`, tidak perlu di-deploy ke production akhir) yang menampilkan seluruh token warna, tipografi, dan komponen dalam satu tempat — mempercepat QA visual di Hari 9 tanpa harus cek satu-satu ke tiap halaman.
-3. Karena warna primer (#FFDC36) sangat terang, **selalu uji kontras teks di atasnya** — gunakan `--color-950` atau `--color-900` untuk teks di atas background kuning, jangan pernah teks putih di atas kuning (kontras akan gagal).
-4. Untuk ikon, gunakan **satu library ikon konsisten** (rekomendasi: `lucide-react`, ringan & sudah lazim dipakai bareng Next.js + Tailwind) — hindari mix beberapa icon set berbeda gaya yang akan terlihat tidak seragam.
+### Phase 1: Base Components (Hari 1–2)
+
+**Buat folder `src/components/ui/` dengan base components:**
+- `Button.tsx` (Primary, Secondary, Success variants)
+- `Card.tsx`
+- `Badge.tsx`
+- `Input.tsx`
+- `Label.tsx`
+- `Avatar.tsx`
+- `ScoreCard.tsx` (komponen khusus peternak)
+
+**File `src/styles/tokens.css` (global CSS variables):**
+```css
+:root {
+  /* Colors */
+  --color-primary-400: #FFDE6B;
+  --color-primary-500: #FACC15;
+  /* ... semua token di atas ... */
+  
+  /* Shadows */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.05), 0 1px 4px rgba(0, 0, 0, 0.03);
+  /* ... */
+}
+```
+
+### Phase 2: Design System Page (Hari 2–3)
+
+**Buat internal page `/dev/style-guide` (jangan deploy ke production akhir):**
+- Menampilkan semua warna, token, komponen
+- Color swatches interaktif
+- Typography scale
+- Button variants
+- Card samples
+- Badge status
+- Input states
+
+Gunakan untuk QA visual cepat & referensi team — tidak perlu buka banyak file.
+
+### Phase 3: Page Development (Hari 3–9)
+
+**Konsumen (Rian) & Peternak (Alvin):**
+- Import base components dari `src/components/ui/`
+- Gunakan class Tailwind dari extended config
+- **QA Checklist per halaman:**
+  - ✅ Warna hanya dari token (tidak hardcode #hex)
+  - ✅ Spacing dari `--space-*` atau Tailwind scale
+  - ✅ Box-shadow hanya dari token (`shadow-sm`, `shadow-md`, dll)
+  - ✅ Font-size dari scale (`text-body`, `text-h2`, dll)
+  - ✅ Touch target min 44×44px
+  - ✅ Bottom nav (mobile) atau sidebar (desktop) konsisten
+  - ✅ Tidak ada warna ungu di mana pun
+  - ✅ Tidak ada gradient background
+
+### Phase 4: Final QA & Polish (Hari 8–9)
+
+**Cross-device testing:**
+- Mobile: 375px, 390px, 430px (iPhone 12–15, Android common)
+- Tablet: 768px (iPad)
+- Desktop: 1024px, 1440px
+
+**Aksesibilitas:**
+- Lighthouse Accessibility score ≥90
+- Color contrast pakai WebAIM contrast checker
+- Keyboard navigation (Tab key, Enter key)
+- Screen reader test (NVDA/JAWS untuk Windows, VoiceOver untuk Mac)
+
+**Performance:**
+- Lighthouse Performance ≥85
+- Font loading optimal (Plus Jakarta Sans hanya load weights 400, 500, 600, 700, 800)
+- Image optimization (avatar, product photo)
 
 ---
 
-**Dokumen terkait:** `prd.md`, `tech_stack.md`, `schema_database.md`, `task_division.md`
+## Kesimpulan
+
+Desain system ini menggabungkan **elegantsi modern** (Gojek/Tokopedia style) dengan **aksesibilitas tinggi** untuk pengguna Indonesia yang beragam. Setiap token, komponen, dan guideline dirancang untuk membuat adatelur.com terasa **premium, professional, dan mudah digunakan**.
+
+**Konsistensi adalah kunci.** Dengan base components yang solid & design token yang ketat, hasil akhir akan terasa terpadu profesional — jauh dari kesan "generic AI slop". 🎯
+
+---
+
+**Dokumen Terkait:**
+- `prd.md` — Visi produk & user flows
+- `tech_stack.md` — Tech stack (Next.js 14, Tailwind, Supabase)
+- `schema_database.md` — Database schema
+- `task_division.md` — Pembagian tugas team
+- `coding_guidelines.md` — Convention & best practices

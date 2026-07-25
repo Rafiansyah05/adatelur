@@ -57,6 +57,7 @@ export default function StyleGuidePage() {
                 peternakName="Sentra Telur Cimahi"
                 avatarInitials="ST"
                 rating={4.8}
+                totalOrders={10}
                 score={87}
                 pricePerRak={35000}
                 estimatedOngkir={12000}
@@ -68,6 +69,7 @@ export default function StyleGuidePage() {
                 peternakName="Peternakan Bahagia"
                 avatarInitials="PB"
                 rating={4.9}
+                totalOrders={50}
                 score={99}
                 pricePerRak={34500}
                 estimatedOngkir={10000}

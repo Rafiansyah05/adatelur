@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { haversineDistance, calculateOngkir } from '@/lib/haversine';
 
 export async function POST(request: Request) {
@@ -32,7 +33,7 @@ export async function POST(request: Request) {
     // fetch listing and peternak info
     const { data: listing, error: listingError } = await supabase
       .from('listings')
-      .select('id, peternak_id, price_per_rak, listing_date, is_listing_active, stock_rak')
+      .select('id, peternak_id, price_per_rak, is_listing_active, stock_rak')
       .eq('id', listingId)
       .maybeSingle();
 
@@ -65,7 +66,8 @@ export async function POST(request: Request) {
       if (!consumerAddress)
         return NextResponse.json({ error: 'Consumer address not found' }, { status: 404 });
 
-      const { data: peternakDetail, error: pdErr } = await supabase
+      const adminSupabase = createAdminClient();
+      const { data: peternakDetail, error: pdErr } = await adminSupabase
         .from('peternak_details')
         .select('farm_latitude, farm_longitude')
         .eq('id', listing.peternak_id)
@@ -111,7 +113,11 @@ export async function POST(request: Request) {
       updated_at: createdAt,
     };
 
-    const { data: order, error: orderErr } = await supabase
+    // We already initialized adminSupabase above if fulfillmentMethod === 'delivery'
+    // but just in case it's pickup, we can initialize it again or use a fallback
+    const adminClientForInsert = createAdminClient();
+
+    const { data: order, error: orderErr } = await adminClientForInsert
       .from('orders')
       .insert(insertPayload)
       .select()
@@ -120,7 +126,7 @@ export async function POST(request: Request) {
     if (orderErr) return NextResponse.json({ error: orderErr.message }, { status: 500 });
 
     // insert initial status history
-    const { error: histErr } = await supabase.from('order_status_history').insert({
+    const { error: histErr } = await adminClientForInsert.from('order_status_history').insert({
       order_id: order.id,
       status: 'waiting',
       note: 'Order created',

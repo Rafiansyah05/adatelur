@@ -7,6 +7,17 @@ import { Input } from '@/components/ui/Input';
 import { Label } from '@/components/ui/Label';
 import { CheckCircle2, Clock3, ToggleLeft, ToggleRight } from 'lucide-react';
 
+const SESSION_BLOCKS = [
+  '00:00 - 03:00',
+  '03:00 - 06:00',
+  '06:00 - 09:00',
+  '09:00 - 12:00',
+  '12:00 - 15:00',
+  '15:00 - 18:00',
+  '18:00 - 21:00',
+  '21:00 - 23:59',
+];
+
 interface ListingRecord {
   id?: string;
   price_per_rak: number;
@@ -17,7 +28,6 @@ interface ListingRecord {
 
 interface DeliverySlotRecord {
   id: string;
-  slot_date: string;
   start_time: string;
   end_time: string;
   is_active: boolean;
@@ -30,7 +40,18 @@ interface PeternakDashboardProps {
 
 export function PeternakDashboard({ initialListing, initialSlots }: PeternakDashboardProps) {
   const [listing, setListing] = React.useState<ListingRecord | null>(initialListing);
-  const [slots, setSlots] = React.useState<DeliverySlotRecord[]>(initialSlots);
+  
+  // Format the existing slots into strings matching SESSION_BLOCKS
+  const initialActiveSessions = initialSlots
+    .filter(slot => slot.is_active)
+    .map(slot => {
+      const s = slot.start_time.substring(0, 5);
+      const e = slot.end_time.substring(0, 5);
+      return `${s} - ${e}`;
+    });
+
+  const [activeSessions, setActiveSessions] = React.useState<string[]>(initialActiveSessions);
+
   const [pricePerRak, setPricePerRak] = React.useState(
     initialListing?.price_per_rak?.toString() ?? ''
   );
@@ -38,11 +59,9 @@ export function PeternakDashboard({ initialListing, initialSlots }: PeternakDash
   const [isListingActive, setIsListingActive] = React.useState(
     initialListing?.is_listing_active ?? true
   );
-  const [slotDate, setSlotDate] = React.useState('');
-  const [startTime, setStartTime] = React.useState('');
-  const [endTime, setEndTime] = React.useState('');
+
   const [isSavingListing, setIsSavingListing] = React.useState(false);
-  const [isSavingSlot, setIsSavingSlot] = React.useState(false);
+  const [isSyncingSlots, setIsSyncingSlots] = React.useState(false);
   const [message, setMessage] = React.useState('');
 
   React.useEffect(() => {
@@ -82,104 +101,120 @@ export function PeternakDashboard({ initialListing, initialSlots }: PeternakDash
     }
   };
 
-  const handleCreateSlot = async () => {
-    if (!slotDate || !startTime || !endTime) {
-      setMessage('Lengkapi tanggal dan jam slot terlebih dahulu.');
-      return;
-    }
-
-    setIsSavingSlot(true);
+  const handleToggleSession = async (sessionStr: string) => {
+    setIsSyncingSlots(true);
     setMessage('');
 
+    let newSessions = [...activeSessions];
+    if (newSessions.includes(sessionStr)) {
+      newSessions = newSessions.filter(s => s !== sessionStr);
+    } else {
+      newSessions.push(sessionStr);
+    }
+
     try {
-      const response = await fetch('/api/delivery-slots', {
+      const response = await fetch('/api/delivery-slots/sync', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          slot_date: slotDate,
-          start_time: startTime,
-          end_time: endTime,
-          is_active: true,
-        }),
+        body: JSON.stringify({ activeSlots: newSessions }),
       });
 
       const data = await response.json();
-
       if (!response.ok) {
-        throw new Error(data.error || 'Gagal menambahkan slot');
+        throw new Error(data.error || 'Gagal menyimpan sesi waktu');
       }
 
-      setSlots((current) => [...current, data.slot]);
-      setSlotDate('');
-      setStartTime('');
-      setEndTime('');
-      setMessage('Slot waktu berhasil ditambahkan.');
+      setActiveSessions(newSessions);
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'Terjadi kesalahan');
+      setMessage(error instanceof Error ? error.message : 'Terjadi kesalahan saat menyimpan sesi');
     } finally {
-      setIsSavingSlot(false);
-    }
-  };
-
-  const handleToggleSlot = async (slotId: string, isActive: boolean) => {
-    try {
-      const response = await fetch(`/api/delivery-slots/${slotId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ is_active: !isActive }),
-      });
-
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.error || 'Gagal mengubah status slot');
-      }
-
-      setSlots((current) => current.map((slot) => (slot.id === slotId ? data.slot : slot)));
-      setMessage('Status slot berhasil diperbarui.');
-    } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'Terjadi kesalahan');
+      setIsSyncingSlots(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-cream p-4 pb-24">
-      <div className="mx-auto flex max-w-5xl flex-col gap-6">
-        <div className="space-y-2">
-          <p className="text-caption font-semibold uppercase tracking-[0.2em] text-primary-600">
-            Dashboard Peternak
+    <div className="w-full">
+      <div className="mb-6 flex flex-col justify-between gap-4 md:flex-row md:items-end">
+        <div>
+          <p className="text-body text-text-desc mb-1">
+            {new Date().toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
           </p>
-          <h1 className="text-h1 text-text-main">Kelola listing & slot waktu</h1>
-          <p className="text-body text-text-desc">
-            Stok Anda hanya terlihat di dashboard peternak ini dan tidak dipublikasikan ke publik.
+          <h1 className="text-display text-text-main">Dashboard Peternak</h1>
+          <p className="text-body text-text-desc mt-1">
+            Kelola penjualan telur Anda hari ini.
           </p>
         </div>
+        <div className="flex items-center gap-2 rounded-full border border-border bg-white px-4 py-2 text-sm text-text-main shadow-sm">
+          {listing?.is_listing_active ? (
+            <CheckCircle2 className="h-4 w-4 text-success" />
+          ) : (
+            <Clock3 className="h-4 w-4 text-text-desc" />
+          )}
+          {listing?.is_listing_active ? 'Toko Buka (Publik)' : 'Toko Tutup (Sembunyi)'}
+        </div>
+      </div>
 
-        {message ? (
-          <Card className="border-primary-400 bg-primary-50 p-4 text-sm text-text-main">
-            {message}
-          </Card>
-        ) : null}
+      {message ? (
+        <Card className="border-primary-400 bg-primary-50 p-4 text-sm text-text-main mb-6">
+          {message}
+        </Card>
+      ) : null}
 
-        <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
-          <Card className="space-y-5 p-6">
-            <div className="flex items-center justify-between">
+      {/* OVERVIEW CARDS */}
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-4 mb-8">
+        <Card className="p-5 flex flex-col justify-center">
+          <p className="text-caption text-text-desc mb-1">Status Listing</p>
+          <p className="text-h1 text-text-main">{listing?.is_listing_active ? 'Aktif' : 'Nonaktif'}</p>
+        </Card>
+        <Card className="p-5 flex flex-col justify-center">
+          <p className="text-caption text-text-desc mb-1">Stok Rak</p>
+          <p className="text-h1 text-text-main">{stockRak || '0'}</p>
+        </Card>
+        <Card className="p-5 flex flex-col justify-center">
+          <p className="text-caption text-text-desc mb-1">Slot Aktif</p>
+          <p className="text-h1 text-text-main">{activeSessions.length}</p>
+        </Card>
+        <Card className="p-5 flex flex-col justify-center">
+          <p className="text-caption text-text-desc mb-1">Harga per Rak</p>
+          <p className="text-h2 text-text-main">
+            {pricePerRak ? new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(Number(pricePerRak)) : '-'}
+          </p>
+        </Card>
+      </div>
+
+      <div className="grid gap-6 lg:grid-cols-2">
+        {/* LISTING HARI INI */}
+        <Card className="space-y-6 p-6">
+          <div>
+            <h2 className="text-h2 text-text-main mb-1">Listing Hari Ini</h2>
+            <p className="text-body text-text-desc">
+              Atur harga dan stok harian.
+            </p>
+          </div>
+
+          <div className="space-y-4">
+            <div className="flex items-center justify-between rounded-md border border-border px-4 py-3 bg-bg-surface">
               <div>
-                <h2 className="text-h2 text-text-main">Posting listing harian</h2>
-                <p className="text-body text-text-desc">
-                  Atur harga, status aktif jual, dan stok rak Anda hari ini.
+                <p className="text-body-medium text-text-main">Status Jual</p>
+                <p className="text-caption text-text-desc">
+                  Tampilkan di pencarian publik
                 </p>
               </div>
-              <div className="flex items-center gap-2 rounded-full border border-border bg-cream px-3 py-2 text-sm text-text-main">
-                {listing?.is_listing_active ? (
-                  <CheckCircle2 className="h-4 w-4 text-success" />
+              <button
+                type="button"
+                className="rounded-full p-1 focus:outline-none"
+                onClick={() => setIsListingActive((value) => !value)}
+                aria-label="Toggle status listing"
+              >
+                {isListingActive ? (
+                  <ToggleRight className="h-8 w-8 text-success" />
                 ) : (
-                  <Clock3 className="h-4 w-4 text-text-desc" />
+                  <ToggleLeft className="h-8 w-8 text-text-desc" />
                 )}
-                {listing?.is_listing_active ? 'Tampil di publik' : 'Disembunyikan'}
-              </div>
+              </button>
             </div>
-
-            <div className="space-y-4">
+            
+            <div className="space-y-3">
               <div>
                 <Label>Harga per rak</Label>
                 <Input
@@ -188,121 +223,75 @@ export function PeternakDashboard({ initialListing, initialSlots }: PeternakDash
                   value={pricePerRak}
                   onChange={(event) => setPricePerRak(event.target.value)}
                   placeholder="Contoh: 35000"
+                  className="mt-1"
                 />
               </div>
               <div>
-                <Label>Stok rak (private)</Label>
+                <Label>Stok rak (tersedia)</Label>
                 <Input
                   type="number"
                   min="0"
                   value={stockRak}
                   onChange={(event) => setStockRak(event.target.value)}
                   placeholder="Contoh: 20"
+                  className="mt-1"
                 />
               </div>
-              <div className="flex items-center justify-between rounded-md border border-border px-4 py-3">
-                <div>
-                  <p className="text-body-medium text-text-main">Aktif jual hari ini</p>
-                  <p className="text-caption text-text-desc">
-                    Switch ini mengontrol apakah listing terlihat untuk konsumen.
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  className="rounded-full p-1"
-                  onClick={() => setIsListingActive((value) => !value)}
-                  aria-label="Toggle status listing"
-                >
-                  {isListingActive ? (
-                    <ToggleRight className="h-8 w-8 text-success" />
-                  ) : (
-                    <ToggleLeft className="h-8 w-8 text-text-desc" />
-                  )}
-                </button>
-              </div>
             </div>
+          </div>
 
-            <Button onClick={handleSaveListing} disabled={isSavingListing} className="w-full">
-              {isSavingListing ? 'Menyimpan...' : 'Simpan listing hari ini'}
-            </Button>
-          </Card>
+          <Button onClick={handleSaveListing} disabled={isSavingListing} className="w-full">
+            {isSavingListing ? 'Menyimpan...' : 'Simpan Listing'}
+          </Button>
+        </Card>
 
-          <Card className="space-y-5 p-6">
+        {/* SLOT PENGIRIMAN */}
+        <Card className="space-y-6 p-6">
+          <div className="flex justify-between items-start">
             <div>
-              <h2 className="text-h2 text-text-main">Kelola delivery slots</h2>
+              <h2 className="text-h2 text-text-main mb-1">Sesi Ketersediaan</h2>
               <p className="text-body text-text-desc">
-                Tambahkan slot pengiriman atau pengambilan yang tersedia untuk konsumen.
+                Pilih sesi jam operasional Anda.
               </p>
             </div>
+            {isSyncingSlots && (
+              <span className="text-xs font-semibold text-primary-600 animate-pulse bg-primary-50 px-2 py-1 rounded">Menyimpan...</span>
+            )}
+          </div>
 
-            <div className="space-y-4">
-              <div>
-                <Label>Tanggal slot</Label>
-                <Input
-                  type="date"
-                  value={slotDate}
-                  onChange={(event) => setSlotDate(event.target.value)}
-                />
-              </div>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div>
-                  <Label>Jam mulai</Label>
-                  <Input
-                    type="time"
-                    value={startTime}
-                    onChange={(event) => setStartTime(event.target.value)}
-                  />
-                </div>
-                <div>
-                  <Label>Jam selesai</Label>
-                  <Input
-                    type="time"
-                    value={endTime}
-                    onChange={(event) => setEndTime(event.target.value)}
-                  />
-                </div>
-              </div>
-            </div>
-
-            <Button
-              onClick={handleCreateSlot}
-              disabled={isSavingSlot}
-              className="w-full"
-              variant="secondary"
-            >
-              {isSavingSlot ? 'Menambahkan...' : 'Tambah slot baru'}
-            </Button>
-
-            <div className="space-y-3">
-              {slots.length === 0 ? (
-                <p className="text-body text-text-desc">Belum ada slot yang ditambahkan.</p>
-              ) : (
-                slots.map((slot) => (
-                  <div
-                    key={slot.id}
-                    className="flex items-center justify-between rounded-md border border-border px-4 py-3"
-                  >
-                    <div>
-                      <p className="text-body-medium text-text-main">
-                        {slot.slot_date} • {slot.start_time} - {slot.end_time}
-                      </p>
-                      <p className="text-caption text-text-desc">
-                        {slot.is_active ? 'Aktif' : 'Nonaktif'}
-                      </p>
-                    </div>
-                    <button
-                      type="button"
-                      className="rounded-full border border-border px-3 py-1 text-sm text-text-main"
-                      onClick={() => handleToggleSlot(slot.id, slot.is_active)}
-                    >
-                      {slot.is_active ? 'Nonaktifkan' : 'Aktifkan'}
-                    </button>
+          <div className="space-y-2">
+            {SESSION_BLOCKS.map((session) => {
+              const isActive = activeSessions.includes(session);
+              return (
+                <div
+                  key={session}
+                  className="flex items-center justify-between rounded-md border border-border px-4 py-3 cursor-pointer hover:bg-neutral-50 transition-colors"
+                  onClick={() => !isSyncingSlots && handleToggleSession(session)}
+                >
+                  <div>
+                    <p className="text-body-medium text-text-main font-semibold">
+                      Sesi {session}
+                    </p>
+                    <p className={`text-caption ${isActive ? 'text-success-text' : 'text-text-desc'}`}>
+                      {isActive ? 'Aktif' : 'Nonaktif'}
+                    </p>
                   </div>
-                ))
-              )}
-            </div>
-          </Card>
-        </div>
+                  <button
+                    type="button"
+                    className="rounded-full p-1 focus:outline-none"
+                    aria-label={`Toggle sesi ${session}`}
+                  >
+                    {isActive ? (
+                      <ToggleRight className="h-8 w-8 text-success" />
+                    ) : (
+                      <ToggleLeft className="h-8 w-8 text-text-desc" />
+                    )}
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        </Card>
       </div>
     </div>
   );

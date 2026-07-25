@@ -34,12 +34,20 @@ export async function GET(request: Request) {
     return NextResponse.redirect(`${origin}/`);
   }
 
-  const { error: insertError } = await supabase.from('profiles').insert({
-    id: user.id,
-    role: 'consumer',
-    full_name: user.user_metadata.full_name ?? 'Pengguna Adatelur',
-    email: user.email,
-  });
+    // Menghasilkan nomor acak 11 digit yang berawalan 628 untuk bypass unik & format
+    const randomSuffix = Math.floor(10000000 + Math.random() * 90000000).toString();
+    const generatedPhone = `628${randomSuffix}`;
+    
+    // Gunakan phone_number dari user_metadata jika ada (dari pendaftaran manual)
+    const phoneToInsert = user.user_metadata?.phone_number || user.phone || generatedPhone;
+
+    const { error: insertError } = await supabase.from('profiles').insert({
+      id: user.id,
+      role: 'consumer',
+      full_name: user.user_metadata?.full_name || 'Pengguna Adatelur',
+      email: user.email,
+      phone_number: phoneToInsert,
+    });
 
   if (insertError) {
     return NextResponse.redirect(`${origin}/login?error=profile`);

@@ -77,6 +77,13 @@ export default function PeternakDetail({ params }: { params: { id: string } }) {
       alert('Pilih slot waktu terlebih dahulu');
       return;
     }
+    
+    if (method === 'delivery' && !consumerAddress) {
+      alert('Anda belum mengatur alamat pengiriman. Anda akan dialihkan ke halaman profil.');
+      router.push('/profile');
+      return;
+    }
+
     // show summary modal
     setShowSummary(true);
     // save last search for possible re-route
@@ -84,6 +91,8 @@ export default function PeternakDetail({ params }: { params: { id: string } }) {
       sessionStorage.setItem('last_recommend_params', JSON.stringify({ quantity, method }));
     } catch {}
   };
+
+
 
   const handleConfirmOrder = async () => {
     if (!data.listing_id) {
@@ -113,149 +122,183 @@ export default function PeternakDetail({ params }: { params: { id: string } }) {
   };
 
   return (
-    <div className="w-full">
-      <div className="bg-primary-50 px-4 py-8">
-        <h1 className="text-h1 text-text-main mb-2">{data.full_name || 'Peternak'}</h1>
-        <div className="flex items-center gap-2 mb-4">
-          <span className="text-primary-600">⭐ {data.rating || '4.8'}</span>
-          <span className="text-text-desc">•</span>
-          <span className="text-text-desc">Score {data.score || 85}</span>
+    <div className="mx-auto w-full max-w-3xl">
+      <div className="mb-6 overflow-hidden rounded-xl bg-white shadow-sm border border-border">
+        <div className="bg-primary-50 px-6 py-8">
+          <div className="flex items-center gap-4">
+            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary-100 text-[24px] font-bold text-primary-950">
+              {data.full_name ? data.full_name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() : 'PT'}
+            </div>
+            <div>
+              <h1 className="text-h1 text-text-main mb-1">{data.full_name || 'Peternak'}</h1>
+              <div className="flex items-center gap-3">
+                <span className="flex items-center gap-1 text-body-medium text-text-main">
+                  ⭐ {data.rating || '4.8'}
+                </span>
+                <span className="text-border">•</span>
+                <span className="inline-flex items-center rounded-sm bg-primary-400 px-2 py-0.5 text-caption font-bold text-primary-950">
+                  Score {data.score || 85}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="p-6">
+          <div className="grid gap-6 md:grid-cols-2">
+            <div>
+              <h2 className="text-h3 text-text-main mb-3">Detail Pesanan</h2>
+              <div className="rounded-lg border border-border bg-bg-surface p-4">
+                <div className="mb-4 flex items-center justify-between">
+                  <span className="text-body text-text-desc">Harga per rak</span>
+                  <span className="text-h3 text-text-main">
+                    Rp {data.price_per_rak ? Number(data.price_per_rak).toLocaleString('id-ID') : '0'}
+                  </span>
+                </div>
+                
+                <div className="mb-4 h-[1px] w-full bg-border" />
+                
+                <div className="mb-4">
+                  <label className="text-body-medium text-text-main block mb-2">Jumlah rak</label>
+                  <div className="flex items-center gap-3">
+                    <button 
+                      onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                      className="flex h-10 w-10 items-center justify-center rounded-md border border-border bg-white text-text-main hover:bg-bg-surface"
+                    >
+                      -
+                    </button>
+                    <span className="text-h3 w-8 text-center">{quantity}</span>
+                    <button 
+                      onClick={() => setQuantity(quantity + 1)}
+                      className="flex h-10 w-10 items-center justify-center rounded-md border border-border bg-white text-text-main hover:bg-bg-surface"
+                    >
+                      +
+                    </button>
+                  </div>
+                </div>
+
+                <div className="h-[1px] w-full bg-border mb-4" />
+
+                <div>
+                  <label className="text-body-medium text-text-main block mb-2">Metode Pengambilan</label>
+                  <div className="flex gap-4">
+                    <label className={`flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-md border p-3 text-sm font-bold transition-colors ${method === 'pickup' ? 'border-primary-400 bg-primary-50 text-primary-950' : 'border-border bg-white text-text-main'}`}>
+                      <input type="radio" name="method" checked={method === 'pickup'} onChange={() => setMethod('pickup')} className="hidden" />
+                      Ambil Sendiri
+                    </label>
+                    <label className={`flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-md border p-3 text-sm font-bold transition-colors ${method === 'delivery' ? 'border-primary-400 bg-primary-50 text-primary-950' : 'border-border bg-white text-text-main'}`}>
+                      <input type="radio" name="method" checked={method === 'delivery'} onChange={() => setMethod('delivery')} className="hidden" />
+                      Diantar
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <h2 className="text-h3 text-text-main mb-3">Pilih Slot Waktu</h2>
+              {data.delivery_slots && data.delivery_slots.length > 0 ? (
+                <div className="flex flex-col gap-3">
+                  {data.delivery_slots.map((slot: DeliverySlot) => {
+                    const startTimeStr = slot.start_time.substring(0, 5);
+                    const endTimeStr = slot.end_time.substring(0, 5);
+                    const isSelected = selectedSlot === slot.id;
+                    
+                    return (
+                      <label
+                        key={slot.id}
+                        className={`flex cursor-pointer items-center gap-3 rounded-md border p-4 transition-colors ${isSelected ? 'border-primary-400 bg-primary-50' : 'border-border bg-white hover:border-primary-300'}`}
+                      >
+                        <input
+                          type="radio"
+                          name="slot"
+                          value={slot.id}
+                          checked={isSelected}
+                          onChange={() => setSelectedSlot(slot.id)}
+                          className="accent-primary-500 h-4 w-4"
+                        />
+                        <div>
+                          <p className={`text-body-medium ${isSelected ? 'text-primary-950' : 'text-text-main'}`}>
+                            {startTimeStr} - {endTimeStr}
+                          </p>
+                        </div>
+                      </label>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="rounded-md border border-border bg-bg-surface p-6 text-center">
+                  <p className="text-body text-text-desc">Belum ada slot waktu tersedia hari ini.</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div className="border-t border-border bg-bg-surface p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <p className="text-caption text-text-desc">Total Pembayaran</p>
+              <p className="text-h2 text-text-main">
+                Rp {((Number(data.price_per_rak || 0) * quantity) + computeOngkir()).toLocaleString('id-ID')}
+              </p>
+            </div>
+            <Button onClick={handlePesan} variant="primary" className="px-8 h-[48px]">
+              Lanjutkan
+            </Button>
+          </div>
         </div>
       </div>
 
-      <div className="px-4 py-6 flex flex-col gap-6">
-        <Card>
-          <h2 className="text-h3 text-text-main mb-4">Harga & Stok</h2>
-          <div className="flex justify-between items-center mb-2">
-            <span className="text-body text-text-desc">Harga per rak</span>
-            <span className="text-body-medium text-text-main">
-              Rp {data.price_per_rak ? Number(data.price_per_rak).toLocaleString() : '45.000'}
-            </span>
-          </div>
-          <div className="flex items-center gap-3 mt-4">
-            <label className="text-body">Jumlah rak</label>
-            <input
-              type="number"
-              min={1}
-              value={quantity}
-              onChange={(e) => setQuantity(Number(e.target.value || 1))}
-              className="w-24 rounded-md border border-border p-2"
-            />
-          </div>
-          <div className="flex justify-between items-center">
-            <span className="text-body text-text-desc">Status</span>
-            <span className="text-body-medium text-success-text bg-success-bg px-2 py-1 rounded-full text-caption">
-              Tersedia
-            </span>
-          </div>
-        </Card>
 
-        <Card>
-          <h2 className="text-h3 text-text-main mb-4">Pilih Waktu Pengiriman/Pengambilan</h2>
-          <div className="flex gap-4 mb-4">
-            <label
-              className={`px-3 py-2 rounded-md border ${method === 'pickup' ? 'border-primary-400 bg-primary-50' : 'border-border'}`}
-            >
-              <input
-                type="radio"
-                name="method"
-                checked={method === 'pickup'}
-                onChange={() => setMethod('pickup')}
-              />{' '}
-              Pickup
-            </label>
-            <label
-              className={`px-3 py-2 rounded-md border ${method === 'delivery' ? 'border-primary-400 bg-primary-50' : 'border-border'}`}
-            >
-              <input
-                type="radio"
-                name="method"
-                checked={method === 'delivery'}
-                onChange={() => setMethod('delivery')}
-              />{' '}
-              Delivery
-            </label>
-          </div>
-          {data.delivery_slots && data.delivery_slots.length > 0 ? (
-            <div className="flex flex-col gap-3">
-              {data.delivery_slots.map((slot: DeliverySlot) => (
-                <label
-                  key={slot.id}
-                  className="flex items-center gap-3 border border-border rounded-md p-3"
-                >
-                  <input
-                    type="radio"
-                    name="slot"
-                    value={slot.id}
-                    checked={selectedSlot === slot.id}
-                    onChange={() => setSelectedSlot(slot.id)}
-                    className="accent-primary-400"
-                  />
-                  <div className="flex flex-col">
-                    <span className="text-body-medium text-text-main">
-                      {new Date(slot.start_time).toLocaleTimeString([], {
-                        hour: '2-digit',
-                        minute: '2-digit',
-                      })}{' '}
-                      -{' '}
-                      {new Date(slot.end_time).toLocaleTimeString([], {
-                        hour: '2-digit',
-                        minute: '2-digit',
-                      })}
-                    </span>
-                  </div>
-                </label>
-              ))}
+
+      {showSummary && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center p-4 sm:items-center">
+          <div className="absolute inset-0 bg-text-main/40 backdrop-blur-sm transition-opacity" onClick={() => setShowSummary(false)} />
+          <div className="relative w-full max-w-md animate-in slide-in-from-bottom-4 sm:slide-in-from-bottom-0 sm:zoom-in-95 rounded-2xl bg-white p-6 shadow-xl">
+            <h3 className="text-h2 text-text-main mb-6 text-center">Ringkasan Pesanan</h3>
+            
+            <div className="space-y-4 mb-6">
+              <div className="flex justify-between items-center text-body">
+                <span className="text-text-desc">Harga per rak</span>
+                <span className="font-medium">Rp {Number(data.price_per_rak || 0).toLocaleString('id-ID')}</span>
+              </div>
+              <div className="flex justify-between items-center text-body">
+                <span className="text-text-desc">Jumlah pesanan</span>
+                <span className="font-medium">{quantity} Rak</span>
+              </div>
+              <div className="flex justify-between items-center text-body">
+                <span className="text-text-desc">Metode</span>
+                <span className="font-medium">{method === 'pickup' ? 'Ambil Sendiri' : 'Diantar (Delivery)'}</span>
+              </div>
+              {method === 'delivery' && (
+                <div className="flex justify-between items-center text-body">
+                  <span className="text-text-desc">Biaya pengiriman</span>
+                  <span className="font-medium">Rp {computeOngkir().toLocaleString('id-ID')}</span>
+                </div>
+              )}
             </div>
-          ) : (
-            <p className="text-body text-text-desc">Belum ada slot waktu tersedia hari ini.</p>
-          )}
-        </Card>
-
-        <Button onClick={handlePesan} className="w-full mt-4" variant="primary">
-          Pesan Sekarang
-        </Button>
-
-        {showSummary && (
-          <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center p-4">
-            <div className="absolute inset-0 bg-black/40" onClick={() => setShowSummary(false)} />
-            <div className="relative w-full max-w-md rounded-md bg-white p-6">
-              <h3 className="text-h3 mb-3">Ringkasan Pesanan</h3>
-              <div className="mb-2 flex justify-between">
-                <span>Harga per rak</span>
-                <span>Rp {data.price_per_rak?.toLocaleString() || '0'}</span>
-              </div>
-              <div className="mb-2 flex justify-between">
-                <span>Jumlah rak</span>
-                <span>{quantity}</span>
-              </div>
-              <div className="mb-2 flex justify-between">
-                <span>Metode</span>
-                <span>{method === 'pickup' ? 'Ambil Sendiri' : 'Diantar'}</span>
-              </div>
-              <div className="mb-2 flex justify-between">
-                <span>Estimasi ongkir</span>
-                <span>Rp {computeOngkir().toLocaleString()}</span>
-              </div>
-              <div className="mb-4 flex justify-between font-semibold">
-                <span>Total</span>
-                <span>
-                  Rp{' '}
-                  {(Number(data.price_per_rak || 0) * quantity + computeOngkir()).toLocaleString()}
-                </span>
-              </div>
-              <div className="flex gap-2">
-                <Button variant="secondary" onClick={() => setShowSummary(false)}>
-                  Batal
-                </Button>
-                <Button onClick={handleConfirmOrder} className="ml-auto">
-                  Konfirmasi & Bayar
-                </Button>
-              </div>
+            
+            <div className="h-[1px] w-full bg-border mb-4" />
+            
+            <div className="flex justify-between items-center mb-8">
+              <span className="text-body-medium text-text-main">Total Tagihan</span>
+              <span className="text-h2 text-primary-700">
+                Rp {((Number(data.price_per_rak || 0) * quantity) + computeOngkir()).toLocaleString('id-ID')}
+              </span>
+            </div>
+            
+            <div className="flex flex-col-reverse sm:flex-row gap-3">
+              <Button variant="secondary" onClick={() => setShowSummary(false)} className="w-full h-[48px]">
+                Kembali
+              </Button>
+              <Button onClick={handleConfirmOrder} variant="primary" className="w-full h-[48px]">
+                Konfirmasi Pesanan
+              </Button>
             </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }

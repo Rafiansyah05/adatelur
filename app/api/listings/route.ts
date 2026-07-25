@@ -42,13 +42,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Stok rak tidak valid' }, { status: 400 });
     }
 
-    const todayDateStr = new Date().toISOString().split('T')[0];
-
     const { data: existingListing, error: selectError } = await supabase
       .from('listings')
       .select('id')
       .eq('peternak_id', peternakDetail.id)
-      .eq('listing_date', todayDateStr)
       .maybeSingle();
 
     if (selectError) {
@@ -81,7 +78,6 @@ export async function POST(request: Request) {
           price_per_rak: pricePerRak,
           stock_rak: stockRak,
           is_listing_active: isListingActive,
-          listing_date: todayDateStr,
         })
         .select()
         .single();

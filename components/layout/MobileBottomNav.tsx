@@ -6,6 +6,10 @@ import { NavItem } from './DesktopSidebar';
 
 export function MobileBottomNav({ items }: { items: NavItem[] }) {
   const pathname = usePathname();
+  
+  if (pathname.startsWith('/recommendations')) {
+    return null;
+  }
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-40 flex h-16 border-t border-border bg-white md:hidden">

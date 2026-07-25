@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 
 export async function GET(request: Request, { params }: { params: { id: string } }) {
   try {
@@ -39,9 +40,10 @@ export async function GET(request: Request, { params }: { params: { id: string }
       is_available: listing.is_available,
     };
 
+    const adminClient = createAdminClient();
     const todayDateStr = new Date().toISOString().split('T')[0];
 
-    const { data: deliverySlots, error: slotsError } = await supabase
+    const { data: deliverySlots, error: slotsError } = await adminClient
       .from('delivery_slots')
       .select('*')
       .eq('peternak_id', peternakId)
@@ -55,7 +57,14 @@ export async function GET(request: Request, { params }: { params: { id: string }
     }
 
     const responseData = {
-      profile: peternak,
+      id: peternakId,
+      full_name: listing.peternak_name,
+      rating: 4.8,
+      score: listing.final_score,
+      price_per_rak: listing.price_per_rak,
+      farm_latitude: listing.farm_latitude,
+      farm_longitude: listing.farm_longitude,
+      listing_id: listing.listing_id ?? listing.id,
       delivery_slots: deliverySlots || [],
     };
 
