@@ -5,7 +5,8 @@ import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Label } from '@/components/ui/Label';
-import { CheckCircle2, Clock3, ToggleLeft, ToggleRight } from 'lucide-react';
+import Link from 'next/link';
+import { Bot, CheckCircle2, ChevronRight, Clock3, ToggleLeft, ToggleRight } from 'lucide-react';
 
 const SESSION_BLOCKS = [
   '00:00 - 03:00',
@@ -181,6 +182,20 @@ export function PeternakDashboard({ initialListing, initialSlots }: PeternakDash
           </p>
         </Card>
       </div>
+
+      <Link
+        href="/dashboard/assistant"
+        className="mb-8 flex items-center gap-4 rounded-lg border border-border bg-white p-5 shadow-sm transition-colors hover:border-primary-400"
+      >
+        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary-100">
+          <Bot className="h-5 w-5 text-primary-700" />
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="text-h3 text-text-main">Asisten AI</p>
+          <p className="text-caption text-text-desc">Tanya seputar operasional ternak Anda</p>
+        </div>
+        <ChevronRight className="h-5 w-5 shrink-0 text-text-desc" />
+      </Link>
 
       <div className="grid gap-6 lg:grid-cols-2">
         {/* LISTING HARI INI */}
