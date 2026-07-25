@@ -12,6 +12,7 @@ const withPWA = withPWAInit({
 
 const nextConfig = {
   reactStrictMode: true,
+  output: 'standalone',
   images: {
     remotePatterns: [
       {

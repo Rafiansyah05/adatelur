@@ -1,0 +1,12 @@
+version: '3.8'
+services:
+  adatelur-web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: adatelur-web
+    restart: always
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env.local # Make sure you create this file on the server with your Supabase credentials!
