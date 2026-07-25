@@ -70,7 +70,7 @@ export function AssistantChat() {
   };
 
   return (
-    <Card className="flex h-[65vh] flex-col p-0 md:h-[70vh]">
+    <Card className="flex h-[70vh] flex-col p-0">
       <div className="flex items-center gap-3 border-b border-border px-5 py-4">
         <span className="flex h-10 w-10 items-center justify-center rounded-full bg-primary-100">
           <Bot className="h-5 w-5 text-primary-700" />
@@ -120,9 +120,7 @@ export function AssistantChat() {
         ) : null}
       </div>
 
-      {error ? (
-        <p className="px-5 text-caption text-danger-text">{error}</p>
-      ) : null}
+      {error ? <p className="px-5 text-caption text-danger-text">{error}</p> : null}
 
       <form onSubmit={handleSend} className="flex items-center gap-2 border-t border-border px-5 py-4">
         <Input

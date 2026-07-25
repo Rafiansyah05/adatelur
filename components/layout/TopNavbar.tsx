@@ -26,10 +26,8 @@ export function TopNavbar({ items }: { items: NavItem[] }) {
 
   const supabase = createClient();
 
-  // Check if we are in consumer or peternak layout
   const isConsumer = !pathname.startsWith('/dashboard');
 
-  // Search logic for sidebar
   useEffect(() => {
     async function fetchResults() {
       if (!searchQuery.trim()) {
@@ -64,7 +62,6 @@ export function TopNavbar({ items }: { items: NavItem[] }) {
       }
     }
 
-    // Debounce search
     const timer = setTimeout(() => {
       fetchResults();
     }, 300);
@@ -75,11 +72,9 @@ export function TopNavbar({ items }: { items: NavItem[] }) {
 
   return (
     <>
-      {/* Spacer untuk mengkompensasi fixed navbar + margin-bottom 40px pada desktop */}
-      <div className="hidden md:block h-[40px] w-full shrink-0" />
+      <div className="hidden md:block h-[76px] w-full shrink-0" />
 
       <header className={`fixed top-0 left-0 right-0 z-40 hidden w-full items-center justify-between bg-white px-6 py-4 md:flex ${!isConsumer ? 'border-b border-border shadow-sm' : ''}`}>
-        {/* Kiri: Logo + Text */}
         <Link href={isConsumer ? '/' : '/dashboard'} className="flex items-center gap-3 hover:opacity-90 transition-opacity">
           <Image
             src="/icons/icon-512x512.png"
@@ -91,48 +86,35 @@ export function TopNavbar({ items }: { items: NavItem[] }) {
           <span className="text-xl font-bold text-text-main tracking-tight">adatelur.</span>
         </Link>
 
-        {/* Tengah: Navigasi */}
         <nav className="flex items-center gap-8">
-          {(isConsumer ? items.filter(item => item.href === '/' || item.href === '/orders') : items).map((item) => {
-            const isActive = pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href));
+          {(isConsumer
+            ? items.filter((item) => item.href === '/' || item.href === '/orders')
+            : items.filter((item) => item.href !== '/dashboard/profile')
+          ).map((item) => {
+            const isActive =
+              pathname === item.href ||
+              (item.href !== '/' && item.href !== '/dashboard' && pathname.startsWith(item.href));
 
-            if (isConsumer) {
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className="relative py-2 text-sm font-semibold transition-colors"
-                >
-                  <span className={isActive ? 'text-text-main' : 'text-neutral-500 hover:text-text-main'}>
-                    {item.label}
-                  </span>
-                  {isActive && (
-                    <span className="absolute bottom-0 left-0 w-full h-[3px] rounded-t-full bg-text-main" />
-                  )}
-                </Link>
-              );
-            } else {
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={`flex items-center gap-2 text-body-medium transition-colors ${isActive
-                    ? 'text-primary-500 border-b-2 border-primary-500 pb-1'
-                    : 'text-text-desc hover:text-text-main'
-                    }`}
-                >
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className="relative py-2 text-sm font-semibold transition-colors"
+              >
+                <span className={isActive ? 'text-text-main' : 'text-neutral-500 hover:text-text-main'}>
                   {item.label}
-                </Link>
-              );
-            }
+                </span>
+                {isActive && (
+                  <span className="absolute bottom-0 left-0 w-full h-[3px] rounded-t-full bg-text-main" />
+                )}
+              </Link>
+            );
           })}
         </nav>
 
-        {/* Kanan */}
         <div className="flex items-center gap-5">
           {isConsumer ? (
             <>
-              {/* Searchbar Toggle */}
               <div
                 onClick={() => setShowSearchSidebar(true)}
                 className="relative w-64 cursor-pointer"
@@ -145,7 +127,6 @@ export function TopNavbar({ items }: { items: NavItem[] }) {
                 </div>
               </div>
 
-              {/* Notifikasi Toggle */}
               <button
                 onClick={() => setShowNotifSidebar(true)}
                 className="relative flex h-10 w-10 items-center justify-center rounded-full bg-neutral-100 text-text-main hover:bg-neutral-200 transition-colors"
@@ -154,30 +135,34 @@ export function TopNavbar({ items }: { items: NavItem[] }) {
                 <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-danger"></span>
               </button>
 
-              {/* Akun */}
               <Link href="/profile" className="flex h-10 w-10 items-center justify-center rounded-full bg-neutral-100 text-text-main hover:bg-neutral-200 transition-colors">
                 <User className="h-5 w-5" />
               </Link>
             </>
           ) : (
-            <LogoutButton />
+            <div className="flex items-center gap-3">
+              <Link
+                href="/dashboard/profile"
+                aria-label="Akun"
+                className="flex h-10 w-10 items-center justify-center rounded-full bg-neutral-100 text-text-main hover:bg-neutral-200 transition-colors"
+              >
+                <User className="h-5 w-5" />
+              </Link>
+              <LogoutButton />
+            </div>
           )}
         </div>
       </header>
 
-      {/* OVERLAYS & SIDEBARS */}
       {isConsumer && (
         <>
-          {/* SEARCH SIDEBAR */}
           <div
             className={`fixed inset-0 z-50 transition-opacity duration-300 ${showSearchSidebar ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
           >
-            {/* Backdrop Blur */}
             <div
               className="absolute inset-0 bg-black/20 backdrop-blur-sm"
               onClick={() => setShowSearchSidebar(false)}
             />
-            {/* Sidebar Panel */}
             <div className={`absolute right-0 top-0 h-full w-full max-w-md bg-white shadow-2xl transition-transform duration-300 ease-in-out ${showSearchSidebar ? 'translate-x-0' : 'translate-x-full'}`}>
               <div className="flex h-full flex-col">
                 <div className="flex items-center justify-between border-b border-neutral-100 p-6">
@@ -255,16 +240,13 @@ export function TopNavbar({ items }: { items: NavItem[] }) {
             </div>
           </div>
 
-          {/* NOTIFICATION SIDEBAR */}
           <div
             className={`fixed inset-0 z-50 transition-opacity duration-300 ${showNotifSidebar ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
           >
-            {/* Backdrop Blur */}
             <div
               className="absolute inset-0 bg-black/20 backdrop-blur-sm"
               onClick={() => setShowNotifSidebar(false)}
             />
-            {/* Sidebar Panel */}
             <div className={`absolute right-0 top-0 h-full w-full max-w-sm bg-white shadow-2xl transition-transform duration-300 ease-in-out ${showNotifSidebar ? 'translate-x-0' : 'translate-x-full'}`}>
               <div className="flex h-full flex-col">
                 <div className="flex items-center justify-between border-b border-neutral-100 p-6">
