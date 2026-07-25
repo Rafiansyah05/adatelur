@@ -9,8 +9,8 @@ Platform pemesanan telur untuk menghubungkan peternak dan konsumen.
 ## Cara Clone & Instalasi
 1. Clone repositori ini:
    ```bash
-   git clone <URL_REPO>
-   cd adatelur.com
+   git clone https://github.com/Rafiansyah05/adatelur.git
+   cd adatelur
    ```
 2. Install semua dependencies:
    ```bash
