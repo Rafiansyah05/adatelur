@@ -15,7 +15,6 @@ export default function PeternakOrdersPage() {
   const [confirmDeliveryOrderId, setConfirmDeliveryOrderId] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   
-  // Camera state
   const [isCameraOpen, setIsCameraOpen] = useState(false);
   const [stream, setStream] = useState<MediaStream | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
@@ -153,7 +152,6 @@ export default function PeternakOrdersPage() {
     }
   };
 
-  // --- Camera Logic ---
   useEffect(() => {
     if (isCameraOpen && stream && videoRef.current) {
       videoRef.current.srcObject = stream;
@@ -194,7 +192,6 @@ export default function PeternakOrdersPage() {
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
         const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
         setPhotoPreview(dataUrl);
-        // Stop camera stream since we have the photo
         if (stream) stream.getTracks().forEach(track => track.stop());
       }
     }
@@ -224,7 +221,6 @@ export default function PeternakOrdersPage() {
       } else {
         fetchOrders();
         
-        // Trigger RPC calculation
         const supabase = supabaseRef.current;
         await supabase.rpc('recalculate_peternak_score', { p_peternak_id: peternakId });
         
@@ -237,9 +233,19 @@ export default function PeternakOrdersPage() {
       setIsUploading(false);
     }
   };
-  // --------------------
 
-  if (loading) return <div className="p-8 text-center text-text-desc">Memuat pesanan...</div>;
+  if (loading) {
+    return (
+      <div className="w-full">
+        <div className="mb-6 h-7 w-40 animate-pulse rounded-lg bg-neutral-100" />
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {[1, 2, 3].map((item) => (
+            <div key={item} className="h-32 animate-pulse rounded-lg bg-neutral-100" />
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   const incomingOrders = orders.filter(o => o.order_status === 'waiting');
   const activeProcessOrders = orders.filter(o => ['accepted', 'processing', 'in_delivery'].includes(o.order_status));
@@ -256,7 +262,6 @@ export default function PeternakOrdersPage() {
 
   return (
     <div className="w-full">
-      {/* Camera Modal */}
       {isCameraOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black">
           <div className="w-full max-w-md h-full md:h-auto md:max-h-[90vh] bg-neutral-900 md:rounded-xl flex flex-col relative overflow-hidden">
@@ -296,7 +301,6 @@ export default function PeternakOrdersPage() {
         </div>
       )}
 
-      {/* Confirmation Modal */}
       {confirmDeliveryOrderId && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
           <div className="bg-white rounded-xl p-6 max-w-sm w-full text-center shadow-xl animate-in fade-in zoom-in-95 duration-200">
@@ -309,7 +313,6 @@ export default function PeternakOrdersPage() {
         </div>
       )}
 
-      {/* Toast */}
       {toastMessage && (
         <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 bg-neutral-800 text-white px-4 py-2 rounded-lg shadow-lg animate-in slide-in-from-bottom-4 fade-in duration-300">
           {toastMessage}
@@ -318,7 +321,6 @@ export default function PeternakOrdersPage() {
 
       <h1 className="text-h2 text-text-main mb-2">Kelola Pesanan</h1>
       
-      {/* 1. Incoming Orders */}
       <div className="mb-8 mt-6">
         <h2 className="text-h3 text-text-main mb-4 border-b border-border pb-2">Pesanan Baru Masuk</h2>
         {incomingOrders.length === 0 ? (
@@ -351,7 +353,6 @@ export default function PeternakOrdersPage() {
         )}
       </div>
 
-      {/* 2. Active Orders (Diproses / Diantar) */}
       <div className="mb-8">
         <h2 className="text-h3 text-text-main mb-4 border-b border-border pb-2">Pesanan Diproses & Diantar</h2>
         {activeProcessOrders.length === 0 ? (
@@ -404,7 +405,6 @@ export default function PeternakOrdersPage() {
                   </div>
                   
                   <div className="flex w-full sm:w-auto flex-wrap gap-2 justify-end">
-                    {/* Hubungi WA button */}
                     {!['completed', 'rejected', 'cancelled', 'expired'].includes(order.order_status) && order.payment_status === 'paid' && order.consumer?.phone_number && (
                       <Button
                         onClick={() => window.open(`https://wa.me/${formatWaNumber(order.consumer.phone_number)}`, '_blank')}
@@ -450,7 +450,6 @@ export default function PeternakOrdersPage() {
         )}
       </div>
 
-      {/* 3. History Orders */}
       <div>
         <h2 className="text-h3 text-text-main mb-4 border-b border-border pb-2">Riwayat Pesanan</h2>
         {historyOrders.length === 0 ? (

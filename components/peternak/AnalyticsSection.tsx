@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import { Card } from '@/components/ui/Card';
+import { Wallet, Package, ClipboardCheck, Star, Truck } from 'lucide-react';
 import {
   ResponsiveContainer,
   AreaChart,
@@ -19,6 +20,13 @@ const CHART_PRIMARY_FILL = '#FFDE6B';
 const CHART_SUCCESS = '#00AA5B';
 const CHART_GRID = '#E4E7EB';
 const CHART_AXIS = '#9DA3AF';
+
+const TOOLTIP_STYLE = {
+  borderRadius: 8,
+  border: '1px solid #E4E7EB',
+  fontSize: 12,
+  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.05)',
+};
 
 interface WeeklyPoint {
   label: string;
@@ -61,11 +69,24 @@ function formatCompact(value: number) {
   return `${value}`;
 }
 
-function SummaryTile({ label, value }: { label: string; value: string }) {
+function SummaryTile({
+  icon,
+  label,
+  value,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+}) {
   return (
-    <Card className="p-5 flex flex-col justify-center">
-      <p className="text-caption text-text-desc mb-1">{label}</p>
-      <p className="text-h2 text-text-main">{value}</p>
+    <Card className="p-5">
+      <div className="mb-3 flex items-center gap-2">
+        <span className="flex h-9 w-9 items-center justify-center rounded-full bg-primary-100">
+          {icon}
+        </span>
+        <p className="text-caption text-text-desc">{label}</p>
+      </div>
+      <p className="text-h1 text-text-main">{value}</p>
     </Card>
   );
 }
@@ -107,9 +128,17 @@ export function AnalyticsSection() {
 
   if (isLoading) {
     return (
-      <Card className="p-6">
-        <p className="text-body text-text-desc">Memuat analitik...</p>
-      </Card>
+      <div className="w-full">
+        <div className="mb-6 grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-5">
+          {[1, 2, 3, 4, 5].map((item) => (
+            <div key={item} className="h-28 animate-pulse rounded-lg bg-neutral-100" />
+          ))}
+        </div>
+        <div className="grid gap-6 lg:grid-cols-2">
+          <div className="h-72 animate-pulse rounded-lg bg-neutral-100" />
+          <div className="h-72 animate-pulse rounded-lg bg-neutral-100" />
+        </div>
+      </div>
     );
   }
 
@@ -126,17 +155,33 @@ export function AnalyticsSection() {
   }
 
   const hasSales = data.summary.completedOrders > 0;
+  const iconClass = 'h-4 w-4 text-primary-700';
 
   return (
     <div className="w-full">
-      <h2 className="text-h2 text-text-main mb-4">Analitik Penjualan</h2>
-
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-5 mb-6">
-        <SummaryTile label="Total Pendapatan" value={formatRupiah(data.summary.totalRevenue)} />
-        <SummaryTile label="Rak Terjual" value={`${data.summary.totalRakSold}`} />
-        <SummaryTile label="Pesanan Selesai" value={`${data.summary.completedOrders}`} />
-        <SummaryTile label="Rata-rata Rating" value={`${data.summary.averageRating}`} />
+      <div className="mb-6 grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-5">
         <SummaryTile
+          icon={<Wallet className={iconClass} />}
+          label="Total Pendapatan"
+          value={formatRupiah(data.summary.totalRevenue)}
+        />
+        <SummaryTile
+          icon={<Package className={iconClass} />}
+          label="Rak Terjual"
+          value={`${data.summary.totalRakSold}`}
+        />
+        <SummaryTile
+          icon={<ClipboardCheck className={iconClass} />}
+          label="Pesanan Selesai"
+          value={`${data.summary.completedOrders}`}
+        />
+        <SummaryTile
+          icon={<Star className={iconClass} />}
+          label="Rata-rata Rating"
+          value={`${data.summary.averageRating}`}
+        />
+        <SummaryTile
+          icon={<Truck className={iconClass} />}
           label="Keberhasilan Kirim"
           value={`${Math.round(data.summary.deliveryAccuracy)}%`}
         />
@@ -149,23 +194,34 @@ export function AnalyticsSection() {
             <ResponsiveContainer width="100%" height={260}>
               <AreaChart data={data.weekly} margin={{ top: 8, right: 8, left: 8, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke={CHART_GRID} vertical={false} />
-                <XAxis dataKey="label" stroke={CHART_AXIS} fontSize={12} tickLine={false} />
+                <XAxis
+                  dataKey="label"
+                  stroke={CHART_AXIS}
+                  fontSize={12}
+                  tickLine={false}
+                  axisLine={false}
+                />
                 <YAxis
                   stroke={CHART_AXIS}
                   fontSize={12}
                   tickLine={false}
+                  axisLine={false}
                   tickFormatter={formatCompact}
                   width={44}
                 />
-                <Tooltip formatter={(value) => formatRupiah(Number(value))} />
+                <Tooltip
+                  formatter={(value) => formatRupiah(Number(value))}
+                  contentStyle={TOOLTIP_STYLE}
+                />
                 <Area
                   type="monotone"
                   dataKey="revenue"
                   name="Pendapatan"
                   stroke={CHART_PRIMARY}
                   fill={CHART_PRIMARY_FILL}
-                  fillOpacity={0.3}
+                  fillOpacity={0.25}
                   strokeWidth={2}
+                  activeDot={{ r: 4 }}
                 />
               </AreaChart>
             </ResponsiveContainer>
@@ -176,15 +232,22 @@ export function AnalyticsSection() {
             <ResponsiveContainer width="100%" height={260}>
               <LineChart data={data.ratingTrend} margin={{ top: 8, right: 8, left: 8, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke={CHART_GRID} vertical={false} />
-                <XAxis dataKey="label" stroke={CHART_AXIS} fontSize={12} tickLine={false} />
+                <XAxis
+                  dataKey="label"
+                  stroke={CHART_AXIS}
+                  fontSize={12}
+                  tickLine={false}
+                  axisLine={false}
+                />
                 <YAxis
                   stroke={CHART_AXIS}
                   fontSize={12}
                   tickLine={false}
+                  axisLine={false}
                   domain={[0, 5]}
                   width={28}
                 />
-                <Tooltip />
+                <Tooltip contentStyle={TOOLTIP_STYLE} />
                 <Line
                   type="monotone"
                   dataKey="averageRating"
@@ -192,6 +255,7 @@ export function AnalyticsSection() {
                   stroke={CHART_SUCCESS}
                   strokeWidth={2}
                   dot={{ r: 3 }}
+                  activeDot={{ r: 5 }}
                 />
               </LineChart>
             </ResponsiveContainer>
