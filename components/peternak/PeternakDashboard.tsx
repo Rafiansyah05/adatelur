@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import Link from 'next/link';
-import { Card } from '@/components/ui/Card';
+import { AnalyticsSection } from '@/components/peternak/AnalyticsSection';
 import { Bot, CheckCircle2, ChevronRight, Clock3 } from 'lucide-react';
 
 interface ListingRecord {
@@ -25,8 +25,7 @@ interface PeternakDashboardProps {
   initialSlots: DeliverySlotRecord[];
 }
 
-export function PeternakDashboard({ initialListing, initialSlots }: PeternakDashboardProps) {
-  const activeSlotCount = initialSlots.filter((slot) => slot.is_active).length;
+export function PeternakDashboard({ initialListing }: PeternakDashboardProps) {
   const isListingActive = initialListing?.is_listing_active ?? false;
 
   return (
@@ -54,31 +53,6 @@ export function PeternakDashboard({ initialListing, initialSlots }: PeternakDash
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-4 mb-8">
-        <Card className="p-5 flex flex-col justify-center">
-          <p className="text-caption text-text-desc mb-1">Status Listing</p>
-          <p className="text-h1 text-text-main">{isListingActive ? 'Aktif' : 'Nonaktif'}</p>
-        </Card>
-        <Card className="p-5 flex flex-col justify-center">
-          <p className="text-caption text-text-desc mb-1">Stok Rak</p>
-          <p className="text-h1 text-text-main">{initialListing?.stock_rak ?? 0}</p>
-        </Card>
-        <Card className="p-5 flex flex-col justify-center">
-          <p className="text-caption text-text-desc mb-1">Slot Aktif</p>
-          <p className="text-h1 text-text-main">{activeSlotCount}</p>
-        </Card>
-        <Card className="p-5 flex flex-col justify-center">
-          <p className="text-caption text-text-desc mb-1">Harga per Rak</p>
-          <p className="text-h2 text-text-main">
-            {initialListing?.price_per_rak
-              ? new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(
-                  Number(initialListing.price_per_rak)
-                )
-              : '-'}
-          </p>
-        </Card>
-      </div>
-
       <Link
         href="/dashboard/assistant"
         className="flex items-center gap-4 rounded-lg border border-border bg-white p-5 shadow-sm transition-colors hover:border-primary-400"
@@ -92,6 +66,10 @@ export function PeternakDashboard({ initialListing, initialSlots }: PeternakDash
         </div>
         <ChevronRight className="h-5 w-5 shrink-0 text-text-desc" />
       </Link>
+
+      <div className="mt-8">
+        <AnalyticsSection />
+      </div>
     </div>
   );
 }

@@ -39,8 +39,6 @@ interface AvailabilityManagerProps {
 }
 
 export function AvailabilityManager({ initialListing, initialSlots }: AvailabilityManagerProps) {
-  const [listing, setListing] = React.useState<ListingRecord | null>(initialListing);
-
   const initialActiveSessions = initialSlots
     .filter((slot) => slot.is_active)
     .map((slot) => {
@@ -64,7 +62,6 @@ export function AvailabilityManager({ initialListing, initialSlots }: Availabili
   const [message, setMessage] = React.useState('');
 
   React.useEffect(() => {
-    setListing(initialListing);
     setPricePerRak(initialListing?.price_per_rak?.toString() ?? '');
     setStockRak(initialListing?.stock_rak?.toString() ?? '');
     setIsListingActive(initialListing?.is_listing_active ?? true);
@@ -91,7 +88,6 @@ export function AvailabilityManager({ initialListing, initialSlots }: Availabili
         throw new Error(data.error || 'Gagal menyimpan listing');
       }
 
-      setListing(data.listing);
       setMessage('Listing harian berhasil disimpan.');
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'Terjadi kesalahan');
@@ -133,6 +129,31 @@ export function AvailabilityManager({ initialListing, initialSlots }: Availabili
 
   return (
     <div className="w-full">
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-4 mb-6">
+        <Card className="p-5 flex flex-col justify-center">
+          <p className="text-caption text-text-desc mb-1">Status Listing</p>
+          <p className="text-h1 text-text-main">{isListingActive ? 'Aktif' : 'Nonaktif'}</p>
+        </Card>
+        <Card className="p-5 flex flex-col justify-center">
+          <p className="text-caption text-text-desc mb-1">Stok Rak</p>
+          <p className="text-h1 text-text-main">{stockRak || '0'}</p>
+        </Card>
+        <Card className="p-5 flex flex-col justify-center">
+          <p className="text-caption text-text-desc mb-1">Slot Aktif</p>
+          <p className="text-h1 text-text-main">{activeSessions.length}</p>
+        </Card>
+        <Card className="p-5 flex flex-col justify-center">
+          <p className="text-caption text-text-desc mb-1">Harga per Rak</p>
+          <p className="text-h2 text-text-main">
+            {pricePerRak
+              ? new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(
+                  Number(pricePerRak)
+                )
+              : '-'}
+          </p>
+        </Card>
+      </div>
+
       {message ? (
         <Card className="border-primary-400 bg-primary-50 p-4 text-sm text-text-main mb-6">
           {message}
