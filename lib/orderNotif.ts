@@ -54,11 +54,11 @@ export async function sendOrderPaidNotif(orderId: string) {
 
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || '';
     const message =
-      `Pembayaran berhasil!\n\n` +
-      `Pesanan dari ${consumerProfile?.full_name || 'Konsumen'} sudah dibayar.\n` +
-      `No. WA: ${consumerProfile?.phone_number || '-'}\n` +
-      `Jumlah: ${order.rak_quantity} rak\n` +
-      `Total: Rp${Number(order.total_amount).toLocaleString('id-ID')}\n\n` +
+      `*Pembayaran berhasil!*\n\n` +
+      `Pesanan dari *${consumerProfile?.full_name || 'Konsumen'}* sudah dibayar.\n` +
+      `*No. WA:* ${consumerProfile?.phone_number || '-'}\n` +
+      `*Jumlah:* ${order.rak_quantity} rak\n` +
+      `*Total:* Rp${Number(order.total_amount).toLocaleString('id-ID')}\n\n` +
       `Lihat detail pesanan:\n` +
       `${appUrl}/dashboard/orders/${order.id}`;
 
@@ -128,7 +128,7 @@ export async function sendOrderCancelledNotif(orderId: string) {
       .single();
 
     const consumerName = consumerProfile?.full_name || 'Konsumen';
-    const message = `Pesanan dibatalkan\n\nPesanan dari ${consumerName} telah dibatalkan.`;
+    const message = `*Pesanan dibatalkan*\n\nPesanan dari *${consumerName}* telah dibatalkan.`;
 
     await sendWhatsAppMessage(peternakProfile.phone_number, message);
 

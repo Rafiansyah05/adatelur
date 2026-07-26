@@ -169,7 +169,7 @@ export async function POST(request: Request) {
               .maybeSingle();
             if (slot) {
               const jamLabel = fulfillmentMethod === 'delivery' ? 'Jam antar' : 'Jam ambil';
-              slotLine = `${jamLabel}: ${slot.start_time.substring(0, 5)}-${slot.end_time.substring(0, 5)} WIB\n`;
+              slotLine = `*${jamLabel}:* ${slot.start_time.substring(0, 5)}-${slot.end_time.substring(0, 5)} WIB\n`;
             }
           }
 
@@ -181,27 +181,27 @@ export async function POST(request: Request) {
               .eq('id', consumerAddressId)
               .maybeSingle();
             if (address?.full_address) {
-              addressLine = `Alamat: ${address.full_address}\n`;
+              addressLine = `*Alamat:* ${address.full_address}\n`;
             }
           }
 
           const replyInstruction = device
             ? `Tap untuk membalas (dalam 5 menit):\n` +
-              `Terima: https://wa.me/${device}?text=${encodeURIComponent(`TERIMA ${shortId}`)}\n` +
-              `Tolak: https://wa.me/${device}?text=${encodeURIComponent(`TOLAK ${shortId}`)}`
+              `*Terima:* https://wa.me/${device}?text=${encodeURIComponent(`TERIMA ${shortId}`)}\n` +
+              `*Tolak:* https://wa.me/${device}?text=${encodeURIComponent(`TOLAK ${shortId}`)}`
             : `Balas dalam 5 menit:\n` +
               `TERIMA ${shortId} (untuk menerima)\n` +
               `TOLAK ${shortId} (untuk menolak)`;
 
           const message =
-            `Pesanan baru di adatelur!\n\n` +
-            `Pemesan: ${consumerProfile?.full_name || 'Konsumen'}\n` +
-            `No. WA: ${consumerProfile?.phone_number || '-'}\n` +
-            `Jumlah: ${rakQuantity} rak\n` +
-            `Metode: ${methodLabel}\n` +
+            `*Pesanan baru di adatelur!*\n\n` +
+            `*Pemesan:* ${consumerProfile?.full_name || 'Konsumen'}\n` +
+            `*No. WA:* ${consumerProfile?.phone_number || '-'}\n` +
+            `*Jumlah:* ${rakQuantity} rak\n` +
+            `*Metode:* ${methodLabel}\n` +
             addressLine +
             slotLine +
-            `Total: Rp${Number(order.total_amount).toLocaleString('id-ID')}\n\n` +
+            `*Total:* Rp${Number(order.total_amount).toLocaleString('id-ID')}\n\n` +
             replyInstruction;
 
           await sendWhatsAppMessage(peternakProfile.phone_number, message);
