@@ -1,5 +1,7 @@
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
+import { OrderDetail, type OrderDetailData } from '@/components/peternak/OrderDetail';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,7 +18,7 @@ export default async function PeternakOrderDetailPage({ params }: { params: { id
 
   const { data: peternakDetail } = await supabase
     .from('peternak_details')
-    .select('verification_status')
+    .select('id, verification_status')
     .eq('profile_id', user.id)
     .single();
 
@@ -28,15 +30,30 @@ export default async function PeternakOrderDetailPage({ params }: { params: { id
     redirect('/dashboard');
   }
 
-  return (
-    <div className="w-full">
-      <div className="mb-6">
-        <h1 className="text-h1 text-text-main">Detail Pesanan</h1>
-        <p className="text-body text-text-desc mt-1">Order #{params.id.slice(0, 8).toUpperCase()}</p>
+  const admin = createAdminClient();
+  const { data: order } = await admin
+    .from('orders')
+    .select(
+      `
+      *,
+      consumer:profiles!orders_consumer_id_fkey(full_name, phone_number),
+      consumer_address:consumer_addresses(full_address, latitude, longitude),
+      delivery_slot:delivery_slots(start_time, end_time)
+    `
+    )
+    .eq('id', params.id)
+    .maybeSingle();
+
+  if (!order || order.peternak_id !== peternakDetail.id) {
+    return (
+      <div className="w-full">
+        <h1 className="text-h1 text-text-main">Pesanan tidak ditemukan</h1>
+        <p className="text-body text-text-desc mt-1">
+          Pesanan ini tidak ada atau bukan milik Anda.
+        </p>
       </div>
-      <div className="rounded-lg border border-border bg-white p-6 shadow-sm">
-        <p className="text-body text-text-desc">Halaman detail pesanan akan segera hadir.</p>
-      </div>
-    </div>
-  );
+    );
+  }
+
+  return <OrderDetail order={order as unknown as OrderDetailData} />;
 }
