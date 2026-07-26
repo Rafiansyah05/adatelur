@@ -1,4 +1,4 @@
-FROM node:22-slim AS base
+FROM public.ecr.aws/docker/library/node:22-slim AS base
 
 # Install dependencies only when needed
 FROM base AS deps
