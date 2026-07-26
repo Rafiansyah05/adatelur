@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { sendOrderPaidNotif } from '@/lib/orderNotif';
 
 export async function POST(request: Request) {
   try {
@@ -53,6 +54,8 @@ export async function POST(request: Request) {
         status: 'diproses',
         note: 'Pembayaran berhasil via webhook Midtrans'
       });
+
+      await sendOrderPaidNotif(order.id);
     }
 
     return NextResponse.json({ success: true });

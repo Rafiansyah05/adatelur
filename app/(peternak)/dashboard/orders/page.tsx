@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
@@ -8,6 +9,7 @@ import { MapPin, Clock, Camera, X, Truck, ShoppingBag, Package, MessageCircle } 
 import Image from 'next/image';
 
 export default function PeternakOrdersPage() {
+  const router = useRouter();
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [peternakId, setPeternakId] = useState<string | null>(null);
@@ -360,7 +362,7 @@ export default function PeternakOrdersPage() {
         ) : (
           <div className="grid gap-4 lg:grid-cols-2">
             {activeProcessOrders.map(order => (
-              <Card key={order.id} className="p-5 md:p-6 border border-border rounded-xl flex flex-col justify-between gap-5 transition-all hover:shadow-sm hover:border-primary-200 bg-white">
+              <Card key={order.id} onClick={() => router.push(`/dashboard/orders/${order.id}`)} className="p-5 md:p-6 border border-border rounded-xl flex flex-col justify-between gap-5 transition-all hover:shadow-sm hover:border-primary-200 bg-white cursor-pointer">
                 <div>
                   <div className="flex justify-between items-start mb-3">
                     <div>
@@ -404,7 +406,7 @@ export default function PeternakOrdersPage() {
                     <p className="text-lg font-bold text-text-main">Rp {Number(order.total_amount).toLocaleString('id-ID')}</p>
                   </div>
                   
-                  <div className="flex w-full sm:w-auto flex-wrap gap-2 justify-end">
+                  <div className="flex w-full sm:w-auto flex-wrap gap-2 justify-end" onClick={(e) => e.stopPropagation()}>
                     {!['completed', 'rejected', 'cancelled', 'expired'].includes(order.order_status) && order.payment_status === 'paid' && order.consumer?.phone_number && (
                       <Button
                         onClick={() => window.open(`https://wa.me/${formatWaNumber(order.consumer.phone_number)}`, '_blank')}

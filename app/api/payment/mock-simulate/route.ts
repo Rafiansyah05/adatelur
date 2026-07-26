@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { sendOrderPaidNotif } from '@/lib/orderNotif';
 
 export async function POST(req: Request) {
   // Hanya izinkan di environment non-production atau jika isProduction false
@@ -31,6 +32,8 @@ export async function POST(req: Request) {
       status: 'accepted',
       note: 'Pembayaran disimulasikan (Sandbox Bypass)'
     });
+
+    await sendOrderPaidNotif(order.id);
 
     return NextResponse.json({ success: true });
   } catch (err: any) {

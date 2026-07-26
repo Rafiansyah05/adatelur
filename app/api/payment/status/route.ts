@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 // @ts-ignore
 import midtransClient from 'midtrans-client';
+import { sendOrderPaidNotif } from '@/lib/orderNotif';
 
 const coreApi = new midtransClient.CoreApi({
   isProduction: process.env.MIDTRANS_IS_PRODUCTION === 'true',
@@ -55,6 +56,8 @@ export async function POST(req: Request) {
           status: 'accepted',
           note: 'Pembayaran QRIS berhasil'
         });
+
+        await sendOrderPaidNotif(order.id);
 
         return NextResponse.json({ success: true, status: 'paid' });
       }
