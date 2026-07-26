@@ -1,0 +1,15 @@
+version: '3'
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: adatelur-web
+    restart: always
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
+    # If you use a reverse proxy like Nginx or Cloudflare Tunnels, 
+    # it will route to this port.
