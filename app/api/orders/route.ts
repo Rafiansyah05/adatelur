@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { haversineDistance, calculateOngkir } from '@/lib/haversine';
+import { sendWhatsAppMessage } from '@/lib/fonnte';
 
 export async function POST(request: Request) {
   try {
@@ -113,8 +114,6 @@ export async function POST(request: Request) {
       updated_at: createdAt,
     };
 
-    // We already initialized adminSupabase above if fulfillmentMethod === 'delivery'
-    // but just in case it's pickup, we can initialize it again or use a fallback
     const adminClientForInsert = createAdminClient();
 
     const { data: order, error: orderErr } = await adminClientForInsert
@@ -125,7 +124,6 @@ export async function POST(request: Request) {
 
     if (orderErr) return NextResponse.json({ error: orderErr.message }, { status: 500 });
 
-    // insert initial status history
     const { error: histErr } = await adminClientForInsert.from('order_status_history').insert({
       order_id: order.id,
       status: 'waiting',
@@ -134,8 +132,91 @@ export async function POST(request: Request) {
     });
 
     if (histErr) {
-      // not fatal for consumer, but log
       console.error('Failed to insert order history', histErr.message);
+    }
+
+    try {
+      const { data: peternakDetail } = await adminClientForInsert
+        .from('peternak_details')
+        .select('profile_id')
+        .eq('id', listing.peternak_id)
+        .single();
+
+      if (peternakDetail?.profile_id) {
+        const { data: peternakProfile } = await adminClientForInsert
+          .from('profiles')
+          .select('phone_number')
+          .eq('id', peternakDetail.profile_id)
+          .single();
+
+        const { data: consumerProfile } = await adminClientForInsert
+          .from('profiles')
+          .select('full_name, phone_number')
+          .eq('id', user.id)
+          .single();
+
+        if (peternakProfile?.phone_number) {
+          const shortId = order.id.slice(0, 8);
+          const methodLabel = fulfillmentMethod === 'delivery' ? 'Diantar' : 'Ambil Sendiri';
+          const device = process.env.FONNTE_DEVICE_NUMBER;
+
+          let slotLine = '';
+          if (deliverySlotId) {
+            const { data: slot } = await adminClientForInsert
+              .from('delivery_slots')
+              .select('start_time, end_time')
+              .eq('id', deliverySlotId)
+              .maybeSingle();
+            if (slot) {
+              const jamLabel = fulfillmentMethod === 'delivery' ? 'Jam antar' : 'Jam ambil';
+              slotLine = `${jamLabel}: ${slot.start_time.substring(0, 5)}-${slot.end_time.substring(0, 5)} WIB\n`;
+            }
+          }
+
+          let addressLine = '';
+          if (fulfillmentMethod === 'delivery' && consumerAddressId) {
+            const { data: address } = await adminClientForInsert
+              .from('consumer_addresses')
+              .select('full_address')
+              .eq('id', consumerAddressId)
+              .maybeSingle();
+            if (address?.full_address) {
+              addressLine = `Alamat: ${address.full_address}\n`;
+            }
+          }
+
+          const replyInstruction = device
+            ? `Tap untuk membalas (dalam 5 menit):\n` +
+              `Terima: https://wa.me/${device}?text=${encodeURIComponent(`TERIMA ${shortId}`)}\n` +
+              `Tolak: https://wa.me/${device}?text=${encodeURIComponent(`TOLAK ${shortId}`)}`
+            : `Balas dalam 5 menit:\n` +
+              `TERIMA ${shortId} (untuk menerima)\n` +
+              `TOLAK ${shortId} (untuk menolak)`;
+
+          const message =
+            `Pesanan baru di adatelur!\n\n` +
+            `Pemesan: ${consumerProfile?.full_name || 'Konsumen'}\n` +
+            `No. WA: ${consumerProfile?.phone_number || '-'}\n` +
+            `Jumlah: ${rakQuantity} rak\n` +
+            `Metode: ${methodLabel}\n` +
+            addressLine +
+            slotLine +
+            `Total: Rp${Number(order.total_amount).toLocaleString('id-ID')}\n\n` +
+            replyInstruction;
+
+          await sendWhatsAppMessage(peternakProfile.phone_number, message);
+
+          await adminClientForInsert.from('notifications_log').insert({
+            recipient_id: peternakDetail.profile_id,
+            channel: 'whatsapp',
+            notif_type: 'order_new',
+            related_order_id: order.id,
+            payload: { rak_quantity: rakQuantity, total_amount: order.total_amount },
+          });
+        }
+      }
+    } catch (notifError) {
+      console.error('Gagal kirim notifikasi WA ke peternak', notifError);
     }
 
     return NextResponse.json({ success: true, order, data: order });

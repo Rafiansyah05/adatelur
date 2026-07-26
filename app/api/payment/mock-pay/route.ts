@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { sendOrderPaidNotif } from '@/lib/orderNotif';
 
 export async function POST(req: Request) {
   try {
@@ -32,6 +33,8 @@ export async function POST(req: Request) {
       status: 'diproses',
       note: 'Pembayaran otomatis berhasil (Mode Testing)'
     });
+
+    await sendOrderPaidNotif(order.id);
 
     return NextResponse.json({ success: true });
   } catch (err: any) {
