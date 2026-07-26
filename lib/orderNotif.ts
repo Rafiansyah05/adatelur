@@ -75,3 +75,71 @@ export async function sendOrderPaidNotif(orderId: string) {
     console.error('Gagal kirim notifikasi pembayaran', error);
   }
 }
+
+export async function sendOrderCancelledNotif(orderId: string) {
+  try {
+    const supabase = createAdminClient();
+
+    const { data: existing } = await supabase
+      .from('notifications_log')
+      .select('id')
+      .eq('related_order_id', orderId)
+      .eq('notif_type', 'order_cancelled')
+      .maybeSingle();
+
+    if (existing) {
+      return;
+    }
+
+    const { data: order } = await supabase
+      .from('orders')
+      .select('id, peternak_id, consumer_id')
+      .eq('id', orderId)
+      .single();
+
+    if (!order) {
+      return;
+    }
+
+    const { data: peternakDetail } = await supabase
+      .from('peternak_details')
+      .select('profile_id')
+      .eq('id', order.peternak_id)
+      .single();
+
+    if (!peternakDetail?.profile_id) {
+      return;
+    }
+
+    const { data: peternakProfile } = await supabase
+      .from('profiles')
+      .select('phone_number')
+      .eq('id', peternakDetail.profile_id)
+      .single();
+
+    if (!peternakProfile?.phone_number) {
+      return;
+    }
+
+    const { data: consumerProfile } = await supabase
+      .from('profiles')
+      .select('full_name')
+      .eq('id', order.consumer_id)
+      .single();
+
+    const consumerName = consumerProfile?.full_name || 'Konsumen';
+    const message = `Pesanan dibatalkan\n\nPesanan dari ${consumerName} telah dibatalkan.`;
+
+    await sendWhatsAppMessage(peternakProfile.phone_number, message);
+
+    await supabase.from('notifications_log').insert({
+      recipient_id: peternakDetail.profile_id,
+      channel: 'whatsapp',
+      notif_type: 'order_cancelled',
+      related_order_id: order.id,
+      payload: {},
+    });
+  } catch (error) {
+    console.error('Gagal kirim notifikasi pembatalan', error);
+  }
+}

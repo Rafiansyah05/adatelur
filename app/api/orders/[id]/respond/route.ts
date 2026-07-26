@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { sendOrderCancelledNotif } from '@/lib/orderNotif';
 
 export async function POST(request: Request, { params }: { params: { id: string } }) {
   try {
@@ -90,6 +91,10 @@ export async function POST(request: Request, { params }: { params: { id: string 
     });
 
     if (histErr) console.error('Failed to insert order history', histErr.message);
+
+    if (newStatus === 'cancelled') {
+      await sendOrderCancelledNotif(orderId);
+    }
 
     return NextResponse.json({ success: true, order: updated, data: updated });
   } catch (error) {
