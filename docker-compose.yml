@@ -1,4 +1,4 @@
-version: '3'
+version: '3.8'
 
 services:
   web:
@@ -8,8 +8,8 @@ services:
     container_name: adatelur-web
     restart: always
     ports:
-      - "3000:3000"
+      - "3020:3000"
     env_file:
       - .env
     # If you use a reverse proxy like Nginx or Cloudflare Tunnels, 
-    # it will route to this port.
+    # it will route to this port (3020).

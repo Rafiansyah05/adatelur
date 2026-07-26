@@ -1,28 +1,20 @@
 #!/bin/bash
 
-# Tangkap jika ada error
-set -e
-
-echo "======================================"
-echo "Memulai proses deployment Adatelur..."
-echo "======================================"
+echo "🚀 Memulai Otomatisasi Deployment Adatelur..."
 
 # 1. Pastikan berada di direktori project (tempat deploy.sh berada)
 cd "$(dirname "$0")"
 
-# 2. Update code dari GitHub (asumsi branch main)
-echo "=> Mengambil kode terbaru dari GitHub..."
-git pull origin main
+# 2. Pull update kode terbaru dari GitHub
+echo "📥 Menarik kode terbaru dari GitHub..."
+git pull origin main || git pull origin master
 
-# 3. Build & Restart menggunakan Docker Compose
-echo "=> Membangun dan menjalankan ulang container (Docker Compose)..."
-docker compose up -d --build
+# 3. Build ulang & jalankan container dengan Docker Compose
+echo "🛠️ Membangun dan memperbarui Docker Containers..."
+docker compose up --build -d
 
-# 4. Bersihkan image docker yang sudah tidak terpakai (opsional tapi disarankan)
-echo "=> Membersihkan sisa file docker (prune)..."
+# 4. Bersihkan image lama/dangling agar storage server tidak penuh
+echo "🧹 Membersihkan Docker cache lama..."
 docker image prune -f
 
-echo "======================================"
-echo "Deployment Selesai dan Berhasil!"
-echo "Aplikasi berjalan di background via Docker."
-echo "======================================"
+echo "✅ Deployment Berhasil! Aplikasi aktif di port 3020."
