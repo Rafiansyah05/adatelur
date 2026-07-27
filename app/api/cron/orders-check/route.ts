@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { sendOrderExpiredNotif } from '@/lib/orderNotif';
 
 export async function GET() {
   try {
@@ -33,6 +34,10 @@ export async function GET() {
       const { error: histErr } = await supabase.from('order_status_history').insert(histories);
       if (histErr)
         console.error('Failed to insert order history for expired orders', histErr.message);
+
+      for (const id of ids) {
+        await sendOrderExpiredNotif(id);
+      }
     }
 
     return NextResponse.json({

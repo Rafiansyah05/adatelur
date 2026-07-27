@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { sendOrderExpiredNotif } from '@/lib/orderNotif';
 
 // Vercel Cron Endpoint (or callable by any scheduler)
 export async function GET(request: Request) {
@@ -50,6 +51,10 @@ export async function GET(request: Request) {
         .insert(historyInserts);
 
       if (historyError) throw historyError;
+
+      for (const id of orderIds) {
+        await sendOrderExpiredNotif(id);
+      }
 
       processed = orderIds.length;
     }
