@@ -12,7 +12,6 @@ export async function POST(request: Request, { params }: { params: { id: string 
     const supabase = createAdminClient();
     const orderId = params.id;
 
-    // Check order
     const { data: order, error: orderError } = await supabase
       .from('orders')
       .select('*')
@@ -27,15 +26,11 @@ export async function POST(request: Request, { params }: { params: { id: string 
       return NextResponse.json({ error: 'Status pesanan tidak valid untuk diselesaikan' }, { status: 400 });
     }
 
-    // Convert base64 to buffer
     const base64Data = photo_base64.replace(/^data:image\/\w+;base64,/, "");
     const buffer = Buffer.from(base64Data, 'base64');
     const fileName = `proof_${orderId}_${Date.now()}.jpg`;
 
-    // Upload to storage
-    // Assuming 'delivery-proofs' bucket exists. If not, it needs to be created or we use a fallback bucket.
-    // For MVP we will try to upload to 'delivery-proofs', if it fails we might need to handle it or ensure the bucket is created in Supabase dashboard.
-    const { data: uploadData, error: uploadError } = await supabase
+    const { error: uploadError } = await supabase
       .storage
       .from('delivery-proofs')
       .upload(fileName, buffer, {
@@ -46,23 +41,17 @@ export async function POST(request: Request, { params }: { params: { id: string 
     let photoUrl = '';
     if (uploadError) {
       console.error('Upload Error:', uploadError);
-      // Fallback: Just proceed without blocking MVP if storage bucket is missing, but log it.
-      // Wait, let's return error if upload fails
-      // return NextResponse.json({ error: 'Gagal mengupload foto bukti: ' + uploadError.message }, { status: 500 });
-      // Actually, if the bucket is not created, we can just save a placeholder URL for MVP if it fails.
       photoUrl = `placeholder_error_${fileName}`;
     } else {
       const { data: publicUrlData } = supabase.storage.from('delivery-proofs').getPublicUrl(fileName);
       photoUrl = publicUrlData.publicUrl;
     }
 
-    // Insert delivery proof FIRST (to prevent realtime race condition on frontend)
     await supabase.from('delivery_proof').insert({
       order_id: orderId,
       photo_url: photoUrl
     });
 
-    // Update order status
     const { error: updateError } = await supabase
       .from('orders')
       .update({ order_status: 'completed' })
@@ -70,14 +59,18 @@ export async function POST(request: Request, { params }: { params: { id: string 
 
     if (updateError) throw updateError;
 
-    // Add history
     await supabase.from('order_status_history').insert({
       order_id: orderId,
       status: 'completed',
       note: 'Pesanan telah diselesaikan dan bukti telah diunggah.'
     });
 
-    // Optionally recalculate score (can be done asynchronously)
+    try {
+      await supabase.rpc('credit_wallet_from_order', { p_order_id: orderId });
+    } catch (e) {
+      console.error('Gagal menambahkan saldo peternak', e);
+    }
+
     try {
       await fetch(`${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/api/peternak/${order.peternak_id}/recalculate-score`, { method: 'POST' });
     } catch (e) {

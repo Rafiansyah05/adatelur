@@ -525,4 +525,84 @@ alter table public.otps enable row level security;
 
 ---
 
+## 21. Sistem Saldo Peternak (Wallet)
+
+Ditambahkan pada fitur #5 (`Feat/PeternakWallet`), migration `20260727000000_create_wallet.sql`. Modul buku kas/ledger: pendapatan pesanan selesai mengendap jadi saldo (dipotong biaya admin 3.5% dari `subtotal`), lalu dicairkan ke rekening bank. Transfer bank dilakukan manual di luar sistem (MVP).
+
+### 21.1 Kolom rekening pada `peternak_details`
+
+Tiga kolom baru (nullable, diisi lewat halaman profil peternak):
+
+```sql
+alter table peternak_details
+  add column bank_name text,
+  add column bank_account_number text,
+  add column bank_account_holder text;
+```
+
+### 21.2 Tabel `wallets`
+
+Saldo berjalan, satu baris per peternak.
+
+```sql
+create table wallets (
+  peternak_id uuid primary key references peternak_details(id) on delete cascade,
+  balance numeric(14,2) not null default 0,
+  updated_at timestamptz not null default now()
+);
+```
+
+### 21.3 Tabel `withdrawals`
+
+Pengajuan pencairan. Rekening di-snapshot saat pengajuan agar riwayat tetap benar walau peternak mengubah rekening di profil.
+
+```sql
+create table withdrawals (
+  id uuid primary key default gen_random_uuid(),
+  peternak_id uuid not null references peternak_details(id) on delete cascade,
+  amount numeric(14,2) not null check (amount > 0),
+  bank_name text not null,
+  bank_account_number text not null,
+  bank_account_holder text not null,
+  status text not null default 'pending' check (status in ('pending', 'completed', 'rejected')),
+  note text,
+  requested_at timestamptz not null default now(),
+  processed_at timestamptz
+);
+```
+
+### 21.4 Tabel `wallet_transactions`
+
+Buku besar (ledger) tiap mutasi. `balance_after` menyimpan snapshot saldo setelah mutasi. Unique index mencegah satu order di-credit lebih dari sekali.
+
+```sql
+create table wallet_transactions (
+  id uuid primary key default gen_random_uuid(),
+  peternak_id uuid not null references peternak_details(id) on delete cascade,
+  type text not null check (type in ('credit', 'debit')),
+  amount numeric(14,2) not null check (amount > 0),
+  balance_after numeric(14,2) not null,
+  related_order_id uuid references orders(id),
+  related_withdrawal_id uuid references withdrawals(id),
+  note text,
+  created_at timestamptz not null default now()
+);
+
+create unique index uq_wallet_transactions_order
+  on wallet_transactions(related_order_id)
+  where related_order_id is not null;
+```
+
+### 21.5 RLS & Fungsi
+
+- RLS: peternak hanya bisa `select` data (wallet, transaksi, pencairan) miliknya sendiri. Perubahan saldo tidak dilakukan langsung dari client, melainkan lewat fungsi `SECURITY DEFINER`.
+- Fungsi:
+  - `credit_wallet_from_order(order_id)` — dipanggil saat order `completed`; menambahkan `subtotal × 0.965` ke saldo + catat credit. Idempotent (skip jika order sudah pernah di-credit).
+  - `request_withdrawal(peternak_id, amount)` — pencairan instan tanpa persetujuan. Validasi rekening terisi dan `amount ≤ balance`, langsung memotong saldo, membuat `withdrawals` status `completed`, dan mencatat debit di ledger. Mengembalikan id pencairan.
+  - `complete_withdrawal(withdrawal_id)` & `reject_withdrawal(withdrawal_id, note)` — legacy dari rancangan approval manual; tidak dipakai pada alur instan saat ini, dibiarkan untuk kebutuhan penyesuaian manual bila diperlukan.
+
+> **Model pencairan:** saldo peternak adalah uang miliknya sendiri, jadi pencairan langsung diproses saat diajukan (tidak ada status `pending`/persetujuan admin). Transfer bank aktual tetap dilakukan manual di luar sistem untuk MVP.
+
+---
+
 **Dokumen terkait:** `prd.md`, `tech_stack.md`, `design_system.md`, `task_division.md`

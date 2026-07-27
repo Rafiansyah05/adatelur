@@ -1,6 +1,7 @@
 'use client';
 
 import { AnalyticsSection } from '@/components/peternak/AnalyticsSection';
+import { WalletCard } from '@/components/peternak/WalletCard';
 import { CheckCircle2, Clock3 } from 'lucide-react';
 
 interface ListingRecord {
@@ -39,6 +40,8 @@ export function PeternakDashboard({ initialListing }: PeternakDashboardProps) {
           {isListingActive ? 'Toko Buka (Publik)' : 'Toko Tutup (Sembunyi)'}
         </div>
       </div>
+
+      <WalletCard />
 
       <AnalyticsSection />
     </div>
