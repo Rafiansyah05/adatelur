@@ -5,7 +5,6 @@ import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import { Bell, Search, User, X, MapPin, ArrowRight } from 'lucide-react';
 import { useState, useEffect } from 'react';
-import { LogoutButton } from '@/components/ui/LogoutButton';
 import { createClient } from '@/lib/supabase/client';
 
 export interface NavItem {
@@ -148,7 +147,6 @@ export function TopNavbar({ items }: { items: NavItem[] }) {
               >
                 <User className="h-5 w-5" />
               </Link>
-              <LogoutButton />
             </div>
           )}
         </div>

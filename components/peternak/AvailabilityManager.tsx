@@ -5,9 +5,9 @@ import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Label } from '@/components/ui/Label';
-import { ToggleLeft, ToggleRight } from 'lucide-react';
+import { ToggleLeft, ToggleRight, Store, Package, Clock, Tag } from 'lucide-react';
 
-const SESSION_BLOCKS = [
+const sessionBlocks = [
   '00:00 - 03:00',
   '03:00 - 06:00',
   '06:00 - 09:00',
@@ -130,27 +130,59 @@ export function AvailabilityManager({ initialListing, initialSlots }: Availabili
   return (
     <div className="w-full">
       <div className="grid grid-cols-2 gap-4 md:grid-cols-4 mb-6">
-        <Card className="p-5 flex flex-col justify-center">
-          <p className="text-caption text-text-desc mb-1">Status Listing</p>
-          <p className="text-h1 text-text-main">{isListingActive ? 'Aktif' : 'Nonaktif'}</p>
+        <Card className="p-5">
+          <div className="flex items-center gap-3">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary-100 text-primary-700">
+              <Store className="h-5 w-5" />
+            </span>
+            <div>
+              <p className="text-caption text-text-desc">Status Listing</p>
+              <p className={`text-h2 ${isListingActive ? 'text-success-text' : 'text-text-desc'}`}>
+                {isListingActive ? 'Aktif' : 'Nonaktif'}
+              </p>
+            </div>
+          </div>
         </Card>
-        <Card className="p-5 flex flex-col justify-center">
-          <p className="text-caption text-text-desc mb-1">Stok Rak</p>
-          <p className="text-h1 text-text-main">{stockRak || '0'}</p>
+        <Card className="p-5">
+          <div className="flex items-center gap-3">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary-100 text-primary-700">
+              <Package className="h-5 w-5" />
+            </span>
+            <div>
+              <p className="text-caption text-text-desc">Stok Rak</p>
+              <p className="text-h2 text-text-main">{stockRak || '0'}</p>
+            </div>
+          </div>
         </Card>
-        <Card className="p-5 flex flex-col justify-center">
-          <p className="text-caption text-text-desc mb-1">Slot Aktif</p>
-          <p className="text-h1 text-text-main">{activeSessions.length}</p>
+        <Card className="p-5">
+          <div className="flex items-center gap-3">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary-100 text-primary-700">
+              <Clock className="h-5 w-5" />
+            </span>
+            <div>
+              <p className="text-caption text-text-desc">Slot Aktif</p>
+              <p className="text-h2 text-text-main">{activeSessions.length}</p>
+            </div>
+          </div>
         </Card>
-        <Card className="p-5 flex flex-col justify-center">
-          <p className="text-caption text-text-desc mb-1">Harga per Rak</p>
-          <p className="text-h2 text-text-main">
-            {pricePerRak
-              ? new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(
-                  Number(pricePerRak)
-                )
-              : '-'}
-          </p>
+        <Card className="p-5">
+          <div className="flex items-center gap-3">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary-100 text-primary-700">
+              <Tag className="h-5 w-5" />
+            </span>
+            <div>
+              <p className="text-caption text-text-desc">Harga per Rak</p>
+              <p className="text-h2 text-text-main">
+                {pricePerRak
+                  ? new Intl.NumberFormat('id-ID', {
+                      style: 'currency',
+                      currency: 'IDR',
+                      maximumFractionDigits: 0,
+                    }).format(Number(pricePerRak))
+                  : '-'}
+              </p>
+            </div>
+          </div>
         </Card>
       </div>
 
@@ -225,19 +257,21 @@ export function AvailabilityManager({ initialListing, initialSlots }: Availabili
               <p className="text-body text-text-desc">Pilih sesi jam operasional Anda.</p>
             </div>
             {isSyncingSlots && (
-              <span className="text-xs font-semibold text-primary-600 animate-pulse bg-primary-50 px-2 py-1 rounded">
+              <span className="text-xs font-semibold text-primary-700 animate-pulse bg-primary-50 px-2 py-1 rounded">
                 Menyimpan...
               </span>
             )}
           </div>
 
           <div className="space-y-2">
-            {SESSION_BLOCKS.map((session) => {
+            {sessionBlocks.map((session) => {
               const isActive = activeSessions.includes(session);
               return (
                 <div
                   key={session}
-                  className="flex items-center justify-between rounded-md border border-border px-4 py-3 cursor-pointer hover:bg-neutral-50 transition-colors"
+                  className={`flex items-center justify-between rounded-md border px-4 py-3 cursor-pointer transition-colors ${
+                    isActive ? 'border-primary-200 bg-primary-50' : 'border-border hover:bg-bg-surface'
+                  }`}
                   onClick={() => !isSyncingSlots && handleToggleSession(session)}
                 >
                   <div>
