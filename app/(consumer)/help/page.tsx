@@ -23,7 +23,7 @@ export default function HelpCenterPage() {
     },
     {
       q: 'Berapa lama peternak merespon?',
-      a: 'Peternak memiliki waktu maksimal 5 menit untuk menyetujui pesanan Anda. Jika lebih dari 5 menit tidak ada respon, pesanan akan dibatalkan secara otomatis.'
+      a: 'Peternak memiliki waktu maksimal 3 menit untuk menyetujui pesanan Anda. Jika lebih dari 3 menit tidak ada respon, pesanan akan dibatalkan secara otomatis.'
     },
   ];
 

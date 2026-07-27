@@ -131,7 +131,7 @@ export function GlobalWaitingModal() {
             </div>
             <h2 className="text-xl font-bold text-text-main mb-2">Menunggu Konfirmasi</h2>
             <p className="text-sm text-neutral-500 px-4 mb-6 leading-relaxed">
-              Mohon tunggu sebentar, kami sedang meneruskan pesanan Anda ke {waitingOrder.peternak?.profile?.full_name || 'Peternak'}. Jika dalam 5 menit tidak ada konfirmasi, pesanan akan dibatalkan otomatis.
+              Mohon tunggu sebentar, kami sedang meneruskan pesanan Anda ke {waitingOrder.peternak?.profile?.full_name || 'Peternak'}. Jika dalam 3 menit tidak ada konfirmasi, pesanan akan dibatalkan otomatis.
             </p>
             <button 
               onClick={handleCancel}

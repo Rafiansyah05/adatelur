@@ -175,7 +175,7 @@ export default function OrderTrackingPage({ params }: { params: { id: string } }
               <p className="text-body text-text-desc max-w-md mx-auto">
                 {isRejected 
                   ? 'Maaf, peternak tidak dapat memproses pesanan Anda saat ini. Silakan cari peternak lain.'
-                  : 'Pesanan Anda dibatalkan otomatis karena peternak tidak merespon dalam batas waktu (5 menit).'}
+                  : 'Pesanan Anda dibatalkan otomatis karena peternak tidak merespon dalam batas waktu (3 menit).'}
               </p>
             </div>
             <Button onClick={() => router.push('/')} variant="primary" className="mt-4">
@@ -209,7 +209,7 @@ export default function OrderTrackingPage({ params }: { params: { id: string } }
                       </p>
                       {isCurrent && order.order_status === 'waiting' && (
                         <p className="text-body text-text-desc mt-1">
-                          Menunggu konfirmasi dari peternak (maks 5 menit).
+                          Menunggu konfirmasi dari peternak (maks 3 menit).
                         </p>
                       )}
                     </div>

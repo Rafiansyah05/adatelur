@@ -89,7 +89,7 @@ export async function POST(request: Request) {
     }
 
     const createdAt = new Date().toISOString();
-    const responseDeadline = new Date(Date.now() + 5 * 60 * 1000).toISOString();
+    const responseDeadline = new Date(Date.now() + 3 * 60 * 1000).toISOString();
 
     const insertPayload: any = {
       order_code: `ADT-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-${Math.floor(Math.random() * 9000) + 1000}`,
@@ -109,7 +109,6 @@ export async function POST(request: Request) {
       order_status: 'waiting',
       responded_at: null,
       response_deadline: responseDeadline,
-      push_notif_sent_at: null,
       created_at: createdAt,
       updated_at: createdAt,
     };
@@ -186,10 +185,10 @@ export async function POST(request: Request) {
           }
 
           const replyInstruction = device
-            ? `Tap untuk membalas (dalam 5 menit):\n` +
+            ? `Tap untuk membalas (dalam 3 menit):\n` +
               `*Terima:* https://wa.me/${device}?text=${encodeURIComponent(`TERIMA ${shortId}`)}\n` +
               `*Tolak:* https://wa.me/${device}?text=${encodeURIComponent(`TOLAK ${shortId}`)}`
-            : `Balas dalam 5 menit:\n` +
+            : `Balas dalam 3 menit:\n` +
               `TERIMA ${shortId} (untuk menerima)\n` +
               `TOLAK ${shortId} (untuk menolak)`;
 

@@ -35,33 +35,9 @@ export async function GET() {
         console.error('Failed to insert order history for expired orders', histErr.message);
     }
 
-    // push notification marker for 3-minute rule
-    const threeMinAgo = new Date(Date.now() - 3 * 60 * 1000).toISOString();
-    const { data: toNotify, error: notifErr } = await supabase
-      .from('orders')
-      .select('id')
-      .eq('order_status', 'waiting')
-      .is('push_notif_sent_at', null)
-      .lt('created_at', threeMinAgo);
-
-    if (notifErr) return NextResponse.json({ error: notifErr.message }, { status: 500 });
-
-    if (toNotify && toNotify.length > 0) {
-      const ids = toNotify.map((o: any) => o.id);
-      const { error: markErr } = await supabase
-        .from('orders')
-        .update({
-          push_notif_sent_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        })
-        .in('id', ids);
-      if (markErr) console.error('Failed to mark push_notif_sent_at', markErr.message);
-    }
-
     return NextResponse.json({
       success: true,
       expired: expiredOrders?.length ?? 0,
-      notified: toNotify?.length ?? 0,
     });
   } catch (error) {
     return NextResponse.json(
