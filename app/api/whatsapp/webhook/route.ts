@@ -1,9 +1,14 @@
 import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { sendWhatsAppMessage } from '@/lib/fonnte';
 
 function normalizePhone(phone: string) {
   const digits = (phone || '').replace(/\D/g, '');
   return digits.startsWith('0') ? `62${digits.slice(1)}` : digits;
+}
+
+export async function GET() {
+  return NextResponse.json({ status: 'ok' });
 }
 
 export async function POST(request: Request) {
@@ -16,18 +21,65 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Invalid payload' }, { status: 400 });
     }
 
-    const parts = message.split(' ');
-    const actionStr = parts[0];
-    const shortOrderId = parts[1];
+    const reply = async (text: string) => {
+      await sendWhatsAppMessage(sender, text);
+      return NextResponse.json({ message: text });
+    };
 
-    if (!['terima', 'tolak'].includes(actionStr) || !shortOrderId) {
-      return NextResponse.json({
-        message: 'Format pesan tidak dikenali. Balas dengan: TERIMA <ID_ORDER> atau TOLAK <ID_ORDER>',
-      });
+    const supabase = createAdminClient();
+    const parts = message.split(/\s+/);
+    const action = parts[0];
+    const now = new Date().toISOString();
+
+    if (action === 'stok') {
+      const amount = Number(parts[1]);
+      if (!Number.isInteger(amount) || amount < 0) {
+        return reply('Format salah. Balas: STOK <jumlah rak>, contoh: STOK 12');
+      }
+
+      const { data: peternakProfiles } = await supabase
+        .from('profiles')
+        .select('id, phone_number')
+        .eq('role', 'peternak');
+
+      const matchedProfile = (peternakProfiles ?? []).find(
+        (profile) => normalizePhone(profile.phone_number) === normalizePhone(sender)
+      );
+
+      if (!matchedProfile) {
+        return reply('Nomor Anda belum terdaftar sebagai peternak.');
+      }
+
+      const { data: peternakDetail } = await supabase
+        .from('peternak_details')
+        .select('id')
+        .eq('profile_id', matchedProfile.id)
+        .maybeSingle();
+
+      if (!peternakDetail) {
+        return reply('Data peternak tidak ditemukan.');
+      }
+
+      const { error: updateError } = await supabase
+        .from('listings')
+        .update({ stock_rak: amount, updated_at: now })
+        .eq('peternak_id', peternakDetail.id);
+
+      if (updateError) {
+        return reply('Gagal memperbarui stok. Coba lagi nanti.');
+      }
+
+      return reply(`Stok berhasil diperbarui menjadi *${amount} rak*.`);
     }
 
-    const newStatus = actionStr === 'terima' ? 'accepted' : 'rejected';
-    const supabase = createAdminClient();
+    if (!['terima', 'tolak'].includes(action) || !parts[1]) {
+      return reply(
+        'Format pesan tidak dikenali. Balas dengan:\nTERIMA <kode pesanan>\nTOLAK <kode pesanan>\nSTOK <jumlah rak>'
+      );
+    }
+
+    const shortOrderId = parts[1];
+    const newStatus = action === 'terima' ? 'accepted' : 'rejected';
 
     const { data: orders, error } = await supabase
       .from('orders')
@@ -36,7 +88,7 @@ export async function POST(request: Request) {
       .ilike('id', `${shortOrderId}%`);
 
     if (error || !orders || orders.length === 0) {
-      return NextResponse.json({ message: 'Order tidak ditemukan atau sudah tidak berstatus menunggu.' });
+      return reply('Pesanan tidak ditemukan atau sudah tidak berstatus menunggu.');
     }
 
     const order = orders[0];
@@ -48,7 +100,7 @@ export async function POST(request: Request) {
       .single();
 
     if (!peternak?.profile_id) {
-      return NextResponse.json({ message: 'Data peternak tidak ditemukan.' });
+      return reply('Data peternak tidak ditemukan.');
     }
 
     const { data: peternakProfile } = await supabase
@@ -58,10 +110,9 @@ export async function POST(request: Request) {
       .single();
 
     if (!peternakProfile || normalizePhone(peternakProfile.phone_number) !== normalizePhone(sender)) {
-      return NextResponse.json({ message: 'Nomor pengirim tidak cocok dengan pemilik pesanan ini.' });
+      return reply('Nomor pengirim tidak cocok dengan pemilik pesanan ini.');
     }
 
-    const now = new Date().toISOString();
     await supabase
       .from('orders')
       .update({ order_status: newStatus, responded_at: now, updated_at: now })
@@ -70,11 +121,16 @@ export async function POST(request: Request) {
     await supabase.from('order_status_history').insert({
       order_id: order.id,
       status: newStatus,
-      note: `Peternak ${actionStr} via WhatsApp`,
+      note: `Peternak ${action} via WhatsApp`,
       created_at: now,
     });
 
-    return NextResponse.json({ message: `Pesanan ${shortOrderId} berhasil di-${actionStr}.` });
+    const successText =
+      action === 'terima'
+        ? `Pesanan *${shortOrderId}* berhasil diterima. Silakan siapkan pesanannya.`
+        : `Pesanan *${shortOrderId}* telah ditolak.`;
+
+    return reply(successText);
   } catch (error) {
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Internal Server Error' },
