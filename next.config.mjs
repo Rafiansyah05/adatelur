@@ -7,6 +7,18 @@ const withPWA = withPWAInit({
   reloadOnOnline: true,
   swcMinify: true,
   disable: process.env.NODE_ENV === 'development',
+  workboxOptions: {
+    runtimeCaching: [
+      {
+        urlPattern: ({ url }) => url.hostname.endsWith('supabase.co'),
+        handler: 'NetworkOnly',
+      },
+      {
+        urlPattern: ({ url, sameOrigin }) => sameOrigin && url.pathname.startsWith('/api/'),
+        handler: 'NetworkOnly',
+      },
+    ],
+  },
 });
 
 const nextConfig = {
