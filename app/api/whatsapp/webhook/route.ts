@@ -81,17 +81,22 @@ export async function POST(request: Request) {
     const shortOrderId = parts[1];
     const newStatus = action === 'terima' ? 'accepted' : 'rejected';
 
-    const { data: orders, error } = await supabase
+    const { data: waitingOrders, error } = await supabase
       .from('orders')
       .select('id, order_status, peternak_id')
-      .eq('order_status', 'waiting')
-      .ilike('id', `${shortOrderId}%`);
+      .eq('order_status', 'waiting');
 
-    if (error || !orders || orders.length === 0) {
-      return reply('Pesanan tidak ditemukan atau sudah tidak berstatus menunggu.');
+    if (error) {
+      return reply('Terjadi kesalahan. Coba lagi nanti.');
     }
 
-    const order = orders[0];
+    const order = (waitingOrders ?? []).find((row) =>
+      row.id.toLowerCase().startsWith(shortOrderId)
+    );
+
+    if (!order) {
+      return reply('Pesanan tidak ditemukan atau sudah tidak berstatus menunggu.');
+    }
 
     const { data: peternak } = await supabase
       .from('peternak_details')
