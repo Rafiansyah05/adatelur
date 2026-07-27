@@ -143,3 +143,75 @@ export async function sendOrderCancelledNotif(orderId: string) {
     console.error('Gagal kirim notifikasi pembatalan', error);
   }
 }
+
+export async function sendOrderExpiredNotif(orderId: string) {
+  try {
+    const supabase = createAdminClient();
+
+    const { data: existing } = await supabase
+      .from('notifications_log')
+      .select('id')
+      .eq('related_order_id', orderId)
+      .eq('notif_type', 'order_expired')
+      .maybeSingle();
+
+    if (existing) {
+      return;
+    }
+
+    const { data: order } = await supabase
+      .from('orders')
+      .select('id, peternak_id, consumer_id, rak_quantity, total_amount')
+      .eq('id', orderId)
+      .single();
+
+    if (!order) {
+      return;
+    }
+
+    const { data: peternakDetail } = await supabase
+      .from('peternak_details')
+      .select('profile_id')
+      .eq('id', order.peternak_id)
+      .single();
+
+    if (!peternakDetail?.profile_id) {
+      return;
+    }
+
+    const { data: peternakProfile } = await supabase
+      .from('profiles')
+      .select('phone_number')
+      .eq('id', peternakDetail.profile_id)
+      .single();
+
+    if (!peternakProfile?.phone_number) {
+      return;
+    }
+
+    const { data: consumerProfile } = await supabase
+      .from('profiles')
+      .select('full_name')
+      .eq('id', order.consumer_id)
+      .single();
+
+    const consumerName = consumerProfile?.full_name || 'Konsumen';
+    const message =
+      `*Pesanan hangus*\n\n` +
+      `Pesanan dari *${consumerName}* hangus karena tidak direspons dalam 3 menit.\n\n` +
+      `*Jumlah:* ${order.rak_quantity} rak\n` +
+      `*Total:* Rp${Number(order.total_amount).toLocaleString('id-ID')}`;
+
+    await sendWhatsAppMessage(peternakProfile.phone_number, message);
+
+    await supabase.from('notifications_log').insert({
+      recipient_id: peternakDetail.profile_id,
+      channel: 'whatsapp',
+      notif_type: 'order_expired',
+      related_order_id: order.id,
+      payload: {},
+    });
+  } catch (error) {
+    console.error('Gagal kirim notifikasi pesanan hangus', error);
+  }
+}

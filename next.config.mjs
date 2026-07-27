@@ -6,18 +6,15 @@ const withPWA = withPWAInit({
   aggressiveFrontEndNavCaching: true,
   reloadOnOnline: true,
   swcMinify: true,
-  customWorkerDir: 'worker',
   disable: process.env.NODE_ENV === 'development',
 });
 
 const nextConfig = {
   output: 'standalone',
   reactStrictMode: true,
-  // Abaikan ESLint error saat build production (Docker)
   eslint: {
     ignoreDuringBuilds: true,
   },
-  // Abaikan TypeScript type error saat build production (Docker)
   typescript: {
     ignoreBuildErrors: true,
   },

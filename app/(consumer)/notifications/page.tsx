@@ -18,7 +18,7 @@ export default function NotificationsPage() {
     {
       id: '2',
       title: 'Pesanan Kadaluarsa',
-      description: 'Maaf, pesanan Anda di "Ayam Maju" dibatalkan karena melewati batas waktu konfirmasi (5 menit).',
+      description: 'Maaf, pesanan Anda di "Ayam Maju" dibatalkan karena melewati batas waktu konfirmasi (3 menit).',
       time: '2 jam yang lalu',
       type: 'error',
       icon: XCircle,

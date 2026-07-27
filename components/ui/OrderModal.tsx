@@ -107,21 +107,6 @@ export function OrderModal({
       // Notify global modal to check for new order
       window.dispatchEvent(new CustomEvent('new-order-created', { detail: data.data.id }));
       onClose(); // Close this modal, let global modal take over
-
-      // Initial Push Notification trigger
-      fetch('/api/push/notify', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            peternak_id: peternakId,
-            title: 'Ada Orderan Baru',
-            body: `Ada Orderan Masuk. Segera periksa pesanan!`,
-            sound: 'default'
-          })
-      }).catch(console.error);
-
     } catch (err: any) {
       alert(err.message);
     } finally {

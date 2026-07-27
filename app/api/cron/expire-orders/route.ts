@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { sendOrderExpiredNotif } from '@/lib/orderNotif';
 
 // Vercel Cron Endpoint (or callable by any scheduler)
 export async function GET(request: Request) {
@@ -41,7 +42,7 @@ export async function GET(request: Request) {
       const historyInserts = orderIds.map(id => ({
         order_id: id,
         status: 'expired',
-        note: 'Batas waktu respon habis (5 menit)',
+        note: 'Batas waktu respon habis (3 menit)',
         created_at: now
       }));
 
@@ -51,37 +52,17 @@ export async function GET(request: Request) {
 
       if (historyError) throw historyError;
 
+      for (const id of orderIds) {
+        await sendOrderExpiredNotif(id);
+      }
+
       processed = orderIds.length;
     }
 
-    // 4. Mark orders that need a push notification (waiting > 3 mins)
-    const threeMinsAgo = new Date(Date.now() - 3 * 60 * 1000).toISOString();
-    
-    // Find waiting orders > 3 mins old with no push_notif_sent_at
-    const { data: pushOrders, error: pushFindErr } = await supabase
-      .from('orders')
-      .select('id')
-      .eq('order_status', 'waiting')
-      .is('push_notif_sent_at', null)
-      .lt('created_at', threeMinsAgo);
-
-    let pushProcessed = 0;
-    
-    if (pushOrders && pushOrders.length > 0 && !pushFindErr) {
-      const pushIds = pushOrders.map(o => o.id);
-      await supabase
-        .from('orders')
-        .update({ push_notif_sent_at: now })
-        .in('id', pushIds);
-        
-      pushProcessed = pushIds.length;
-    }
-
-    return NextResponse.json({ 
-      success: true, 
+    return NextResponse.json({
+      success: true,
       expired_count: processed,
-      push_notif_marked_count: pushProcessed,
-      timestamp: now 
+      timestamp: now
     });
   } catch (error) {
     return NextResponse.json(
