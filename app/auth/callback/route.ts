@@ -1,19 +1,34 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 
+function getBaseUrl(request: Request) {
+  const forwardedHost = request.headers.get('x-forwarded-host');
+  const forwardedProto = request.headers.get('x-forwarded-proto') || 'https';
+  if (forwardedHost) {
+    return `${forwardedProto}://${forwardedHost}`;
+  }
+
+  const configured = process.env.APP_URL || process.env.NEXT_PUBLIC_APP_URL;
+  if (configured) {
+    return configured.replace(/\/+$/, '');
+  }
+
+  return new URL(request.url).origin;
+}
+
 export async function GET(request: Request) {
-  const { searchParams, origin } = new URL(request.url);
-  const code = searchParams.get('code');
+  const baseUrl = getBaseUrl(request);
+  const code = new URL(request.url).searchParams.get('code');
 
   if (!code) {
-    return NextResponse.redirect(`${origin}/login?error=oauth`);
+    return NextResponse.redirect(`${baseUrl}/login?error=oauth`);
   }
 
   const supabase = createClient();
   const { error } = await supabase.auth.exchangeCodeForSession(code);
 
   if (error) {
-    return NextResponse.redirect(`${origin}/login?error=oauth`);
+    return NextResponse.redirect(`${baseUrl}/login?error=oauth`);
   }
 
   const {
@@ -21,7 +36,7 @@ export async function GET(request: Request) {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    return NextResponse.redirect(`${origin}/login?error=oauth`);
+    return NextResponse.redirect(`${baseUrl}/login?error=oauth`);
   }
 
   const { data: profile } = await supabase
@@ -31,27 +46,24 @@ export async function GET(request: Request) {
     .maybeSingle();
 
   if (profile) {
-    return NextResponse.redirect(`${origin}/`);
+    return NextResponse.redirect(`${baseUrl}/`);
   }
 
-    // Menghasilkan nomor acak 11 digit yang berawalan 628 untuk bypass unik & format
-    const randomSuffix = Math.floor(10000000 + Math.random() * 90000000).toString();
-    const generatedPhone = `628${randomSuffix}`;
-    
-    // Gunakan phone_number dari user_metadata jika ada (dari pendaftaran manual)
-    const phoneToInsert = user.user_metadata?.phone_number || user.phone || generatedPhone;
+  const randomSuffix = Math.floor(10000000 + Math.random() * 90000000).toString();
+  const generatedPhone = `628${randomSuffix}`;
+  const phoneToInsert = user.user_metadata?.phone_number || user.phone || generatedPhone;
 
-    const { error: insertError } = await supabase.from('profiles').insert({
-      id: user.id,
-      role: 'consumer',
-      full_name: user.user_metadata?.full_name || 'Pengguna Adatelur',
-      email: user.email,
-      phone_number: phoneToInsert,
-    });
+  const { error: insertError } = await supabase.from('profiles').insert({
+    id: user.id,
+    role: 'consumer',
+    full_name: user.user_metadata?.full_name || 'Pengguna Adatelur',
+    email: user.email,
+    phone_number: phoneToInsert,
+  });
 
   if (insertError) {
-    return NextResponse.redirect(`${origin}/login?error=profile`);
+    return NextResponse.redirect(`${baseUrl}/login?error=profile`);
   }
 
-  return NextResponse.redirect(`${origin}/`);
+  return NextResponse.redirect(`${baseUrl}/`);
 }
