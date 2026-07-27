@@ -6,7 +6,13 @@ import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { MapPin, Clock, Camera, X, Truck, ShoppingBag, Package, MessageCircle } from 'lucide-react';
-import Image from 'next/image';
+
+const historyStatusLabel: Record<string, string> = {
+  completed: 'Selesai',
+  rejected: 'Ditolak',
+  expired: 'Hangus',
+  cancelled: 'Dibatalkan',
+};
 
 export default function PeternakOrdersPage() {
   const router = useRouter();
@@ -16,6 +22,8 @@ export default function PeternakOrdersPage() {
   const [now, setNow] = useState(new Date().getTime());
   const [confirmDeliveryOrderId, setConfirmDeliveryOrderId] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'masuk' | 'diproses' | 'riwayat'>('masuk');
+  const [showAllHistory, setShowAllHistory] = useState(false);
   
   const [isCameraOpen, setIsCameraOpen] = useState(false);
   const [stream, setStream] = useState<MediaStream | null>(null);
@@ -89,21 +97,6 @@ export default function PeternakOrdersPage() {
 
     return () => { supabase.removeChannel(channel); };
   }, [peternakId]);
-
-  const handleDecline = async (orderId: string) => {
-    try {
-      const res = await fetch(`/api/orders/${orderId}/respond`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'reject' })
-      });
-      if (res.ok) {
-        fetchOrders();
-      }
-    } catch (err) {
-      console.error(err);
-    }
-  };
 
   const formatWaNumber = (phone: string) => {
     if (!phone) return '';
@@ -252,6 +245,7 @@ export default function PeternakOrdersPage() {
   const incomingOrders = orders.filter(o => o.order_status === 'waiting');
   const activeProcessOrders = orders.filter(o => ['accepted', 'processing', 'in_delivery'].includes(o.order_status));
   const historyOrders = orders.filter(o => ['completed', 'rejected', 'expired', 'cancelled'].includes(o.order_status));
+  const visibleHistory = showAllHistory ? historyOrders : historyOrders.slice(0, 10);
 
   const formatCountdown = (deadlineTime: string) => {
     const end = new Date(deadlineTime).getTime();
@@ -321,12 +315,36 @@ export default function PeternakOrdersPage() {
         </div>
       )}
 
-      <h1 className="text-h2 text-text-main mb-2">Kelola Pesanan</h1>
-      
-      <div className="mb-8 mt-6">
-        <h2 className="text-h3 text-text-main mb-4 border-b border-border pb-2">Pesanan Baru Masuk</h2>
+      <h1 className="text-3xl font-bold text-neutral-900 mb-2">Kelola Pesanan</h1>
+
+      <div className="mt-6 mb-6 flex gap-1 overflow-x-auto border-b border-border">
+        {[
+          { key: 'masuk' as const, label: 'Baru Masuk', count: incomingOrders.length },
+          { key: 'diproses' as const, label: 'Diproses & Diantar', count: activeProcessOrders.length },
+          { key: 'riwayat' as const, label: 'Riwayat', count: historyOrders.length },
+        ].map((tab) => (
+          <button
+            key={tab.key}
+            onClick={() => setActiveTab(tab.key)}
+            className={`shrink-0 border-b-2 px-4 py-2.5 text-sm font-semibold transition-colors ${
+              activeTab === tab.key
+                ? 'border-primary-400 text-text-main'
+                : 'border-transparent text-text-desc hover:text-text-main'
+            }`}
+          >
+            {tab.label}
+            {tab.count > 0 ? ` (${tab.count})` : ''}
+          </button>
+        ))}
+      </div>
+
+      {activeTab === 'masuk' && (
+      <div className="mb-8">
         {incomingOrders.length === 0 ? (
-          <p className="text-text-desc text-sm bg-neutral-50 p-4 rounded-lg border border-neutral-100">Tidak ada pesanan menunggu persetujuan.</p>
+          <div className="flex flex-col items-center justify-center gap-2 rounded-lg border border-border bg-bg-surface py-8 text-center">
+            <Package className="h-6 w-6 text-text-muted" />
+            <p className="text-sm text-text-desc">Tidak ada pesanan menunggu persetujuan.</p>
+          </div>
         ) : (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {incomingOrders.map(order => {
@@ -339,14 +357,34 @@ export default function PeternakOrdersPage() {
                       <p className="font-bold text-text-main">{order.consumer?.full_name || 'Pembeli'}</p>
                       <p className="text-xs text-text-desc">{new Date(order.created_at).toLocaleString('id-ID')}</p>
                     </div>
-                    <div className="flex items-center gap-1 bg-red-50 text-red-600 px-2 py-1 rounded text-xs font-bold animate-pulse">
+                    <div className="flex items-center gap-1 bg-danger-light text-danger-text px-2 py-1 rounded text-xs font-bold animate-pulse">
                       <Clock className="h-3 w-3" />
                       <span>{countdown}</span>
                     </div>
                   </div>
+
+                  <div className="mb-4 flex flex-col gap-2">
+                    <div className="flex items-center gap-2 text-sm text-text-main">
+                      <Package className="h-4 w-4 text-text-desc" /> {order.rak_quantity} Rak Telur
+                    </div>
+                    <span className={`inline-flex w-fit items-center gap-1 text-xs font-semibold px-2 py-1 rounded border ${
+                      order.fulfillment_method === 'pickup'
+                        ? 'bg-primary-50 text-primary-700 border-primary-200'
+                        : 'bg-success-bg text-success-text border border-success'
+                    }`}>
+                      {order.fulfillment_method === 'pickup'
+                        ? <><ShoppingBag className="h-3 w-3" /> Ambil Sendiri</>
+                        : <><Truck className="h-3 w-3" /> Diantar</>}
+                    </span>
+                    <div className="mt-1 flex items-baseline justify-between border-t border-border pt-2">
+                      <span className="text-xs text-text-desc">Total</span>
+                      <span className="font-bold text-text-main">Rp {Number(order.total_amount).toLocaleString('id-ID')}</span>
+                    </div>
+                  </div>
+
                   <div className="flex gap-2">
-                    <Button variant="secondary" className="flex-1 text-sm bg-neutral-100 hover:bg-neutral-200" onClick={() => handleRespond(order.id, 'reject')} disabled={isExpired}>Tolak</Button>
-                    <Button variant="primary" className="flex-1 text-sm bg-primary-600" onClick={() => handleRespond(order.id, 'accept')} disabled={isExpired}>Terima</Button>
+                    <Button variant="secondary" className="flex-1 text-sm" onClick={() => handleRespond(order.id, 'reject')} disabled={isExpired}>Tolak</Button>
+                    <Button variant="primary" className="flex-1 text-sm" onClick={() => handleRespond(order.id, 'accept')} disabled={isExpired}>Terima</Button>
                   </div>
                 </Card>
               );
@@ -354,11 +392,15 @@ export default function PeternakOrdersPage() {
           </div>
         )}
       </div>
+      )}
 
+      {activeTab === 'diproses' && (
       <div className="mb-8">
-        <h2 className="text-h3 text-text-main mb-4 border-b border-border pb-2">Pesanan Diproses & Diantar</h2>
         {activeProcessOrders.length === 0 ? (
-          <p className="text-text-desc text-sm bg-neutral-50 p-4 rounded-lg border border-neutral-100">Tidak ada pesanan aktif saat ini.</p>
+          <div className="flex flex-col items-center justify-center gap-2 rounded-lg border border-border bg-bg-surface py-8 text-center">
+            <Package className="h-6 w-6 text-text-muted" />
+            <p className="text-sm text-text-desc">Tidak ada pesanan aktif saat ini.</p>
+          </div>
         ) : (
           <div className="grid gap-4 lg:grid-cols-2">
             {activeProcessOrders.map(order => (
@@ -370,7 +412,7 @@ export default function PeternakOrdersPage() {
                       <p className="text-sm font-medium text-text-desc">{order.consumer?.full_name}</p>
                     </div>
                     <span className={`px-2.5 py-1 rounded-md text-xs font-bold ${
-                      order.payment_status === 'paid' ? 'bg-success-bg text-success-text border border-success' : 'bg-orange-100 text-orange-800 border border-orange-300'
+                      order.payment_status === 'paid' ? 'bg-success-bg text-success-text border border-success' : 'bg-primary-100 text-primary-700 border border-primary-200'
                     }`}>
                       {order.payment_status === 'paid' ? 'LUNAS' : 'BELUM DIBAYAR'}
                     </span>
@@ -379,7 +421,7 @@ export default function PeternakOrdersPage() {
                     <Package className="h-4 w-4" /> {order.rak_quantity} Rak Telur
                   </p>
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-xs font-bold uppercase bg-neutral-100 text-text-desc px-2 py-1 rounded border border-border">
+                    <span className="text-xs font-bold uppercase bg-bg-surface text-text-desc px-2 py-1 rounded border border-border">
                       {order.order_status === 'accepted' ? 'Diproses' : order.order_status === 'in_delivery' ? 'Diantar' : order.order_status}
                     </span>
                     <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded border ${
@@ -400,7 +442,7 @@ export default function PeternakOrdersPage() {
                   </div>
                 </div>
 
-                <div className="pt-4 mt-2 border-t border-neutral-100 flex flex-col sm:flex-row gap-3 items-center">
+                <div className="pt-4 mt-2 border-t border-border flex flex-col sm:flex-row gap-3 items-center">
                   <div className="w-full sm:w-auto sm:flex-1">
                     <p className="text-xs text-text-desc mb-1">Total Pesanan</p>
                     <p className="text-lg font-bold text-text-main">Rp {Number(order.total_amount).toLocaleString('id-ID')}</p>
@@ -413,7 +455,7 @@ export default function PeternakOrdersPage() {
                         variant="outline"
                         className="flex-1 sm:flex-none text-xs px-3 inline-flex items-center justify-center gap-1.5"
                       >
-                        <MessageCircle className="h-4 w-4 text-green-600" /> Hubungi WA
+                        <MessageCircle className="h-4 w-4 text-success" /> Hubungi WA
                       </Button>
                     )}
 
@@ -451,32 +493,47 @@ export default function PeternakOrdersPage() {
           </div>
         )}
       </div>
+      )}
 
+      {activeTab === 'riwayat' && (
       <div>
-        <h2 className="text-h3 text-text-main mb-4 border-b border-border pb-2">Riwayat Pesanan</h2>
         {historyOrders.length === 0 ? (
-          <p className="text-text-desc text-sm bg-neutral-50 p-4 rounded-lg border border-neutral-100">Belum ada riwayat pesanan.</p>
+          <div className="flex flex-col items-center justify-center gap-2 rounded-lg border border-border bg-bg-surface py-8 text-center">
+            <Package className="h-6 w-6 text-text-muted" />
+            <p className="text-sm text-text-desc">Belum ada riwayat pesanan.</p>
+          </div>
         ) : (
+          <>
           <div className="flex flex-col gap-3">
-            {historyOrders.map(order => (
-              <Card key={order.id} className="p-4 border border-border flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 hover:bg-neutral-50">
+            {visibleHistory.map(order => (
+              <Card key={order.id} className="p-4 border border-border flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 hover:bg-bg-surface">
                 <div>
                   <p className="font-bold text-text-main mb-1">Order #{order.id.slice(0, 8)} - {order.consumer?.full_name}</p>
                   <p className="text-xs text-text-desc">{new Date(order.created_at).toLocaleString('id-ID')} • {order.rak_quantity} Rak • Rp {Number(order.total_amount).toLocaleString('id-ID')}</p>
                 </div>
                 <div className="flex items-center gap-3">
                   <span className={`px-3 py-1 rounded-full text-xs font-bold ${
-                    order.order_status === 'completed' ? 'bg-success-bg text-success-text border border-success' : 
-                    'bg-red-50 text-red-700 border border-red-200'
+                    order.order_status === 'completed' ? 'bg-success-bg text-success-text border border-success' :
+                    'bg-danger-light text-danger-text border border-danger'
                   }`}>
-                    {order.order_status.toUpperCase()}
+                    {historyStatusLabel[order.order_status] || order.order_status}
                   </span>
                 </div>
               </Card>
             ))}
           </div>
+          {!showAllHistory && historyOrders.length > 10 && (
+            <button
+              onClick={() => setShowAllHistory(true)}
+              className="mt-3 w-full rounded-lg border border-border bg-white py-3 text-sm font-semibold text-text-main transition-colors hover:bg-bg-surface"
+            >
+              Lihat Semua ({historyOrders.length})
+            </button>
+          )}
+          </>
         )}
       </div>
+      )}
     </div>
   );
 }

@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { CameraCapture } from '@/components/CameraCapture';
-import { MapPin, MessageCircle, Package, Truck, ShoppingBag, Clock, User } from 'lucide-react';
+import { MapPin, MessageCircle, Package, Truck, ShoppingBag, Clock, User, ArrowLeft } from 'lucide-react';
 
 export interface OrderDetailData {
   id: string;
@@ -23,7 +23,7 @@ export interface OrderDetailData {
   delivery_slot?: { start_time: string; end_time: string } | null;
 }
 
-const STATUS_LABELS: Record<string, string> = {
+const statusLabels: Record<string, string> = {
   waiting: 'Menunggu Konfirmasi',
   accepted: 'Diproses',
   processing: 'Diproses',
@@ -53,9 +53,20 @@ function formatWaNumber(phone: string) {
   return phone.startsWith('0') ? `62${phone.slice(1)}` : phone;
 }
 
+function SectionHeader({ icon, title }: { icon: React.ReactNode; title: string }) {
+  return (
+    <div className="flex items-center gap-2">
+      <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary-100 text-primary-700">
+        {icon}
+      </span>
+      <h2 className="text-h3 text-text-main">{title}</h2>
+    </div>
+  );
+}
+
 function InfoRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex items-start justify-between gap-4 py-1">
+    <div className="flex items-start justify-between gap-4 py-1.5">
       <span className="text-body text-text-desc">{label}</span>
       <span className="text-body-medium text-text-main text-right">{value}</span>
     </div>
@@ -137,113 +148,147 @@ export function OrderDetail({ order }: { order: OrderDetailData }) {
   };
 
   return (
-    <div className="w-full space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
+    <div className="w-full">
+      <button
+        type="button"
+        onClick={() => router.push('/dashboard/orders')}
+        className="mb-4 inline-flex items-center gap-1 text-sm font-semibold text-text-desc transition-colors hover:text-text-main"
+      >
+        <ArrowLeft className="h-4 w-4" /> Kembali
+      </button>
+
+      <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-h1 text-text-main">Detail Pesanan</h1>
+          <h1 className="text-3xl font-bold text-neutral-900">Detail Pesanan</h1>
           <p className="text-caption text-text-desc mt-1">
-            {new Date(order.created_at).toLocaleString('id-ID')}
+            Order #{order.id.slice(0, 8).toUpperCase()} • {new Date(order.created_at).toLocaleString('id-ID')}
           </p>
         </div>
-        <span
-          className={`rounded-full px-3 py-1 text-caption font-semibold ${statusBadgeClass(status)}`}
-        >
-          {STATUS_LABELS[status] || status}
+        <span className={`rounded-full px-3 py-1 text-caption font-semibold ${statusBadgeClass(status)}`}>
+          {statusLabels[status] || status}
         </span>
       </div>
 
-      <Card className="space-y-4 p-6">
-        <div className="flex items-center gap-2">
-          <User className="h-4 w-4 text-text-desc" />
-          <h2 className="text-h3 text-text-main">Konsumen</h2>
-        </div>
-        <div>
-          <InfoRow label="Nama" value={order.consumer?.full_name || 'Konsumen'} />
-          <InfoRow label="No. WhatsApp" value={consumerPhone || '-'} />
-        </div>
-      </Card>
-
-      <Card className="space-y-4 p-6">
-        <div className="flex items-center gap-2">
-          <Package className="h-4 w-4 text-text-desc" />
-          <h2 className="text-h3 text-text-main">Rincian Pesanan</h2>
-        </div>
-        <div>
-          <InfoRow label="Jumlah" value={`${order.rak_quantity} rak`} />
-          <InfoRow
-            label="Metode"
-            value={isDelivery ? 'Diantar' : 'Ambil Sendiri'}
-          />
-          {order.delivery_slot ? (
-            <InfoRow
-              label={isDelivery ? 'Jam antar' : 'Jam ambil'}
-              value={`${order.delivery_slot.start_time.substring(0, 5)} - ${order.delivery_slot.end_time.substring(0, 5)} WIB`}
-            />
-          ) : null}
-          {isDelivery && order.consumer_address ? (
-            <InfoRow label="Alamat" value={order.consumer_address.full_address} />
-          ) : null}
-        </div>
-      </Card>
-
-      <Card className="space-y-3 p-6">
-        <h2 className="text-h3 text-text-main">Rincian Harga</h2>
-        <div>
-          <InfoRow
-            label={`Telur (${order.rak_quantity} rak)`}
-            value={formatRupiah(order.subtotal)}
-          />
-          <InfoRow label="Ongkir" value={formatRupiah(order.ongkir_amount)} />
-          <InfoRow
-            label="Pembayaran"
-            value={isPaid ? 'Lunas' : 'Belum dibayar'}
-          />
-        </div>
-        <div className="flex items-center justify-between border-t border-border pt-3">
-          <span className="text-body-medium text-text-main">Total</span>
-          <span className="text-h3 text-text-main">{formatRupiah(order.total_amount)}</span>
-        </div>
-      </Card>
-
-      {!isTerminal ? (
-        <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-          {isPaid && consumerPhone ? (
-            <Button variant="outline" onClick={contactWhatsApp} className="flex items-center justify-center gap-2">
-              <MessageCircle className="h-4 w-4 text-success" /> Hubungi WA
-            </Button>
-          ) : null}
-
-          {isDelivery && order.consumer_address ? (
-            <Button variant="outline" onClick={viewLocation} className="flex items-center justify-center gap-2">
-              <MapPin className="h-4 w-4" /> Lihat Lokasi
-            </Button>
-          ) : null}
-
-          {isPaid && isDelivery && isActive ? (
-            <Button onClick={markDelivering} disabled={isUpdating} className="flex items-center justify-center gap-2">
-              <Truck className="h-4 w-4" /> {isUpdating ? 'Memproses...' : 'Diantar'}
-            </Button>
-          ) : null}
-
-          {isPaid && isDelivery && status === 'in_delivery' ? (
-            <Button onClick={openCamera} className="flex items-center justify-center gap-2">
-              <Package className="h-4 w-4" /> Diterima
-            </Button>
-          ) : null}
-
-          {isPaid && !isDelivery && isActive ? (
-            <Button onClick={openCamera} className="flex items-center justify-center gap-2">
-              <ShoppingBag className="h-4 w-4" /> Diserahkan ke Pembeli
-            </Button>
-          ) : null}
-
-          {!isPaid ? (
-            <div className="flex items-center gap-2 text-caption text-text-desc">
-              <Clock className="h-4 w-4" /> Menunggu pembayaran konsumen
+      <div className="grid gap-6 lg:grid-cols-3">
+        <div className="lg:col-span-2">
+          <Card className="space-y-6 p-6">
+            <div className="space-y-4">
+              <SectionHeader icon={<User className="h-4 w-4" />} title="Konsumen" />
+              <div>
+                <InfoRow label="Nama" value={order.consumer?.full_name || 'Konsumen'} />
+                <div className="flex items-start justify-between gap-4 py-1.5">
+                  <span className="text-body text-text-desc">No. WhatsApp</span>
+                  {consumerPhone ? (
+                    <button
+                      type="button"
+                      onClick={contactWhatsApp}
+                      className="text-body-medium text-primary-700 text-right hover:underline"
+                    >
+                      {consumerPhone}
+                    </button>
+                  ) : (
+                    <span className="text-body-medium text-text-main">-</span>
+                  )}
+                </div>
+              </div>
             </div>
-          ) : null}
+
+            <div className="space-y-4 border-t border-border pt-6">
+              <SectionHeader icon={<Package className="h-4 w-4" />} title="Rincian Pesanan" />
+              <div>
+                <InfoRow label="Jumlah" value={`${order.rak_quantity} rak`} />
+                <div className="flex items-center justify-between gap-4 py-1.5">
+                  <span className="text-body text-text-desc">Metode</span>
+                  <span
+                    className={`inline-flex items-center gap-1 rounded border px-2 py-1 text-xs font-semibold ${
+                      isDelivery
+                        ? 'bg-success-bg text-success-text border border-success'
+                        : 'bg-primary-50 text-primary-700 border-primary-200'
+                    }`}
+                  >
+                    {isDelivery ? <><Truck className="h-3 w-3" /> Diantar</> : <><ShoppingBag className="h-3 w-3" /> Ambil Sendiri</>}
+                  </span>
+                </div>
+                {order.delivery_slot ? (
+                  <InfoRow
+                    label={isDelivery ? 'Jam antar' : 'Jam ambil'}
+                    value={`${order.delivery_slot.start_time.substring(0, 5)} - ${order.delivery_slot.end_time.substring(0, 5)} WIB`}
+                  />
+                ) : null}
+                {isDelivery && order.consumer_address ? (
+                  <InfoRow label="Alamat" value={order.consumer_address.full_address} />
+                ) : null}
+              </div>
+            </div>
+          </Card>
         </div>
-      ) : null}
+
+        <div className="lg:col-span-1">
+          <Card className="space-y-4 p-6 lg:sticky lg:top-24">
+            <h2 className="text-h3 text-text-main">Ringkasan</h2>
+            <div>
+              <InfoRow label={`Telur (${order.rak_quantity} rak)`} value={formatRupiah(order.subtotal)} />
+              <InfoRow label="Ongkir" value={formatRupiah(order.ongkir_amount)} />
+              <div className="flex items-center justify-between gap-4 py-1.5">
+                <span className="text-body text-text-desc">Pembayaran</span>
+                <span
+                  className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-bold ${
+                    isPaid
+                      ? 'bg-success-bg text-success-text border border-success'
+                      : 'bg-primary-100 text-primary-700 border border-primary-200'
+                  }`}
+                >
+                  {isPaid ? 'Lunas' : 'Belum dibayar'}
+                </span>
+              </div>
+            </div>
+            <div className="flex items-center justify-between border-t border-border pt-3">
+              <span className="text-body-medium text-text-main">Total</span>
+              <span className="text-h2 text-text-main">{formatRupiah(order.total_amount)}</span>
+            </div>
+
+            {!isTerminal ? (
+              <div className="flex flex-col gap-2 border-t border-border pt-4">
+                {isPaid && consumerPhone ? (
+                  <Button variant="outline" onClick={contactWhatsApp} className="w-full flex items-center justify-center gap-2">
+                    <MessageCircle className="h-4 w-4 text-success" /> Hubungi WA
+                  </Button>
+                ) : null}
+
+                {isDelivery && order.consumer_address ? (
+                  <Button variant="outline" onClick={viewLocation} className="w-full flex items-center justify-center gap-2">
+                    <MapPin className="h-4 w-4" /> Lihat Lokasi
+                  </Button>
+                ) : null}
+
+                {isPaid && isDelivery && isActive ? (
+                  <Button onClick={markDelivering} disabled={isUpdating} className="w-full flex items-center justify-center gap-2">
+                    <Truck className="h-4 w-4" /> {isUpdating ? 'Memproses...' : 'Diantar'}
+                  </Button>
+                ) : null}
+
+                {isPaid && isDelivery && status === 'in_delivery' ? (
+                  <Button onClick={openCamera} className="w-full flex items-center justify-center gap-2">
+                    <Package className="h-4 w-4" /> Diterima
+                  </Button>
+                ) : null}
+
+                {isPaid && !isDelivery && isActive ? (
+                  <Button onClick={openCamera} className="w-full flex items-center justify-center gap-2">
+                    <ShoppingBag className="h-4 w-4" /> Diserahkan ke Pembeli
+                  </Button>
+                ) : null}
+
+                {!isPaid ? (
+                  <div className="flex items-center gap-2 text-caption text-text-desc">
+                    <Clock className="h-4 w-4" /> Menunggu pembayaran konsumen
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
+          </Card>
+        </div>
+      </div>
 
       {isCameraOpen ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
@@ -255,7 +300,7 @@ export function OrderDetail({ order }: { order: OrderDetailData }) {
                 <Button
                   onClick={completeWithPhoto}
                   disabled={!photo || isUploading}
-                  className="w-full min-h-[52px]"
+                  className="w-full min-h-12"
                 >
                   {isUploading ? 'Mengunggah...' : 'Selesaikan'}
                 </Button>

@@ -44,7 +44,7 @@ export default async function AvailabilityPage() {
   return (
     <div className="w-full">
       <div className="mb-6">
-        <h1 className="text-display text-text-main">Atur Ketersediaan</h1>
+        <h1 className="text-3xl font-bold text-neutral-900">Atur Ketersediaan</h1>
         <p className="text-body text-text-desc mt-1">
           Atur harga, stok, dan sesi jam operasional Anda.
         </p>
