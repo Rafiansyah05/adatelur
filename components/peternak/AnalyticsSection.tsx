@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { Card } from '@/components/ui/Card';
-import { Wallet, Package, ClipboardCheck, Star, Truck } from 'lucide-react';
+import { Wallet, Package, ClipboardCheck, Star, Truck, Trophy } from 'lucide-react';
 import {
   ResponsiveContainer,
   AreaChart,
@@ -36,7 +36,7 @@ interface WeeklyPoint {
 
 interface RatingPoint {
   label: string;
-  averageRating: number;
+  averageRating: number | null;
 }
 
 interface AnalyticsData {
@@ -160,7 +160,7 @@ export function AnalyticsSection() {
 
   return (
     <div className="w-full">
-      <div className="mb-6 grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-5">
+      <div className="mb-6 grid grid-cols-2 gap-4 md:grid-cols-3">
         <SummaryTile
           icon={<Wallet className={iconClass} />}
           label="Total Pendapatan"
@@ -182,7 +182,7 @@ export function AnalyticsSection() {
           value={data.summary.completedOrders === 0 ? 'Baru' : data.summary.averageRating.toFixed(1)}
         />
         <SummaryTile
-          icon={<ClipboardCheck className={iconClass} />}
+          icon={<Trophy className={iconClass} />}
           label="Score Sistem"
           value={data.summary.finalScore > 0 ? `${data.summary.finalScore} pts` : 'Baru!'}
         />
@@ -262,6 +262,7 @@ export function AnalyticsSection() {
                   strokeWidth={2}
                   dot={{ r: 3 }}
                   activeDot={{ r: 5 }}
+                  connectNulls={false}
                 />
               </LineChart>
             </ResponsiveContainer>

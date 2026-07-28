@@ -41,6 +41,7 @@ export async function GET() {
       return NextResponse.json({ error: 'Akun peternak belum disetujui' }, { status: 403 });
     }
 
+    // Fetch orders, ratings (for chart trend), and peternak_scores (source of truth)
     const [{ data: orders }, { data: ratings }, { data: score }] = await Promise.all([
       supabase
         .from('orders')
@@ -53,7 +54,7 @@ export async function GET() {
         .eq('peternak_id', peternakDetail.id),
       supabase
         .from('peternak_scores')
-        .select('delivery_accuracy_pct, final_score')
+        .select('delivery_accuracy_pct, final_score, average_rating')
         .eq('peternak_id', peternakDetail.id)
         .maybeSingle(),
     ]);
@@ -63,13 +64,17 @@ export async function GET() {
 
     const totalRevenue = completedOrders.reduce((sum, order) => sum + Number(order.total_amount), 0);
     const totalRakSold = completedOrders.reduce((sum, order) => sum + Number(order.rak_quantity), 0);
-    const averageRating =
-      ratingRows.length > 0
-        ? ratingRows.reduce((sum, rating) => sum + rating.rating_value, 0) / ratingRows.length
-        : 0;
+    const totalCompletedOrders = completedOrders.length;
+
+    // averageRating and finalScore come from peternak_scores — SAME source as consumer card
+    // This ensures dashboard and consumer view always show identical values
+    const averageRating = Number(score?.average_rating ?? 0);
+    const finalScore = Number(score?.final_score ?? 0);
+    const deliveryAccuracy = Number(score?.delivery_accuracy_pct ?? 0);
 
     const now = Date.now();
 
+    // Weekly revenue chart data
     const weekly = Array.from({ length: WEEKS }, (_, index) => {
       const weeksAgo = WEEKS - 1 - index;
       const start = new Date(now - weeksAgo * MS_PER_WEEK);
@@ -89,6 +94,8 @@ export async function GET() {
       }
     }
 
+    // Weekly rating trend chart — uses ratings table for per-week breakdown
+    // null means no ratings that week (chart will skip/gap), 0 would be misleading
     const ratingBuckets = Array.from({ length: WEEKS }, (_, index) => {
       const weeksAgo = WEEKS - 1 - index;
       const start = new Date(now - weeksAgo * MS_PER_WEEK);
@@ -110,17 +117,18 @@ export async function GET() {
 
     const ratingTrend = ratingBuckets.map((bucket) => ({
       label: bucket.label,
-      averageRating: bucket.count > 0 ? Number((bucket.total / bucket.count).toFixed(2)) : 0,
+      // null when no ratings that week so chart shows gap instead of misleading 0
+      averageRating: bucket.count > 0 ? Number((bucket.total / bucket.count).toFixed(2)) : null,
     }));
 
     return NextResponse.json({
       summary: {
         totalRevenue,
         totalRakSold,
-        completedOrders: completedOrders.length,
+        completedOrders: totalCompletedOrders,
         averageRating: Number(averageRating.toFixed(2)),
-        deliveryAccuracy: Number(score?.delivery_accuracy_pct ?? 0),
-        finalScore: Number(score?.final_score ?? 0),
+        deliveryAccuracy,
+        finalScore,
       },
       weekly,
       ratingTrend,
