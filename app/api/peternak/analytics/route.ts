@@ -53,7 +53,7 @@ export async function GET() {
         .eq('peternak_id', peternakDetail.id),
       supabase
         .from('peternak_scores')
-        .select('delivery_accuracy_pct')
+        .select('delivery_accuracy_pct, final_score')
         .eq('peternak_id', peternakDetail.id)
         .maybeSingle(),
     ]);
@@ -120,6 +120,7 @@ export async function GET() {
         completedOrders: completedOrders.length,
         averageRating: Number(averageRating.toFixed(2)),
         deliveryAccuracy: Number(score?.delivery_accuracy_pct ?? 0),
+        finalScore: Number(score?.final_score ?? 0),
       },
       weekly,
       ratingTrend,

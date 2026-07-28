@@ -46,6 +46,7 @@ interface AnalyticsData {
     completedOrders: number;
     averageRating: number;
     deliveryAccuracy: number;
+    finalScore: number;
   };
   weekly: WeeklyPoint[];
   ratingTrend: RatingPoint[];
@@ -178,7 +179,12 @@ export function AnalyticsSection() {
         <SummaryTile
           icon={<Star className={iconClass} />}
           label="Rata-rata Rating"
-          value={`${data.summary.averageRating}`}
+          value={data.summary.completedOrders === 0 ? 'Baru' : data.summary.averageRating.toFixed(1)}
+        />
+        <SummaryTile
+          icon={<ClipboardCheck className={iconClass} />}
+          label="Score Sistem"
+          value={data.summary.finalScore > 0 ? `${data.summary.finalScore} pts` : 'Baru!'}
         />
         <SummaryTile
           icon={<Truck className={iconClass} />}
