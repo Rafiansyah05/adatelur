@@ -1,32 +1,22 @@
-import { createServerClient, type CookieOptions } from '@supabase/ssr'
+import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
 export const updateSession = async (request: NextRequest) => {
-  let supabaseResponse = NextResponse.next({
-    request: {
-      headers: request.headers,
-    },
-  })
+  let supabaseResponse = NextResponse.next({ request })
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        get(name: string) {
-          return request.cookies.get(name)?.value
+        getAll() {
+          return request.cookies.getAll()
         },
         setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => {
-            request.cookies.set(name, value)
-          })
-          supabaseResponse = NextResponse.next({
-            request: {
-              headers: request.headers,
-            },
-          })
+          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
+          supabaseResponse = NextResponse.next({ request })
           cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set({ name, value, ...options })
+            supabaseResponse.cookies.set(name, value, options)
           )
         },
       },
@@ -37,17 +27,18 @@ export const updateSession = async (request: NextRequest) => {
     data: { user },
   } = await supabase.auth.getUser()
 
-  const pathname = request.nextUrl.pathname;
+  const pathname = request.nextUrl.pathname
 
-  const publicRoutes = ['/login', '/register', '/register-consumer', '/choose-role', '/auth/callback'];
+  const publicRoutes = ['/login', '/register', '/register-consumer', '/choose-role', '/auth/callback']
 
-  const isAuthOrStatic = pathname.startsWith('/_next') || pathname.startsWith('/api') || pathname.includes('.');
+  const isAuthOrStatic =
+    pathname.startsWith('/_next') || pathname.startsWith('/api') || pathname.includes('.')
 
   if (isAuthOrStatic) {
-    return supabaseResponse;
+    return supabaseResponse
   }
 
-  const isPublicRoute = publicRoutes.some(route => pathname.startsWith(route));
+  const isPublicRoute = publicRoutes.some((route) => pathname.startsWith(route))
 
   if (!user && !isPublicRoute) {
     const url = request.nextUrl.clone()
