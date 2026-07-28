@@ -29,15 +29,17 @@ export default async function AssistantPage() {
     redirect('/dashboard');
   }
 
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('full_name')
+    .eq('id', user.id)
+    .maybeSingle();
+
+  const firstName = profile?.full_name?.trim().split(' ')[0] || '';
+
   return (
     <div className="w-full">
-      <div className="mb-6">
-        <h1 className="text-display text-text-main">Asisten AI</h1>
-        <p className="text-body text-text-desc mt-1">
-          Asisten operasional untuk membantu keseharian peternakan Anda.
-        </p>
-      </div>
-      <AssistantChat />
+      <AssistantChat firstName={firstName} />
     </div>
   );
 }

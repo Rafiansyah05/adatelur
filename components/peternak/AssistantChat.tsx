@@ -1,15 +1,30 @@
 'use client';
 
 import * as React from 'react';
-import { Button } from '@/components/ui/Button';
-import { Card } from '@/components/ui/Card';
-import { Input } from '@/components/ui/Input';
-import { Bot, Send } from 'lucide-react';
+import { Bot, Send, Sparkles } from 'lucide-react';
 
 interface ChatMessage {
   role: 'user' | 'assistant';
   content: string;
 }
+
+const suggestions = [
+  {
+    title: 'Pakan Ayam',
+    subtitle: 'Tips pakan biar produksi optimal',
+    question: 'Tips pakan biar produksi telur optimal?',
+  },
+  {
+    title: 'Simpan Telur',
+    subtitle: 'Cara menyimpan telur biar awet',
+    question: 'Bagaimana cara menyimpan telur biar awet?',
+  },
+  {
+    title: 'Harga Jual',
+    subtitle: 'Tips menentukan harga jual',
+    question: 'Tips menentukan harga jual telur yang pas?',
+  },
+];
 
 function renderReply(text: string) {
   return text.split(/\*\*(.+?)\*\*/g).map((segment, index) =>
@@ -23,30 +38,30 @@ function renderReply(text: string) {
   );
 }
 
-export function AssistantChat() {
+export function AssistantChat({ firstName }: { firstName?: string }) {
   const [messages, setMessages] = React.useState<ChatMessage[]>([]);
   const [input, setInput] = React.useState('');
   const [isSending, setIsSending] = React.useState(false);
+  const [thinking, setThinking] = React.useState(false);
   const [error, setError] = React.useState('');
   const scrollRef = React.useRef<HTMLDivElement>(null);
 
   React.useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
-  }, [messages, isSending]);
+  }, [messages, thinking]);
 
-  const handleSend = async (event: React.FormEvent) => {
-    event.preventDefault();
-
-    const question = input.trim();
-    if (!question || isSending) {
+  const send = async (question: string) => {
+    const trimmed = question.trim();
+    if (!trimmed || isSending) {
       return;
     }
 
-    const nextMessages: ChatMessage[] = [...messages, { role: 'user', content: question }];
+    const nextMessages: ChatMessage[] = [...messages, { role: 'user', content: trimmed }];
     setMessages(nextMessages);
     setInput('');
     setError('');
     setIsSending(true);
+    setThinking(true);
 
     try {
       const response = await fetch('/api/assistant/chat', {
@@ -55,84 +70,144 @@ export function AssistantChat() {
         body: JSON.stringify({ messages: nextMessages }),
       });
 
-      const data = await response.json();
-
-      if (!response.ok) {
+      if (!response.ok || !response.body) {
+        const data = await response.json().catch(() => ({}));
         throw new Error(data.error || 'Gagal mengirim pesan');
       }
 
-      setMessages((current) => [...current, { role: 'assistant', content: data.reply }]);
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let reply = '';
+      let started = false;
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        reply += decoder.decode(value, { stream: true });
+        if (!reply.trim()) continue;
+
+        if (!started) {
+          started = true;
+          setThinking(false);
+          setMessages((current) => [...current, { role: 'assistant', content: reply }]);
+        } else {
+          setMessages((current) => {
+            const copy = [...current];
+            copy[copy.length - 1] = { role: 'assistant', content: reply };
+            return copy;
+          });
+        }
+      }
+
+      if (!started) {
+        setMessages((current) => [
+          ...current,
+          { role: 'assistant', content: 'Maaf, asisten tidak dapat menjawab saat ini.' },
+        ]);
+      }
     } catch (sendError) {
       setError(sendError instanceof Error ? sendError.message : 'Terjadi kesalahan');
     } finally {
+      setThinking(false);
       setIsSending(false);
     }
   };
 
-  return (
-    <Card className="flex h-[70vh] flex-col p-0">
-      <div className="flex items-center gap-3 border-b border-border px-5 py-4">
-        <span className="flex h-10 w-10 items-center justify-center rounded-full bg-primary-100">
-          <Bot className="h-5 w-5 text-primary-700" />
-        </span>
-        <div>
-          <p className="text-h3 text-text-main">Asisten Peternak</p>
-          <p className="text-caption text-text-desc">Tanya seputar operasional ternak Anda</p>
-        </div>
-      </div>
+  const handleSubmit = (event: React.FormEvent) => {
+    event.preventDefault();
+    send(input);
+  };
 
-      <div ref={scrollRef} className="flex-1 space-y-4 overflow-y-auto px-5 py-5">
-        {messages.length === 0 ? (
-          <div className="flex h-full flex-col items-center justify-center text-center">
-            <span className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-primary-100">
-              <Bot className="h-6 w-6 text-primary-700" />
+  const isEmpty = messages.length === 0;
+
+  return (
+    <div className="mx-auto flex h-[calc(100dvh-9rem)] min-h-[480px] w-full max-w-3xl flex-col md:h-[calc(100dvh-11rem)]">
+      <div ref={scrollRef} className="flex-1 overflow-y-auto">
+        {isEmpty ? (
+          <div className="flex h-full flex-col items-center justify-center px-2 text-center">
+            <span className="mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-primary-100 text-primary-700">
+              <Sparkles className="h-8 w-8" />
             </span>
-            <p className="text-body-medium text-text-main">Ada yang bisa dibantu?</p>
-            <p className="mt-1 max-w-xs text-body text-text-desc">
-              Tanyakan soal pakan, perawatan ayam, penyimpanan telur, atau tips harga jual.
+            <p className="text-body-medium text-text-desc">
+              {firstName ? `Halo, ${firstName}` : 'Halo'}
             </p>
+            <h2 className="mt-1 text-2xl font-bold text-text-main md:text-3xl">
+              Ada yang bisa saya bantu?
+            </h2>
+
+            <div className="mt-8 grid w-full grid-cols-1 gap-3 sm:grid-cols-3">
+              {suggestions.map((item) => (
+                <button
+                  key={item.title}
+                  type="button"
+                  onClick={() => send(item.question)}
+                  className="rounded-xl border border-border bg-white p-4 text-left transition-all hover:border-primary-400 hover:shadow-sm"
+                >
+                  <p className="text-body-medium font-bold text-text-main">{item.title}</p>
+                  <p className="mt-1 text-caption text-text-desc">{item.subtitle}</p>
+                </button>
+              ))}
+            </div>
           </div>
         ) : (
-          messages.map((message, index) => (
-            <div
-              key={index}
-              className={message.role === 'user' ? 'flex justify-end' : 'flex justify-start'}
-            >
+          <div className="space-y-5 py-2">
+            {messages.map((message, index) => (
               <div
+                key={index}
                 className={
                   message.role === 'user'
-                    ? 'max-w-[85%] whitespace-pre-wrap rounded-lg bg-primary-400 px-4 py-3 text-body text-primary-950'
-                    : 'max-w-[85%] whitespace-pre-wrap rounded-lg border border-border bg-white px-4 py-3 text-body text-text-main'
+                    ? 'flex justify-end'
+                    : 'flex items-start justify-start gap-2.5'
                 }
               >
-                {message.role === 'assistant' ? renderReply(message.content) : message.content}
+                {message.role === 'assistant' ? (
+                  <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary-100 text-primary-700">
+                    <Bot className="h-4 w-4" />
+                  </span>
+                ) : null}
+                <div
+                  className={
+                    message.role === 'user'
+                      ? 'max-w-[85%] whitespace-pre-wrap rounded-2xl rounded-br-md bg-primary-400 px-4 py-3 text-body text-primary-950'
+                      : 'max-w-[85%] whitespace-pre-wrap text-body leading-relaxed text-text-main'
+                  }
+                >
+                  {message.role === 'assistant' ? renderReply(message.content) : message.content}
+                </div>
               </div>
-            </div>
-          ))
-        )}
+            ))}
 
-        {isSending ? (
-          <div className="flex justify-start">
-            <div className="rounded-lg border border-border bg-white px-4 py-3 text-body text-text-desc">
-              Asisten sedang mengetik...
-            </div>
+            {thinking ? (
+              <div className="flex justify-start">
+                <p className="animate-pulse text-body text-text-desc">Sedang mengetik...</p>
+              </div>
+            ) : null}
           </div>
-        ) : null}
+        )}
       </div>
 
-      {error ? <p className="px-5 text-caption text-danger-text">{error}</p> : null}
+      {error ? <p className="pt-2 text-caption text-danger-text">{error}</p> : null}
 
-      <form onSubmit={handleSend} className="flex items-center gap-2 border-t border-border px-5 py-4">
-        <Input
-          value={input}
-          onChange={(event) => setInput(event.target.value)}
-          placeholder="Tulis pertanyaan Anda..."
-          disabled={isSending}
-        />
-        <Button type="submit" disabled={isSending || input.trim() === ''} className="shrink-0">
-          <Send className="h-4 w-4" />
-        </Button>
+      <form onSubmit={handleSubmit} className="pt-3">
+        <div className="flex items-center gap-2 rounded-2xl border border-border bg-white px-3 py-2 shadow-sm transition-colors focus-within:border-primary-400">
+          <input
+            value={input}
+            onChange={(event) => setInput(event.target.value)}
+            placeholder="Tulis pertanyaan Anda..."
+            disabled={isSending}
+            className="flex-1 bg-transparent px-1 text-body text-text-main placeholder:text-text-muted focus:outline-none disabled:opacity-60"
+          />
+          <button
+            type="submit"
+            disabled={isSending || input.trim() === ''}
+            aria-label="Kirim"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary-400 text-primary-950 transition-colors hover:bg-primary-500 disabled:bg-primary-100 disabled:text-text-muted"
+          >
+            <Send className="h-4 w-4" />
+          </button>
+        </div>
       </form>
-    </Card>
+    </div>
   );
 }

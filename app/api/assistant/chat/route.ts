@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 
-const GEMINI_MODEL = 'gemini-3.6-flash';
-const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
+const geminiModel = 'gemini-3.6-flash';
+const geminiStreamUrl = `https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:streamGenerateContent?alt=sse`;
 
-const SYSTEM_INSTRUCTION = `Kamu adalah asisten operasional untuk peternak ayam petelur di platform adatelur.com.
+const systemInstruction = `Kamu adalah asisten operasional untuk peternak ayam petelur di platform adatelur.com.
 Bantu peternak dengan pertanyaan seputar operasional harian: perawatan ayam, pakan, kualitas dan penyimpanan telur, kebersihan kandang, estimasi produksi, serta tips harga jual.
 Jawab dalam Bahasa Indonesia yang ringkas, jelas, dan praktis.
 Kamu diberi data peternak yang sedang login. Gunakan data itu bila relevan untuk menjawab pertanyaan spesifik tentang peternakan mereka, misalnya soal harga, stok, produksi, atau skor reputasi.
@@ -111,7 +111,7 @@ export async function POST(request: Request) {
         parts: [{ text: message.content }],
       }));
 
-    const geminiResponse = await fetch(GEMINI_URL, {
+    const geminiResponse = await fetch(geminiStreamUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -119,7 +119,7 @@ export async function POST(request: Request) {
       },
       body: JSON.stringify({
         systemInstruction: {
-          parts: [{ text: SYSTEM_INSTRUCTION }, { text: farmerFacts.join('\n') }],
+          parts: [{ text: systemInstruction }, { text: farmerFacts.join('\n') }],
         },
         contents,
         generationConfig: {
@@ -129,21 +129,55 @@ export async function POST(request: Request) {
       }),
     });
 
-    if (!geminiResponse.ok) {
+    if (!geminiResponse.ok || !geminiResponse.body) {
       return NextResponse.json({ error: 'Gagal menghubungi asisten' }, { status: 502 });
     }
 
-    const data = await geminiResponse.json();
-    const reply = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+    const encoder = new TextEncoder();
+    const decoder = new TextDecoder();
+    const upstream = geminiResponse.body.getReader();
 
-    if (!reply) {
-      return NextResponse.json(
-        { error: 'Asisten tidak dapat menjawab saat ini' },
-        { status: 502 }
-      );
-    }
+    const stream = new ReadableStream<Uint8Array>({
+      async start(controller) {
+        let buffer = '';
+        try {
+          while (true) {
+            const { done, value } = await upstream.read();
+            if (done) break;
 
-    return NextResponse.json({ reply });
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split('\n');
+            buffer = lines.pop() || '';
+
+            for (const line of lines) {
+              const trimmed = line.trim();
+              if (!trimmed.startsWith('data:')) continue;
+
+              const payload = trimmed.slice(5).trim();
+              if (!payload || payload === '[DONE]') continue;
+
+              try {
+                const parsed = JSON.parse(payload);
+                const text = parsed?.candidates?.[0]?.content?.parts?.[0]?.text;
+                if (text) {
+                  controller.enqueue(encoder.encode(text));
+                }
+              } catch {}
+            }
+          }
+        } finally {
+          controller.close();
+        }
+      },
+    });
+
+    return new Response(stream, {
+      headers: {
+        'Content-Type': 'text/plain; charset=utf-8',
+        'Cache-Control': 'no-store',
+        'X-Accel-Buffering': 'no',
+      },
+    });
   } catch (error) {
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Internal Server Error' },
