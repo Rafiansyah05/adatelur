@@ -183,9 +183,9 @@ export default function Home() {
   };
 
   return (
-    <div className="w-full flex flex-col gap-10 md:gap-24 pb-4 -mt-6 md:-mt-8">
+    <div className="w-full flex flex-col pb-4 -mt-6 md:-mt-8">
       {/* HERO SECTION */}
-      <section className="relative w-screen ml-[calc(-50vw+50%)] overflow-hidden bg-primary-950 min-h-[400px] md:min-h-[600px] flex items-center">
+      <section className="sticky top-0 z-0 relative w-screen ml-[calc(-50vw+50%)] overflow-hidden bg-primary-950 min-h-[400px] md:min-h-[600px] flex items-center">
         {/* Banner Background */}
         <div className="absolute inset-0 z-0 bg-neutral-900">
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -272,8 +272,12 @@ export default function Home() {
         </div>
       </section>
 
-      {/* PETERNAK TERDEKAT SECTION */}
-      <section className="w-full flex flex-col gap-6">
+      {/* CONTENT WRAPPER FOR PARALLAX EFFECT */}
+      <div className="relative z-10 w-screen ml-[calc(-50vw+50%)] bg-white pt-10 md:pt-24 pb-2 shadow-[0_-10px_30px_rgba(0,0,0,0.08)] rounded-t-[32px] mt-[-32px]">
+        <div className="w-full max-w-[1200px] mx-auto px-4 md:px-8 flex flex-col gap-10 md:gap-24">
+          
+          {/* PETERNAK TERDEKAT SECTION */}
+          <section className="w-full flex flex-col gap-6">
         <div className="flex items-center justify-between px-2 gap-2">
           <div className="flex flex-col gap-1">
             <h2 className="text-xl md:text-3xl font-black text-neutral-900 tracking-tight">Peternak Terdekat</h2>
@@ -403,14 +407,17 @@ export default function Home() {
           </p>
         </div>
 
-        <div className="relative z-10 shrink-0">
-          <Link href="/register">
-            <Button variant="primary" className="h-12 px-8 rounded-lg font-semibold text-base transition-all bg-white text-primary-900 hover:bg-neutral-50 border border-neutral-100">
-              Daftar Sekarang
-            </Button>
-          </Link>
+          <div className="relative z-10 shrink-0">
+            <Link href="/register">
+              <Button variant="primary" className="h-12 px-8 rounded-lg font-semibold text-base transition-all bg-white text-primary-900 hover:bg-neutral-50 border border-neutral-100">
+                Daftar Sekarang
+              </Button>
+            </Link>
+          </div>
+        </section>
+        
         </div>
-      </section>
+      </div>
 
       {/* Custom styles for hiding scrollbar but allowing scroll */}
       <style dangerouslySetInnerHTML={{
