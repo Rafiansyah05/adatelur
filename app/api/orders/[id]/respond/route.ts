@@ -96,6 +96,11 @@ export async function POST(request: Request, { params }: { params: { id: string 
       await sendOrderCancelledNotif(orderId);
     }
 
+    if (newStatus === 'accepted') {
+      const { handleStockCheck } = await import('@/lib/stock-notifier');
+      await handleStockCheck(adminSupabase, order.peternak_id);
+    }
+
     return NextResponse.json({ success: true, order: updated, data: updated });
   } catch (error) {
     return NextResponse.json(

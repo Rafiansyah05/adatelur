@@ -66,11 +66,32 @@ export async function POST(request: Request) {
       return acc;
     }, {});
 
+    // Fetch today's accepted/in-progress/completed order quantities to calculate remaining stock
+    const startOfToday = new Date(new Date().setHours(0,0,0,0)).toISOString();
+    const { data: todayOrders } = await supabase
+      .from('orders')
+      .select('peternak_id, rak_quantity')
+      .in('peternak_id', peternakIds)
+      .in('order_status', ['accepted', 'completed', 'in_delivery'])
+      .gte('created_at', startOfToday);
+
+    const todaySoldMap = peternakIds.reduce((acc: any, id) => {
+      const soldToday = (todayOrders ?? [])
+        .filter((o: any) => o.peternak_id === id)
+        .reduce((sum: number, o: any) => sum + Number(o.rak_quantity), 0);
+      acc[id] = soldToday;
+      return acc;
+    }, {});
+
     // Format raw data and apply stock filtering
     const listings = rawPeternaks.map((pd: any) => {
       const p = pd.profiles;
       const listing = Array.isArray(pd.listings) ? pd.listings[0] : pd.listings;
       const score = Array.isArray(pd.peternak_scores) ? pd.peternak_scores[0] : pd.peternak_scores;
+      
+      const todaySold = todaySoldMap[pd.id] || 0;
+      const initialStock = listing?.stock_rak || 0;
+      const remainingStock = Math.max(0, initialStock - todaySold);
       
       return {
         listing_id: listing?.id || `dummy-${pd.id}`,
@@ -78,8 +99,8 @@ export async function POST(request: Request) {
         peternak_name: p.full_name,
         avatar_url: p.avatar_url,
         price_per_rak: listing?.price_per_rak || 50000, 
-        stock_rak: listing?.stock_rak || 0,
-        is_available: listing?.is_available ?? false,
+        stock_rak: remainingStock, // Use actual remaining stock
+        is_available: (listing?.is_available ?? false) && remainingStock > 0,
         farm_address: pd.farm_address || 'Alamat belum diatur',
         farm_latitude: pd.farm_latitude || 0,
         farm_longitude: pd.farm_longitude || 0,

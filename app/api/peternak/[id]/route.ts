@@ -5,13 +5,14 @@ import { createAdminClient } from '@/lib/supabase/admin';
 export async function GET(request: Request, { params }: { params: { id: string } }) {
   try {
     const supabase = createClient();
+    const adminClient = createAdminClient();
     const peternakId = params.id;
 
     if (!peternakId) {
       return NextResponse.json({ error: 'Missing peternak ID' }, { status: 400 });
     }
 
-    const { data: profile, error: peternakError } = await supabase
+    const { data: profile, error: peternakError } = await adminClient
       .from('profiles')
       .select(`
         id,
@@ -20,23 +21,24 @@ export async function GET(request: Request, { params }: { params: { id: string }
         peternak_details (
           id,
           farm_latitude,
-          farm_longitude
-        ),
-        listings (
-          id,
-          price_per_rak,
-          is_available
-        ),
-        peternak_scores (
-          final_score
+          farm_longitude,
+          listings (
+            id,
+            price_per_rak,
+            stock_rak,
+            is_available
+          ),
+          peternak_scores (
+            final_score
+          )
         )
       `)
-      .eq('id', peternakId) // Wait, the param id is peternak_id or profile_id? In the search results it is profile id!
+      .eq('id', peternakId)
       .maybeSingle();
 
     if (peternakError || !profile) {
       // Maybe the id is peternak_details id?
-      const { data: pdFallback } = await supabase
+      const { data: pdFallback } = await adminClient
         .from('peternak_details')
         .select('profile_id')
         .eq('id', peternakId)
@@ -46,9 +48,9 @@ export async function GET(request: Request, { params }: { params: { id: string }
          return NextResponse.json({ error: 'Peternak not found' }, { status: 404 });
       }
       
-      const { data: profile2 } = await supabase
+      const { data: profile2 } = await adminClient
         .from('profiles')
-        .select(`id, full_name, avatar_url, peternak_details(id, farm_latitude, farm_longitude), listings(id, price_per_rak, is_available), peternak_scores(final_score)`)
+        .select(`id, full_name, avatar_url, peternak_details(id, farm_latitude, farm_longitude, listings(id, price_per_rak, stock_rak, is_available), peternak_scores(final_score))`)
         .eq('id', pdFallback.profile_id)
         .maybeSingle();
         
@@ -58,8 +60,8 @@ export async function GET(request: Request, { params }: { params: { id: string }
     
     const p = profile as any;
     const pd = Array.isArray(p?.peternak_details) ? p.peternak_details[0] : p?.peternak_details;
-    const listing = Array.isArray(p?.listings) ? p.listings[0] : p?.listings;
-    const score = Array.isArray(p?.peternak_scores) ? p.peternak_scores[0] : p?.peternak_scores;
+    const listing = Array.isArray(pd?.listings) ? pd.listings[0] : pd?.listings;
+    const score = Array.isArray(pd?.peternak_scores) ? pd.peternak_scores[0] : pd?.peternak_scores;
 
     const actualPeternakId = pd?.id || peternakId;
     
@@ -81,7 +83,6 @@ export async function GET(request: Request, { params }: { params: { id: string }
       is_available: listing?.is_available ?? true,
     };
 
-    const adminClient = createAdminClient();
     const todayDateStr = new Date().toISOString().split('T')[0];
 
     const { data: deliverySlots, error: slotsError } = await adminClient
@@ -89,13 +90,22 @@ export async function GET(request: Request, { params }: { params: { id: string }
       .select('*')
       .eq('peternak_id', actualPeternakId)
       .eq('is_active', true)
-      .gte('slot_date', todayDateStr)
-      .order('slot_date', { ascending: true })
       .order('start_time', { ascending: true });
 
     if (slotsError) {
       return NextResponse.json({ error: 'Failed to fetch delivery slots' }, { status: 500 });
     }
+
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    const { data: ordersToday } = await adminClient
+      .from('orders')
+      .select('rak_quantity')
+      .eq('peternak_id', actualPeternakId)
+      .gte('created_at', todayStart.toISOString())
+      .not('status', 'in', '(rejected,cancelled)');
+
+    const soldRakToday = (ordersToday || []).reduce((sum, order) => sum + (order.rak_quantity || 0), 0);
 
     const responseData = {
       id: actualPeternakId,
@@ -103,6 +113,8 @@ export async function GET(request: Request, { params }: { params: { id: string }
       rating: 4.8,
       score: score?.final_score || 0,
       price_per_rak: peternak.price_per_rak,
+      stock_rak: listing?.stock_rak || 0,
+      sold_rak_today: soldRakToday,
       farm_latitude: peternak.farm_latitude,
       farm_longitude: peternak.farm_longitude,
       listing_id: peternak.listing_id,

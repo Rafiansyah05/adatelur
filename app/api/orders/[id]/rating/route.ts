@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { recalculatePeternakScore } from '@/lib/scoring';
 
 export async function POST(
   request: Request,
@@ -32,7 +33,7 @@ export async function POST(
     // Verify order belongs to user and is completed and has no rating yet
     const { data: order, error: orderErr } = await adminSupabase
       .from('orders')
-      .select('id, consumer_id, order_status, rating')
+      .select('id, consumer_id, order_status, rating, peternak_id')
       .eq('id', orderId)
       .single();
 
@@ -52,14 +53,37 @@ export async function POST(
       return NextResponse.json({ error: 'Pesanan ini sudah diberi rating' }, { status: 400 });
     }
 
-    // Update rating
+    // 1. Update rating on orders table
     const { error: updateErr } = await adminSupabase
       .from('orders')
       .update({ rating })
       .eq('id', orderId);
 
     if (updateErr) {
-      return NextResponse.json({ error: 'Gagal menyimpan rating' }, { status: 500 });
+      return NextResponse.json({ error: 'Gagal menyimpan rating pesanan' }, { status: 500 });
+    }
+
+    // 2. Insert into ratings table (used by scoring system and chart)
+    const { error: ratingInsertErr } = await adminSupabase
+      .from('ratings')
+      .insert({
+        order_id: orderId,
+        consumer_id: user.id,
+        peternak_id: order.peternak_id,
+        rating_value: rating
+      });
+
+    if (ratingInsertErr) {
+      // rollback order rating update if insert fails
+      await adminSupabase.from('orders').update({ rating: null }).eq('id', orderId);
+      return NextResponse.json({ error: 'Gagal menyimpan data rating' }, { status: 500 });
+    }
+
+    // 3. Recalculate score immediately
+    try {
+      await recalculatePeternakScore(order.peternak_id);
+    } catch (e) {
+      console.error('Failed to recalculate score on rating submit:', e);
     }
 
     return NextResponse.json({ success: true, message: 'Rating berhasil disimpan' });

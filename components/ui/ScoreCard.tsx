@@ -134,7 +134,14 @@ const ScoreCard = React.forwardRef<HTMLDivElement, ScoreCardProps>(
             <div className="flex items-center gap-1 font-bold text-neutral-700">
               <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
               <span>
-                {totalOrders === 0 ? 'Baru' : (averageRating ?? rating).toFixed(1)}
+                {(() => {
+                  const displayRating = averageRating ?? rating;
+                  // "Baru" only if no completed orders AND no rating score yet
+                  if ((totalOrders === undefined || totalOrders === 0) && displayRating === 0) {
+                    return 'Baru';
+                  }
+                  return displayRating.toFixed(1);
+                })()}
               </span>
             </div>
           </div>

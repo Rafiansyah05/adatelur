@@ -38,7 +38,7 @@ export function TopNavbar({ items }: { items: NavItem[] }) {
       try {
         const { data, error } = await supabase
           .from('profiles')
-          .select('id, full_name, peternak_details(farm_address)')
+          .select('id, full_name, avatar_url, peternak_details(farm_address)')
           .eq('role', 'peternak')
           .ilike('full_name', `%${searchQuery}%`)
           .limit(10);
@@ -49,6 +49,7 @@ export function TopNavbar({ items }: { items: NavItem[] }) {
         const formattedData = (data || []).map((p: any) => ({
           id: p.id,
           full_name: p.full_name,
+          avatar_url: p.avatar_url,
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           address: Array.isArray(p.peternak_details) ? (p.peternak_details[0] as any)?.farm_address : (p.peternak_details as any)?.farm_address
         }));
@@ -196,18 +197,20 @@ export function TopNavbar({ items }: { items: NavItem[] }) {
                           key={peternak.id}
                           onClick={() => {
                             setShowSearchSidebar(false);
-                            router.push(`/peternak/${peternak.id}`);
+                            router.push(`/search?q=${encodeURIComponent(peternak.full_name)}`);
                           }}
                           className="flex items-start gap-4 rounded-xl border border-neutral-100 p-4 transition-all hover:border-primary-400 hover:shadow-md cursor-pointer"
                         >
-                          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-primary-50">
-                            <Image
-                              src="/icons/icon-512x512.png"
-                              alt="Peternak"
-                              width={24}
-                              height={24}
-                              className="opacity-60 grayscale"
-                            />
+                          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-primary-50 border border-primary-100 text-primary-900 font-bold text-sm overflow-hidden">
+                            {peternak.avatar_url ? (
+                              <img 
+                                src={peternak.avatar_url} 
+                                alt={peternak.full_name} 
+                                className="h-full w-full object-cover"
+                              />
+                            ) : (
+                              <span>{peternak.full_name.split(' ').map((n: string) => n[0]).join('').substring(0, 2).toUpperCase()}</span>
+                            )}
                           </div>
                           <div className="flex-1">
                             <h3 className="text-sm font-bold text-text-main line-clamp-1">{peternak.full_name}</h3>

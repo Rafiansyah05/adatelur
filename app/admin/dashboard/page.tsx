@@ -273,67 +273,71 @@ export default function AdminDashboard() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-neutral-100">
-                  {filteredPeternak.map((p) => (
-                    <tr key={p.id} className="hover:bg-neutral-50/50 transition-colors">
-                      <td className="py-4 px-4">
-                        <p className="font-bold text-neutral-900">{p.full_name}</p>
-                        <p className="text-xs text-neutral-500">{new Date(p.created_at).toLocaleDateString('id-ID')}</p>
-                      </td>
-                      <td className="py-4 px-4">
-                        <p className="text-sm text-neutral-900">{p.email}</p>
-                        <p className="text-sm text-neutral-500">{p.phone_number}</p>
-                      </td>
-                      <td className="py-4 px-4">
-                        {p.verification_status === 'pending' && isDataIncomplete && (
-                          <span className="inline-flex items-center px-2 py-1 rounded bg-yellow-50 text-yellow-700 border border-yellow-200 text-xs font-semibold">
-                            Data Belum Lengkap
-                          </span>
-                        )}
-                        {p.verification_status === 'pending' && !isDataIncomplete && (
-                          <span className="inline-flex items-center px-2 py-1 rounded bg-blue-50 text-blue-700 border border-blue-200 text-xs font-semibold">
-                            Siap Verifikasi
-                          </span>
-                        )}
-                        {p.verification_status === 'approved' && (
-                          <span className="inline-flex items-center px-2 py-1 rounded bg-green-50 text-green-700 border border-green-200 text-xs font-semibold">
-                            Aktif
-                          </span>
-                        )}
-                        {p.verification_status === 'rejected' && (
-                          <span className="inline-flex items-center px-2 py-1 rounded bg-red-50 text-red-700 border border-red-200 text-xs font-semibold">
-                            Ditolak
-                          </span>
-                        )}
-                      </td>
-                      <td className="py-4 px-4 text-right space-x-2">
-                        <Button variant="outline" onClick={() => { setActivePeternak(p); setIsDetailModalOpen(true); }} className="h-8 px-3 text-xs gap-1.5 border-neutral-300 text-neutral-700 hover:bg-neutral-100">
-                          Lihat Detail
-                        </Button>
-                        
-                        {activeTab === 'bantuan' && (
-                          <>
-                            <Button variant="outline" className="h-8 px-3 text-xs gap-1.5" onClick={() => { setActivePeternak(p); setIsDataModalOpen(true); }}>
-                              <FileEdit className="w-3.5 h-3.5" /> Lengkapi Data
-                            </Button>
-                            <Button variant="outline" className="h-8 px-3 text-xs gap-1.5" onClick={() => { setActivePeternak(p); setIsPhotoModalOpen(true); }}>
-                              <UploadCloud className="w-3.5 h-3.5" /> Unggah Foto
-                            </Button>
-                          </>
-                        )}
-                        
-                        {activeTab === 'verifikasi' && (
-                          <>
-                            <Button onClick={() => { setActivePeternak(p); handleVerify('approve'); }} className="h-8 px-3 text-xs bg-green-600 hover:bg-green-700 text-white border-transparent gap-1.5" disabled={actionLoading}>
-                              <CheckCircle className="w-3.5 h-3.5" /> Terima
-                            </Button>
-                            <Button onClick={() => { setActivePeternak(p); setIsRejectModalOpen(true); }} className="h-8 px-3 text-xs bg-red-600 hover:bg-red-700 text-white border-transparent gap-1.5">
-                              <XCircle className="w-3.5 h-3.5" /> Tolak
-                            </Button>
-                          </>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
+                  {filteredPeternak.map((p) => {
+                    const hasAllPhotos = p.photos && p.photos.length >= 4;
+                    const isDataIncomplete = p.chicken_count === 0 || p.feed_type === '-' || p.registration_method === 'video_call_cs' || !hasAllPhotos;
+                    return (
+                      <tr key={p.id} className="hover:bg-neutral-50/50 transition-colors">
+                        <td className="py-4 px-4">
+                          <p className="font-bold text-neutral-900">{p.full_name}</p>
+                          <p className="text-xs text-neutral-500">{new Date(p.created_at).toLocaleDateString('id-ID')}</p>
+                        </td>
+                        <td className="py-4 px-4">
+                          <p className="text-sm text-neutral-900">{p.email}</p>
+                          <p className="text-sm text-neutral-500">{p.phone_number}</p>
+                        </td>
+                        <td className="py-4 px-4">
+                          {p.verification_status === 'pending' && isDataIncomplete && (
+                            <span className="inline-flex items-center px-2 py-1 rounded bg-yellow-50 text-yellow-700 border border-yellow-200 text-xs font-semibold">
+                              Data Belum Lengkap
+                            </span>
+                          )}
+                          {p.verification_status === 'pending' && !isDataIncomplete && (
+                            <span className="inline-flex items-center px-2 py-1 rounded bg-blue-50 text-blue-700 border border-blue-200 text-xs font-semibold">
+                              Siap Verifikasi
+                            </span>
+                          )}
+                          {p.verification_status === 'approved' && (
+                            <span className="inline-flex items-center px-2 py-1 rounded bg-green-50 text-green-700 border border-green-200 text-xs font-semibold">
+                              Aktif
+                            </span>
+                          )}
+                          {p.verification_status === 'rejected' && (
+                            <span className="inline-flex items-center px-2 py-1 rounded bg-red-50 text-red-700 border border-red-200 text-xs font-semibold">
+                              Ditolak
+                            </span>
+                          )}
+                        </td>
+                        <td className="py-4 px-4 text-right space-x-2">
+                          <Button variant="outline" onClick={() => { setActivePeternak(p); setIsDetailModalOpen(true); }} className="h-8 px-3 text-xs gap-1.5 border-neutral-300 text-neutral-700 hover:bg-neutral-100">
+                            Lihat Detail
+                          </Button>
+                          
+                          {activeTab === 'bantuan' && (
+                            <>
+                              <Button variant="outline" className="h-8 px-3 text-xs gap-1.5" onClick={() => { setActivePeternak(p); setIsDataModalOpen(true); }}>
+                                <FileEdit className="w-3.5 h-3.5" /> Lengkapi Data
+                              </Button>
+                              <Button variant="outline" className="h-8 px-3 text-xs gap-1.5" onClick={() => { setActivePeternak(p); setIsPhotoModalOpen(true); }}>
+                                <UploadCloud className="w-3.5 h-3.5" /> Unggah Foto
+                              </Button>
+                            </>
+                          )}
+                          
+                          {activeTab === 'verifikasi' && (
+                            <>
+                              <Button onClick={() => { setActivePeternak(p); handleVerify('approve'); }} className="h-8 px-3 text-xs bg-green-600 hover:bg-green-700 text-white border-transparent gap-1.5" disabled={actionLoading}>
+                                <CheckCircle className="w-3.5 h-3.5" /> Terima
+                              </Button>
+                              <Button onClick={() => { setActivePeternak(p); setIsRejectModalOpen(true); }} className="h-8 px-3 text-xs bg-red-600 hover:bg-red-700 text-white border-transparent gap-1.5">
+                                <XCircle className="w-3.5 h-3.5" /> Tolak
+                              </Button>
+                            </>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>

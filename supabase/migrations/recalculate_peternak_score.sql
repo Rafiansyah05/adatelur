@@ -11,8 +11,8 @@ DECLARE
     v_on_time_deliveries INT := 0;
     v_delivery_accuracy NUMERIC(5,2) := 100;
     
-    v_avg_rating NUMERIC(3,2) := 5.00;
-    v_rating_score NUMERIC(5,2) := 100;
+    v_avg_rating NUMERIC(3,2) := 0.00;
+    v_rating_score NUMERIC(5,2) := 0;
     
     v_final_score NUMERIC(5,2) := 0;
     v_is_suspended BOOLEAN := false;
@@ -46,12 +46,17 @@ BEGIN
         v_delivery_accuracy := 100; -- Default jika belum ada pengiriman
     END IF;
     
-    -- 3. Hitung Rating
-    SELECT COALESCE(AVG(rating_value), 5.00) INTO v_avg_rating
+    -- 3. Hitung Rating (Default 0.00 jika null/belum ada)
+    SELECT AVG(rating_value) INTO v_avg_rating
     FROM ratings
     WHERE peternak_id = p_peternak_id;
     
-    v_rating_score := (v_avg_rating / 5.0) * 100;
+    IF v_avg_rating IS NULL THEN
+        v_avg_rating := 0.00;
+        v_rating_score := 0;
+    ELSE
+        v_rating_score := (v_avg_rating / 5.0) * 100;
+    END IF;
     
     -- 4. Hitung Final Score
     v_final_score := (v_transaction_score * 0.5) + (v_delivery_accuracy * 0.3) + (v_rating_score * 0.2);

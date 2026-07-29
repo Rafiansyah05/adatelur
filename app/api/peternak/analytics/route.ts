@@ -1,11 +1,13 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 
-const WEEKS = 8;
+const WEEKS = 12;
 const MS_PER_WEEK = 7 * 24 * 60 * 60 * 1000;
 
 interface CompletedOrder {
   total_amount: number;
+  subtotal: number;
   rak_quantity: number;
   created_at: string;
 }
@@ -27,110 +29,253 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    // Get peternak detail
     const { data: peternakDetail, error: peternakError } = await supabase
       .from('peternak_details')
-      .select('id, verification_status')
+      .select('id')
       .eq('profile_id', user.id)
       .maybeSingle();
 
-    if (peternakError) {
-      return NextResponse.json({ error: peternakError.message }, { status: 500 });
+    if (peternakError || !peternakDetail) {
+      return NextResponse.json({ error: 'Peternak detail not found' }, { status: 404 });
     }
 
-    if (!peternakDetail || peternakDetail.verification_status !== 'approved') {
-      return NextResponse.json({ error: 'Akun peternak belum disetujui' }, { status: 403 });
-    }
+    // Use admin client to bypass RLS policies
+    const adminSupabase = createAdminClient();
 
-    // Fetch orders, ratings (for chart trend), and peternak_scores (source of truth)
-    const [{ data: orders }, { data: ratings }, { data: score }] = await Promise.all([
+    // Fetch orders, ratings, peternak_scores, listings, wallets, and wallet_transactions
+    const [
+      { data: orders },
+      { data: ratings },
+      { data: score },
+      { data: listing },
+      { data: wallet },
+      { data: transactions },
+    ] = await Promise.all([
       supabase
         .from('orders')
-        .select('total_amount, rak_quantity, created_at')
+        .select('total_amount, subtotal, rak_quantity, created_at')
         .eq('peternak_id', peternakDetail.id)
         .eq('order_status', 'completed'),
-      supabase
+      adminSupabase
         .from('ratings')
         .select('rating_value, created_at')
         .eq('peternak_id', peternakDetail.id),
-      supabase
+      adminSupabase
         .from('peternak_scores')
         .select('delivery_accuracy_pct, final_score, average_rating')
         .eq('peternak_id', peternakDetail.id)
         .maybeSingle(),
+      supabase
+        .from('listings')
+        .select('stock_rak')
+        .eq('peternak_id', peternakDetail.id)
+        .maybeSingle(),
+      adminSupabase
+        .from('wallets')
+        .select('balance')
+        .eq('peternak_id', peternakDetail.id)
+        .maybeSingle(),
+      adminSupabase
+        .from('wallet_transactions')
+        .select('amount, type, balance_after, created_at')
+        .eq('peternak_id', peternakDetail.id)
+        .order('created_at', { ascending: true }),
     ]);
 
     const completedOrders: CompletedOrder[] = orders ?? [];
     const ratingRows: RatingRow[] = ratings ?? [];
+    const txs = transactions ?? [];
 
-    const totalRevenue = completedOrders.reduce((sum, order) => sum + Number(order.total_amount), 0);
+    // The nominal for total pendapatan follows the actual wallet balance (saldo)
+    const totalRevenue = Number(wallet?.balance ?? 0);
     const totalRakSold = completedOrders.reduce((sum, order) => sum + Number(order.rak_quantity), 0);
     const totalCompletedOrders = completedOrders.length;
 
-    // averageRating and finalScore come from peternak_scores — SAME source as consumer card
-    // This ensures dashboard and consumer view always show identical values
+    // Calculate today's stats (WIB / UTC+7)
+    const todayStr = new Date(Date.now() + 7 * 60 * 60 * 1000).toISOString().split('T')[0];
+    let todayRevenue = 0;
+    let todayRakSold = 0;
+    let todayCompletedOrders = 0;
+
+    // Today's revenue matches today's credited wallet transactions
+    for (const tx of txs) {
+      const txDateStr = new Date(new Date(tx.created_at).getTime() + 7 * 60 * 60 * 1000).toISOString().split('T')[0];
+      if (txDateStr === todayStr && tx.type === 'credit') {
+        todayRevenue += Number(tx.amount);
+      }
+    }
+
+    for (const order of completedOrders) {
+      const orderDateStr = new Date(new Date(order.created_at).getTime() + 7 * 60 * 60 * 1000).toISOString().split('T')[0];
+      if (orderDateStr === todayStr) {
+        todayRakSold += Number(order.rak_quantity);
+        todayCompletedOrders += 1;
+      }
+    }
+
     const averageRating = Number(score?.average_rating ?? 0);
     const finalScore = Number(score?.final_score ?? 0);
     const deliveryAccuracy = Number(score?.delivery_accuracy_pct ?? 0);
 
+    const endOfToday = new Date();
+    endOfToday.setHours(23, 59, 59, 999);
+    const endOfTodayTime = endOfToday.getTime();
     const now = Date.now();
 
-    // Weekly revenue chart data
-    const weekly = Array.from({ length: WEEKS }, (_, index) => {
-      const weeksAgo = WEEKS - 1 - index;
-      const start = new Date(now - weeksAgo * MS_PER_WEEK);
+    // 1. Daily wallet balance trend data (Last 10 days)
+    const DAYS = 10;
+    const MS_PER_DAY = 24 * 60 * 60 * 1000;
+    const daily = Array.from({ length: DAYS }, (_, index) => {
+      const daysAgo = DAYS - 1 - index;
+      const bucketEnd = new Date(endOfTodayTime - daysAgo * MS_PER_DAY);
       return {
-        label: start.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' }),
+        label: bucketEnd.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' }),
+        endTime: bucketEnd.getTime(),
         revenue: 0,
         rakSold: 0,
       };
     });
 
-    for (const order of completedOrders) {
-      const weeksAgo = Math.floor((now - new Date(order.created_at).getTime()) / MS_PER_WEEK);
-      if (weeksAgo >= 0 && weeksAgo < WEEKS) {
-        const bucket = weekly[WEEKS - 1 - weeksAgo];
-        bucket.revenue += Number(order.total_amount);
-        bucket.rakSold += Number(order.rak_quantity);
+    let lastBalance = 0;
+    for (const day of daily) {
+      const txsBefore = txs.filter(tx => new Date(tx.created_at).getTime() <= day.endTime);
+      if (txsBefore.length > 0) {
+        lastBalance = Number(txsBefore[txsBefore.length - 1].balance_after);
       }
+      day.revenue = lastBalance;
     }
 
-    // Weekly rating trend chart — uses ratings table for per-week breakdown
-    // null means no ratings that week (chart will skip/gap), 0 would be misleading
-    const ratingBuckets = Array.from({ length: WEEKS }, (_, index) => {
+    // 2. Weekly wallet balance trend data (Last 12 weeks)
+    const weekly = Array.from({ length: WEEKS }, (_, index) => {
       const weeksAgo = WEEKS - 1 - index;
-      const start = new Date(now - weeksAgo * MS_PER_WEEK);
+      const bucketEnd = new Date(endOfTodayTime - weeksAgo * MS_PER_WEEK);
       return {
-        label: start.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' }),
-        total: 0,
-        count: 0,
+        label: bucketEnd.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' }),
+        endTime: bucketEnd.getTime(),
+        revenue: 0,
+        rakSold: 0,
       };
     });
 
-    for (const rating of ratingRows) {
-      const weeksAgo = Math.floor((now - new Date(rating.created_at).getTime()) / MS_PER_WEEK);
+    lastBalance = 0;
+    for (const week of weekly) {
+      const txsBefore = txs.filter(tx => new Date(tx.created_at).getTime() <= week.endTime);
+      if (txsBefore.length > 0) {
+        lastBalance = Number(txsBefore[txsBefore.length - 1].balance_after);
+      }
+      week.revenue = lastBalance;
+    }
+
+    // 3. Monthly wallet balance trend data (Last 6 months)
+    const MONTHS = 6;
+    const monthly = Array.from({ length: MONTHS }, (_, index) => {
+      const monthsAgo = MONTHS - 1 - index;
+      const d = new Date();
+      d.setMonth(d.getMonth() - monthsAgo);
+      const endOfMonth = new Date(d.getFullYear(), d.getMonth() + 1, 0, 23, 59, 59, 999);
+      return {
+        label: d.toLocaleDateString('id-ID', { month: 'short', year: '2-digit' }),
+        endTime: endOfMonth.getTime(),
+        revenue: 0,
+        rakSold: 0,
+      };
+    });
+
+    lastBalance = 0;
+    for (const month of monthly) {
+      const txsBefore = txs.filter(tx => new Date(tx.created_at).getTime() <= month.endTime);
+      if (txsBefore.length > 0) {
+        lastBalance = Number(txsBefore[txsBefore.length - 1].balance_after);
+      }
+      month.revenue = lastBalance;
+    }
+
+    const monthlyClean = monthly.map(({ label, revenue, rakSold }) => ({ label, revenue, rakSold }));
+
+    // Populate rak sold counts in daily/weekly/monthly trends for consistency
+    for (const order of completedOrders) {
+      const orderTime = new Date(order.created_at).getTime();
+      
+      // Daily
+      const daysAgo = Math.floor((now - orderTime) / MS_PER_DAY);
+      if (daysAgo >= 0 && daysAgo < DAYS) {
+        daily[DAYS - 1 - daysAgo].rakSold += Number(order.rak_quantity);
+      }
+
+      // Weekly
+      const weeksAgo = Math.floor((now - orderTime) / MS_PER_WEEK);
       if (weeksAgo >= 0 && weeksAgo < WEEKS) {
-        const bucket = ratingBuckets[WEEKS - 1 - weeksAgo];
-        bucket.total += rating.rating_value;
-        bucket.count += 1;
+        weekly[WEEKS - 1 - weeksAgo].rakSold += Number(order.rak_quantity);
+      }
+
+      // Monthly
+      const orderDate = new Date(order.created_at);
+      const orderYear = orderDate.getFullYear();
+      const orderMonth = orderDate.getMonth();
+      
+      const mBucketIndex = monthly.findIndex(
+        m => new Date(m.endTime).getFullYear() === orderYear && new Date(m.endTime).getMonth() === orderMonth
+      );
+      if (mBucketIndex !== -1) {
+        monthlyClean[mBucketIndex].rakSold += Number(order.rak_quantity);
       }
     }
 
-    const ratingTrend = ratingBuckets.map((bucket) => ({
-      label: bucket.label,
-      // null when no ratings that week so chart shows gap instead of misleading 0
-      averageRating: bucket.count > 0 ? Number((bucket.total / bucket.count).toFixed(2)) : null,
-    }));
+    // Sort ratings by date ascending
+    const sortedRatings = [...ratingRows].sort(
+      (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+    );
+
+    const startOfChartTime = now - WEEKS * MS_PER_WEEK;
+
+    // Calculate initial ratings before the chart timeframe
+    let runningSum = 0;
+    let runningCount = 0;
+    for (const r of sortedRatings) {
+      if (new Date(r.created_at).getTime() < startOfChartTime) {
+        runningSum += r.rating_value;
+        runningCount += 1;
+      }
+    }
+
+    const ratingTrend = Array.from({ length: WEEKS }, (_, index) => {
+      const weeksAgo = WEEKS - 1 - index;
+      const weekStartTime = now - (weeksAgo + 1) * MS_PER_WEEK;
+      const weekEndTime = now - weeksAgo * MS_PER_WEEK;
+
+      // Add ratings that fall within this week
+      for (const r of sortedRatings) {
+        const t = new Date(r.created_at).getTime();
+        if (t >= weekStartTime && t < weekEndTime) {
+          runningSum += r.rating_value;
+          runningCount += 1;
+        }
+      }
+
+      const start = new Date(weekStartTime);
+      return {
+        label: start.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' }),
+        averageRating: runningCount > 0 ? Number((runningSum / runningCount).toFixed(2)) : null,
+      };
+    });
 
     return NextResponse.json({
       summary: {
         totalRevenue,
         totalRakSold,
+        stockRak: listing?.stock_rak ?? 0,
         completedOrders: totalCompletedOrders,
+        todayRevenue,
+        todayRakSold,
+        todayCompletedOrders,
         averageRating: Number(averageRating.toFixed(2)),
         deliveryAccuracy,
         finalScore,
       },
-      weekly,
+      daily: daily.map(({ label, revenue, rakSold }) => ({ label, revenue, rakSold })),
+      weekly: weekly.map(({ label, revenue, rakSold }) => ({ label, revenue, rakSold })),
+      monthly: monthlyClean,
       ratingTrend,
     });
   } catch (error) {
