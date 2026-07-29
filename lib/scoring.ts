@@ -55,9 +55,9 @@ export async function recalculatePeternakScore(peternakId: string) {
     averageRating = totalRating / ratings.length;
     ratingScore = (averageRating / 5) * 100;
   } else {
-    // If no rating, assume neutral 100 or 0? A default of 100 rating score might be too high for new. Let's say 80 (equivalent to 4 stars)
-    averageRating = 4.0;
-    ratingScore = 80;
+    // If no rating, set averageRating to 0 and ratingScore to 0 so it displays as Baru or 0.0
+    averageRating = 0;
+    ratingScore = 0;
   }
 
   // Final Score = 50% transaction + 30% delivery + 20% rating

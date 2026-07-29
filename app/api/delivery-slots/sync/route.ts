@@ -33,35 +33,116 @@ export async function POST(request: Request) {
 
     const adminClient = createAdminClient();
 
-    // 1. Delete all existing slots for this peternak
-    const { error: deleteError } = await adminClient
+    // 1. Fetch all existing slots for this peternak
+    const { data: existingSlots, error: fetchSlotsError } = await adminClient
       .from('delivery_slots')
-      .delete()
+      .select('id, start_time, end_time, is_active')
       .eq('peternak_id', peternakDetail.id);
 
-    if (deleteError) {
-      return NextResponse.json({ error: deleteError.message }, { status: 500 });
+    if (fetchSlotsError) {
+      return NextResponse.json({ error: fetchSlotsError.message }, { status: 500 });
     }
 
-    // 2. Insert new active slots
-    if (activeSlots.length > 0) {
-      const slotsToInsert = activeSlots.map((slotStr) => {
-        const [start, end] = slotStr.split(' - ');
-        return {
-          peternak_id: peternakDetail.id,
-          start_time: start.trim(),
-          end_time: end.trim(),
-          is_active: true,
-        };
-      });
+    // 2. Fetch all delivery_slot_ids currently referenced in orders
+    const { data: referencedOrders, error: referencedOrdersError } = await adminClient
+      .from('orders')
+      .select('delivery_slot_id')
+      .eq('peternak_id', peternakDetail.id)
+      .not('delivery_slot_id', 'is', null);
 
-      const { error: insertError } = await adminClient
-        .from('delivery_slots')
-        .insert(slotsToInsert);
+    if (referencedOrdersError) {
+      return NextResponse.json({ error: referencedOrdersError.message }, { status: 500 });
+    }
 
-      if (insertError) {
-        return NextResponse.json({ error: insertError.message }, { status: 500 });
+    const referencedSlotIds = new Set((referencedOrders ?? []).map((o) => o.delivery_slot_id));
+
+    // Parse active slots from body input
+    const activeParsed = activeSlots.map((slotStr) => {
+      const [start, end] = slotStr.split(' - ');
+      return {
+        start: start.trim(),
+        end: end.trim(),
+      };
+    });
+
+    const slotsToInsert = [];
+    const slotsToActivate = [];
+    const slotsToDeactivate = [];
+    const slotsToDelete = [];
+
+    // Check existing slots to see if they should be deactivated or deleted
+    for (const existing of existingSlots ?? []) {
+      const formattedStartTime = existing.start_time.substring(0, 5);
+      const formattedEndTime = existing.end_time.substring(0, 5);
+
+      const isActiveInInput = activeParsed.some(
+        (a) =>
+          a.start.substring(0, 5) === formattedStartTime &&
+          a.end.substring(0, 5) === formattedEndTime
+      );
+
+      if (isActiveInInput) {
+        if (!existing.is_active) {
+          slotsToActivate.push(existing.id);
+        }
+      } else {
+        // Deselected slot: soft delete if referenced by orders, hard delete if not
+        if (referencedSlotIds.has(existing.id)) {
+          if (existing.is_active) {
+            slotsToDeactivate.push(existing.id);
+          }
+        } else {
+          slotsToDelete.push(existing.id);
+        }
       }
+    }
+
+    // Check input slots to see if they should be inserted
+    for (const active of activeParsed) {
+      const alreadyExists = (existingSlots ?? []).some(
+        (e) =>
+          e.start_time.substring(0, 5) === active.start.substring(0, 5) &&
+          e.end_time.substring(0, 5) === active.end.substring(0, 5)
+      );
+
+      if (!alreadyExists) {
+        slotsToInsert.push({
+          peternak_id: peternakDetail.id,
+          start_time: active.start,
+          end_time: active.end,
+          is_active: true,
+        });
+      }
+    }
+
+    // Perform database operations
+    if (slotsToDelete.length > 0) {
+      const { error: delErr } = await adminClient
+        .from('delivery_slots')
+        .delete()
+        .in('id', slotsToDelete);
+      if (delErr) return NextResponse.json({ error: delErr.message }, { status: 500 });
+    }
+
+    if (slotsToDeactivate.length > 0) {
+      const { error: deactErr } = await adminClient
+        .from('delivery_slots')
+        .update({ is_active: false })
+        .in('id', slotsToDeactivate);
+      if (deactErr) return NextResponse.json({ error: deactErr.message }, { status: 500 });
+    }
+
+    if (slotsToActivate.length > 0) {
+      const { error: actErr } = await adminClient
+        .from('delivery_slots')
+        .update({ is_active: true })
+        .in('id', slotsToActivate);
+      if (actErr) return NextResponse.json({ error: actErr.message }, { status: 500 });
+    }
+
+    if (slotsToInsert.length > 0) {
+      const { error: insErr } = await adminClient.from('delivery_slots').insert(slotsToInsert);
+      if (insErr) return NextResponse.json({ error: insErr.message }, { status: 500 });
     }
 
     return NextResponse.json({ success: true, message: 'Slots updated successfully' });

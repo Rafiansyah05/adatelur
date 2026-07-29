@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Star } from 'lucide-react';
+import { X, Star, CheckCircle } from 'lucide-react';
 import { Button } from './Button';
 import { cn } from '@/lib/utils';
 
@@ -14,6 +14,7 @@ export function RatingModal({ isOpen, onClose, orderId, onSuccess }: RatingModal
   const [rating, setRating] = useState<number>(0);
   const [hoveredRating, setHoveredRating] = useState<number>(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   if (!isOpen) return null;
@@ -39,8 +40,13 @@ export function RatingModal({ isOpen, onClose, orderId, onSuccess }: RatingModal
         throw new Error(data.error || 'Gagal menyimpan rating');
       }
 
-      onSuccess();
-      onClose();
+      setIsSuccess(true);
+      setTimeout(() => {
+        onSuccess();
+        onClose();
+        setIsSuccess(false);
+        setRating(0);
+      }, 3000);
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -53,48 +59,58 @@ export function RatingModal({ isOpen, onClose, orderId, onSuccess }: RatingModal
       <div className="bg-white rounded-xl shadow-lg w-full max-w-sm overflow-hidden flex flex-col animate-in fade-in zoom-in duration-200">
         <div className="flex justify-between items-center p-4 border-b border-neutral-100">
           <h3 className="font-bold text-lg text-neutral-800">Beri Rating Pesanan</h3>
-          <button onClick={onClose} className="p-1 hover:bg-neutral-100 rounded-md transition-colors">
+          <button onClick={onClose} className="p-1 hover:bg-neutral-100 rounded-md transition-colors" disabled={isSuccess}>
             <X className="h-5 w-5 text-neutral-500" />
           </button>
         </div>
 
-        <div className="p-6 flex flex-col items-center justify-center gap-4">
-          <p className="text-center text-sm text-neutral-600 mb-2">
-            Bagaimana kualitas pelayanan dan produk dari peternak ini?
-          </p>
-
-          <div className="flex gap-2">
-            {[1, 2, 3, 4, 5].map((star) => (
-              <button
-                key={star}
-                type="button"
-                className="transition-transform hover:scale-110 focus:outline-none"
-                onMouseEnter={() => setHoveredRating(star)}
-                onMouseLeave={() => setHoveredRating(0)}
-                onClick={() => setRating(star)}
-                disabled={isSubmitting}
-              >
-                <Star 
-                  className={cn(
-                    "h-10 w-10 transition-colors cursor-pointer",
-                    (hoveredRating ? star <= hoveredRating : star <= rating)
-                      ? "fill-primary-400 text-primary-400"
-                      : "fill-neutral-100 text-neutral-200"
-                  )} 
-                />
-              </button>
-            ))}
+        {isSuccess ? (
+          <div className="p-8 flex flex-col items-center justify-center gap-3 text-center animate-in fade-in duration-300">
+            <CheckCircle className="h-16 w-16 text-success fill-success/10 animate-bounce" />
+            <h4 className="font-bold text-lg text-neutral-800">Berhasil Memberikan Rating!</h4>
+            <p className="text-sm text-neutral-500">Terima kasih atas ulasan Anda. Halaman akan tertutup otomatis...</p>
           </div>
-          
-          {error && <p className="text-danger-text text-sm font-semibold">{error}</p>}
-        </div>
+        ) : (
+          <>
+            <div className="p-6 flex flex-col items-center justify-center gap-4">
+              <p className="text-center text-sm text-neutral-600 mb-2">
+                Bagaimana kualitas pelayanan dan produk dari peternak ini?
+              </p>
 
-        <div className="p-4 border-t border-neutral-100 bg-neutral-50 flex justify-end gap-3">
-          <Button variant="outline" onClick={onClose} disabled={isSubmitting}>Batal</Button>
-          <Button variant="primary" onClick={handleSubmit} disabled={isSubmitting || rating === 0}>
-            {isSubmitting ? 'Menyimpan...' : 'Kirim Rating'}
-          </Button>
-        </div>
+              <div className="flex gap-2">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <button
+                    key={star}
+                    type="button"
+                    className="transition-transform hover:scale-110 focus:outline-none"
+                    onMouseEnter={() => setHoveredRating(star)}
+                    onMouseLeave={() => setHoveredRating(0)}
+                    onClick={() => setRating(star)}
+                    disabled={isSubmitting}
+                  >
+                    <Star 
+                      className={cn(
+                        "h-10 w-10 transition-colors cursor-pointer",
+                        (hoveredRating ? star <= hoveredRating : star <= rating)
+                          ? "fill-primary-400 text-primary-400"
+                          : "fill-neutral-100 text-neutral-200"
+                      )} 
+                    />
+                  </button>
+                ))}
+              </div>
+              
+              {error && <p className="text-danger-text text-sm font-semibold">{error}</p>}
+            </div>
+
+            <div className="p-4 border-t border-neutral-100 bg-neutral-50 flex justify-end gap-3">
+              <Button variant="outline" onClick={onClose} disabled={isSubmitting}>Batal</Button>
+              <Button variant="primary" onClick={handleSubmit} disabled={isSubmitting || rating === 0}>
+                {isSubmitting ? 'Menyimpan...' : 'Kirim Rating'}
+              </Button>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

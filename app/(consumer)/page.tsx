@@ -15,6 +15,7 @@ export interface RecommendParams {
   fulfillment_method: 'pickup' | 'delivery';
   consumer_lat?: number;
   consumer_lng?: number;
+  sort_by?: 'score' | 'efficiency';
 }
 
 export interface RecommendationResult {
@@ -22,6 +23,7 @@ export interface RecommendationResult {
   peternak_id: string;
   peternak_name: string;
   avatar_url: string;
+  farm_address: string;
   price_per_rak: number;
   final_score: number;
   average_rating: number;
@@ -72,6 +74,7 @@ export default function Home() {
           fulfillment_method: 'pickup',
           consumer_lat: lat,
           consumer_lng: lng,
+          sort_by: 'score'
         });
         // Get top 10
         setTopPeternak(result.data.slice(0, 10));
@@ -225,7 +228,9 @@ export default function Home() {
                 <div key={item.listing_id} className="w-[320px] md:w-[380px] shrink-0">
                   <ScoreCard
                     peternakName={item.peternak_name}
+                    avatarUrl={item.avatar_url}
                     avatarInitials={getInitials(item.peternak_name)}
+                    location={item.farm_address}
                     rating={item.average_rating || 0}
                     averageRating={item.average_rating}
                     totalOrders={item.total_completed_orders}
@@ -235,6 +240,8 @@ export default function Home() {
                     distanceKm={item.distance_km}
                     isTopPick={false}
                     rank={index + 1}
+                    hidePesanButton={true}
+                    hideOngkir={true}
                     onPesanClick={() => {
                       setSelectedPeternak(item);
                       setIsModalOpen(true);

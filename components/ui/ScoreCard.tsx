@@ -8,6 +8,7 @@ import Image from 'next/image';
 export interface ScoreCardProps {
   peternakName: string;
   avatarInitials: string;
+  avatarUrl?: string;
   location?: string;
   rating?: number;
   averageRating?: number;
@@ -20,6 +21,8 @@ export interface ScoreCardProps {
   isTopPick?: boolean;
   rank?: number;
   onPesanClick?: () => void;
+  hidePesanButton?: boolean;
+  hideOngkir?: boolean;
   className?: string;
 }
 
@@ -28,6 +31,7 @@ const ScoreCard = React.forwardRef<HTMLDivElement, ScoreCardProps>(
     {
       peternakName,
       avatarInitials,
+      avatarUrl,
       location,
       rating = 0,
       averageRating,
@@ -40,6 +44,8 @@ const ScoreCard = React.forwardRef<HTMLDivElement, ScoreCardProps>(
       isTopPick = false,
       rank,
       onPesanClick,
+      hidePesanButton = false,
+      hideOngkir = false,
       className,
     },
     ref
@@ -88,8 +94,12 @@ const ScoreCard = React.forwardRef<HTMLDivElement, ScoreCardProps>(
             )}
             
             <div className="flex items-center gap-3">
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary-50 text-sm font-bold text-primary-900 shadow-sm border border-primary-100">
-                {avatarInitials}
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary-50 text-sm font-bold text-primary-900 shadow-sm border border-primary-100 overflow-hidden">
+                {avatarUrl ? (
+                  <img src={avatarUrl} alt={peternakName} className="h-full w-full object-cover" />
+                ) : (
+                  avatarInitials
+                )}
               </div>
               <div className="flex flex-col">
                 <h3 className="text-base font-bold text-neutral-800">{peternakName}</h3>
@@ -124,7 +134,14 @@ const ScoreCard = React.forwardRef<HTMLDivElement, ScoreCardProps>(
             <div className="flex items-center gap-1 font-bold text-neutral-700">
               <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
               <span>
-                {totalOrders === 0 ? 'Baru' : (averageRating ?? rating).toFixed(1)}
+                {(() => {
+                  const displayRating = averageRating ?? rating;
+                  // "Baru" only if no completed orders AND no rating score yet
+                  if ((totalOrders === undefined || totalOrders === 0) && displayRating === 0) {
+                    return 'Baru';
+                  }
+                  return displayRating.toFixed(1);
+                })()}
               </span>
             </div>
           </div>
@@ -147,34 +164,47 @@ const ScoreCard = React.forwardRef<HTMLDivElement, ScoreCardProps>(
         </div>
 
         {/* Pricing Info */}
-        <div className="relative z-10 flex flex-col gap-1.5 text-sm text-neutral-600">
-          <div className="flex justify-between">
-            <span>Harga per rak</span>
-            <span className="font-semibold text-neutral-800">Rp {pricePerRak.toLocaleString('id-ID')}</span>
+        {!hideOngkir && (
+          <div className="relative z-10 flex flex-col gap-1.5 text-sm text-neutral-600">
+            <div className="flex justify-between">
+              <span>Harga per rak</span>
+              <span className="font-semibold text-neutral-800">Rp {pricePerRak.toLocaleString('id-ID')}</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Estimasi ongkir</span>
+              <span className="font-semibold text-neutral-800">Rp {estimatedOngkir.toLocaleString('id-ID')}</span>
+            </div>
           </div>
-          <div className="flex justify-between">
-            <span>Estimasi ongkir</span>
-            <span className="font-semibold text-neutral-800">Rp {estimatedOngkir.toLocaleString('id-ID')}</span>
-          </div>
-        </div>
+        )}
 
-        <div className="relative z-10 my-1 h-px w-full bg-neutral-100" />
+        {!hideOngkir && <div className="relative z-10 my-1 h-px w-full bg-neutral-100" />}
 
         {/* Total & Action */}
         <div className="relative z-10 flex items-center justify-between">
-          <div className="flex flex-col">
-            <span className="text-xs font-medium text-neutral-500">Total Biaya</span>
-            <span className="text-lg font-black text-neutral-900">
-              Rp {total.toLocaleString('id-ID')}
-            </span>
-          </div>
-          <Button 
-            variant="primary" 
-            onClick={onPesanClick} 
-            className="rounded-lg px-6 py-2.5 transition-all font-semibold text-sm"
-          >
-            Pesan <ChevronRight className="ml-1 h-4 w-4" />
-          </Button>
+          {!hideOngkir ? (
+            <div className="flex flex-col">
+              <span className="text-xs font-medium text-neutral-500">Total Biaya</span>
+              <span className="text-lg font-black text-neutral-900">
+                Rp {total.toLocaleString('id-ID')}
+              </span>
+            </div>
+          ) : (
+            <div className="flex flex-col">
+              <span className="text-xs font-medium text-neutral-500">Harga per rak</span>
+              <span className="text-lg font-black text-neutral-900">
+                Rp {pricePerRak.toLocaleString('id-ID')}
+              </span>
+            </div>
+          )}
+          {!hidePesanButton && (
+            <Button 
+              variant="primary" 
+              onClick={onPesanClick} 
+              className="rounded-lg px-6 py-2.5 transition-all font-semibold text-sm"
+            >
+              Pesan <ChevronRight className="ml-1 h-4 w-4" />
+            </Button>
+          )}
         </div>
       </Card>
     );

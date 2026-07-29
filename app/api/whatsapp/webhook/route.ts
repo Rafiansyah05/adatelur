@@ -135,6 +135,11 @@ export async function POST(request: Request) {
         ? `Pesanan *${shortOrderId}* berhasil diterima. Silakan siapkan pesanannya.`
         : `Pesanan *${shortOrderId}* telah ditolak.`;
 
+    if (newStatus === 'accepted') {
+      const { handleStockCheck } = await import('@/lib/stock-notifier');
+      await handleStockCheck(supabase, order.peternak_id);
+    }
+
     return reply(successText);
   } catch (error) {
     return NextResponse.json(

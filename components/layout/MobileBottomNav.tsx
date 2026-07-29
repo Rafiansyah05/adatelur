@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { NavItem } from './DesktopSidebar';
+import { NavItem } from './TopNavbar';
 
 export function MobileBottomNav({ items }: { items: NavItem[] }) {
   const pathname = usePathname();

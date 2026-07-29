@@ -228,7 +228,9 @@ function RecommendationsContent() {
                   <ScoreCard
                     key={item.listing_id}
                     peternakName={item.peternak_name}
+                    avatarUrl={item.avatar_url}
                     avatarInitials={getInitials(item.peternak_name)}
+                    location={item.farm_address}
                     rating={item.average_rating || 0}
                     averageRating={item.average_rating}
                     totalOrders={item.total_completed_orders}

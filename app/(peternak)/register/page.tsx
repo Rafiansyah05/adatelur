@@ -31,11 +31,11 @@ function CustomToast({ message, type, onClose }: ToastProps) {
   const Icon = type === 'error' ? AlertCircle : type === 'success' ? CheckCircle2 : AlertCircle;
 
   return (
-    <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-top-5 fade-in duration-300">
-      <div className={`flex items-center gap-3 px-4 py-3 rounded-sm border shadow-sm ${bgColor}`}>
-        <Icon className="w-5 h-5" />
-        <span className="text-[14px] font-bold">{message}</span>
-        <button onClick={onClose} className="ml-4 text-inherit hover:opacity-70 focus:outline-none">
+    <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-top-5 fade-in duration-300 w-[90%] max-w-md">
+      <div className={`flex items-start sm:items-center gap-3 px-4 py-3 rounded-sm border shadow-sm ${bgColor}`}>
+        <Icon className="w-5 h-5 shrink-0 mt-0.5 sm:mt-0" />
+        <span className="text-[14px] font-bold flex-1 leading-snug">{message}</span>
+        <button onClick={onClose} className="shrink-0 text-inherit hover:opacity-70 focus:outline-none">
           <X className="w-4 h-4" />
         </button>
       </div>
@@ -717,7 +717,20 @@ export default function RegisterPeternakPage() {
                       {hasVehicle && (
                         <div className="sm:col-span-2 mt-2 animate-in fade-in slide-in-from-top-2">
                           <Label className="text-neutral-700 font-bold mb-1.5 block">Jenis Kendaraan*</Label>
-                          <Input value={vehicleType} onChange={(e) => setVehicleType(e.target.value)} placeholder="Misal: Mobil Pickup (L300)" className="min-h-[48px] rounded-sm bg-neutral-50 border-neutral-200 shadow-none text-[14px]" />
+                          <div className="relative">
+                            <select
+                              value={vehicleType}
+                              onChange={(e) => setVehicleType(e.target.value)}
+                              className="w-full min-h-[48px] appearance-none rounded-sm bg-neutral-50 border border-neutral-200 px-3 text-[14px] text-neutral-900 focus:bg-white focus:outline-none focus:border-primary-400 focus:ring-1 focus:ring-primary-400 transition-colors"
+                            >
+                              <option value="">Pilih Jenis Kendaraan</option>
+                              <option value="Mobil">Mobil</option>
+                              <option value="Motor">Motor</option>
+                            </select>
+                            <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-neutral-500">
+                              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+                            </div>
+                          </div>
                         </div>
                       )}
                     </div>

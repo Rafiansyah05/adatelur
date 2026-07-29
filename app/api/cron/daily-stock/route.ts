@@ -56,6 +56,16 @@ export async function GET(request: Request) {
 
     const stockMap = new Map((listings ?? []).map((l) => [l.peternak_id, l.stock_rak]));
 
+    // Reset all peternak stock to 0 daily at 00:00 (run by cron)
+    const { error: resetError } = await supabase
+      .from('listings')
+      .update({ stock_rak: 0 })
+      .in('peternak_id', peternakIds);
+
+    if (resetError) {
+      console.error('Failed to reset daily stock:', resetError);
+    }
+
     const { data: completedHistory } = await supabase
       .from('order_status_history')
       .select('order_id')
@@ -111,17 +121,19 @@ export async function GET(request: Request) {
       const baselineRak = Math.floor(baselineEggs / RAK_SIZE);
       const projectedStock = baselineRak + leftover;
 
-      const confirmLine = device
-        ? `Jika stok hari ini sama seperti biasa, stok jadi *${projectedStock} rak*.\n\nSetuju? Tap:\nhttps://wa.me/${device}?text=${encodeURIComponent(`STOK ${projectedStock}`)}`
-        : `Jika sama seperti biasa, balas: STOK ${projectedStock}`;
+      const confirmLink = device
+        ? `https://wa.me/${device}?text=${encodeURIComponent(`STOK ${stockYesterday}`)}`
+        : '';
+      const editLink = `${appUrl}/dashboard/availability`;
 
       const message =
-        `*Selamat pagi! Rekap kemarin:*\n\n` +
-        `*Terjual:* ${soldYesterday} rak\n` +
-        `*Stok kemarin:* ${stockYesterday} rak\n` +
-        `*Sisa:* ${leftover} rak\n\n` +
-        `${confirmLine}\n\n` +
-        `Ubah stok manual:\n${appUrl}/dashboard/availability`;
+        `*Konfirmasi Stok Harian - adatelur.*\n\n` +
+        `Halo! Stok harian Anda telah direset menjadi 0 pada jam 00:00.\n\n` +
+        `Apakah stok hari ini sama dengan stok kemarin (*${stockYesterday} rak*)?\n\n` +
+        `✅ *Iya, Sama:* Klik link berikut untuk mengirim pesan konfirmasi otomatis:\n` +
+        `${confirmLink}\n\n` +
+        `✏️ *Ubah/Edit Stok:* Klik link berikut untuk diarahkan ke halaman edit stok Anda:\n` +
+        `${editLink}`;
 
       await sendWhatsAppMessage(phone, message);
 
