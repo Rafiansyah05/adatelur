@@ -212,8 +212,8 @@ function SearchResults() {
 
       {/* Peternak Detail & Order Input Popup */}
       {showPopup && (
-        <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-          <div className="w-full max-w-md bg-white rounded-xl p-6 relative animate-in slide-in-from-bottom-4 sm:slide-in-from-bottom-0 sm:zoom-in-95" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+          <div className="w-full max-w-md bg-white rounded-xl p-6 relative animate-in zoom-in-95" onClick={(e) => e.stopPropagation()}>
             <button 
               onClick={() => setShowPopup(false)}
               className="absolute top-4 right-4 p-2 text-neutral-400 hover:text-neutral-600 rounded-lg hover:bg-neutral-100 transition-colors"
@@ -231,9 +231,9 @@ function SearchResults() {
               <>
                 <div className="flex items-center gap-4 mb-6 pb-6 border-b border-border">
                   <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-primary-100 text-primary-950 font-bold text-xl overflow-hidden">
-                    {peternakDetail.profiles?.avatar_url ? (
+                    {selectedPeternak?.avatar_url || peternakDetail.profiles?.avatar_url ? (
                       <img 
-                        src={peternakDetail.profiles.avatar_url} 
+                        src={selectedPeternak?.avatar_url || peternakDetail.profiles?.avatar_url} 
                         alt={peternakDetail.full_name} 
                         className="h-full w-full object-cover"
                       />

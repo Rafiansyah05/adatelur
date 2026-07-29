@@ -106,8 +106,8 @@ export function PeternakDetailModal({ isOpen, onClose, peternak }: PeternakDetai
   }
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-sm p-4" onClick={handleModalClose}>
-      <div className="w-full max-w-md bg-white rounded-xl p-6 relative animate-in slide-in-from-bottom-4 sm:slide-in-from-bottom-0 sm:zoom-in-95" onClick={(e) => e.stopPropagation()}>
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4" onClick={handleModalClose}>
+      <div className="w-full max-w-md bg-white rounded-xl p-6 relative animate-in zoom-in-95" onClick={(e) => e.stopPropagation()}>
         <button 
           onClick={onClose}
           className="absolute top-4 right-4 p-2 text-neutral-400 hover:text-neutral-600 rounded-lg hover:bg-neutral-100 transition-colors"

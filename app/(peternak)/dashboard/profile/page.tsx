@@ -160,9 +160,9 @@ export default function PeternakProfilePage() {
     <div className="w-full max-w-5xl mx-auto">
       <h1 className="text-3xl font-bold text-neutral-900 mb-8 hidden md:block">Akun</h1>
 
-      <div className="flex flex-col md:flex-row gap-8">
-        <div className="w-full md:w-72 flex flex-col gap-6 shrink-0">
-          <Card className="flex flex-col items-center p-6 bg-white border border-neutral-100 shadow-sm rounded-xl">
+      <div className="flex flex-col md:flex-row gap-8 md:gap-0 md:bg-white md:border md:border-neutral-100 md:shadow-sm md:rounded-xl md:overflow-hidden">
+        <div className="w-full md:w-72 flex flex-col gap-6 shrink-0 md:border-r md:border-neutral-100 md:p-6 md:bg-neutral-50/30">
+          <Card className="flex flex-col items-center p-6 bg-white border border-neutral-100 shadow-sm rounded-xl md:border-none md:shadow-none md:bg-transparent md:p-0">
             <div className="relative mb-4 group">
               <div className="h-24 w-24 rounded-full overflow-hidden border-4 border-white shadow-md bg-neutral-100 relative">
                 {avatarUrl ? (
@@ -198,7 +198,7 @@ export default function PeternakProfilePage() {
             <p className="text-sm text-neutral-500 font-medium mt-1">Peternak</p>
           </Card>
 
-          <Card className="flex-col bg-white border border-neutral-100 shadow-sm rounded-xl overflow-hidden p-2 gap-1 hidden md:flex">
+          <Card className="flex-col bg-white border border-neutral-100 shadow-sm rounded-xl overflow-hidden p-2 gap-1 hidden md:flex md:border-none md:shadow-none md:bg-transparent md:p-0">
             <button
               onClick={() => setActiveTab('informasi')}
               className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-semibold transition-colors ${
@@ -262,8 +262,8 @@ export default function PeternakProfilePage() {
           </div>
         </div>
 
-        <div className="flex-1 flex flex-col gap-6">
-          <Card className="bg-white border border-neutral-100 shadow-sm rounded-xl p-6 md:p-8 min-h-[400px]">
+        <div className="flex-1 flex flex-col gap-6 md:p-0">
+          <Card className="bg-white border border-neutral-100 shadow-sm rounded-xl p-6 md:p-8 min-h-[400px] md:border-none md:shadow-none md:bg-transparent md:rounded-none">
             {activeTab === 'informasi' && (
               <div className="animate-in fade-in duration-300">
                 <div className="border-b border-neutral-100 pb-4 mb-6">

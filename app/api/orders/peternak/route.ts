@@ -18,7 +18,7 @@ export async function GET(request: Request) {
       .from('orders')
       .select(`
         *,
-        consumer:profiles!orders_consumer_id_fkey(full_name, phone_number),
+        consumer:profiles!orders_consumer_id_fkey(full_name, phone_number, avatar_url),
         consumer_address:consumer_addresses(latitude, longitude),
         delivery_slot:delivery_slots(start_time, end_time)
       `)

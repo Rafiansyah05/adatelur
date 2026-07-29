@@ -123,25 +123,39 @@ export default function ConsumerOrdersPage() {
         <div className="flex flex-col gap-4">
           {displayedOrders.map((order) => (
             <Card key={order.id} className="p-5 md:p-6 border border-border rounded-xl flex flex-col md:flex-row md:items-center justify-between gap-5 transition-all hover:shadow-sm hover:border-primary-200 bg-white">
-              <div className="flex-1">
-                <div className="flex items-center gap-3 mb-2">
-                  <span className="font-bold text-text-main">Order #{order.id.split('-')[0].toUpperCase()}</span>
-                  <span className={`px-2 py-0.5 rounded text-xs font-bold ${
-                    order.order_status === 'completed' ? 'bg-success-bg text-success-text border border-success' : 
-                    (order.order_status === 'rejected' || order.order_status === 'expired') ? 'bg-danger-light text-danger-text border border-danger' :
-                    'bg-primary-100 text-primary-900 border border-primary-200'
-                  }`}>
-                    {order.order_status.toUpperCase()}
-                  </span>
+              <div className="flex flex-1 items-start gap-4">
+                {/* Peternak Logo */}
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary-50 text-lg font-bold text-primary-900 overflow-hidden border border-primary-100">
+                  {order.peternak?.profile?.avatar_url ? (
+                    <img 
+                      src={order.peternak.profile.avatar_url} 
+                      alt={order.peternak?.profile?.full_name || 'Peternak'} 
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <span>{(order.peternak?.profile?.full_name || 'P')[0].toUpperCase()}</span>
+                  )}
                 </div>
-                <p className="text-sm text-text-desc mb-1">
-                  {new Date(order.created_at).toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' })}
-                </p>
-                <p className="text-body-medium text-text-main mb-2">
-                  {order.peternak?.profile?.full_name || 'Peternak'} • {order.rak_quantity} Rak
-                </p>
 
-                <div className="flex flex-wrap items-center gap-2 mt-2">
+                <div className="flex-1">
+                  <div className="flex flex-wrap items-center gap-3 mb-2">
+                    <span className="font-bold text-text-main">Order #{order.id.split('-')[0].toUpperCase()}</span>
+                    <span className={`px-2 py-0.5 rounded text-xs font-bold ${
+                      order.order_status === 'completed' ? 'bg-success-bg text-success-text border border-success' : 
+                      (order.order_status === 'rejected' || order.order_status === 'expired') ? 'bg-danger-light text-danger-text border border-danger' :
+                      'bg-primary-100 text-primary-900 border border-primary-200'
+                    }`}>
+                      {order.order_status.toUpperCase()}
+                    </span>
+                  </div>
+                  <p className="text-sm text-text-desc mb-1">
+                    {new Date(order.created_at).toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' })}
+                  </p>
+                  <p className="text-body-medium text-text-main mb-2">
+                    {order.peternak?.profile?.full_name || 'Peternak'} • {order.rak_quantity} Rak
+                  </p>
+
+                  <div className="flex flex-wrap items-center gap-2 mt-2">
                   <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded border ${
                     order.fulfillment_method === 'pickup'
                       ? 'bg-primary-50 text-primary-700 border-primary-200'
@@ -158,16 +172,17 @@ export default function ConsumerOrdersPage() {
                       {formatTime(order.delivery_slot.start_time)} – {formatTime(order.delivery_slot.end_time)} WIB
                     </span>
                   )}
+                  </div>
                 </div>
               </div>
             
             {/* Kolom kanan: harga + tombol aksi */}
-            <div className="flex flex-col md:items-end gap-3 md:pl-6 md:border-l md:border-neutral-100">
-              <div className="md:text-right">
-                <p className="text-xs text-text-desc mb-1">Total Belanja</p>
-                <p className="text-h3 text-text-main">
+            <div className="flex flex-col items-end gap-3 md:pl-6 md:border-l md:border-neutral-100 w-full md:w-auto mt-4 pt-4 border-t border-neutral-100 md:mt-0 md:pt-0 md:border-t-0">
+              <div className="flex flex-col items-end">
+                <span className="text-xs text-text-desc mb-1">Total Belanja</span>
+                <span className="font-bold text-text-main text-lg">
                   Rp {Number(order.total_amount).toLocaleString('id-ID')}
-                </p>
+                </span>
               </div>
 
               <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">

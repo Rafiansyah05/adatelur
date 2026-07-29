@@ -188,6 +188,13 @@ export async function POST(request: Request) {
 
     if (sort_by === 'score') {
       processedListings.sort((a, b) => b.final_score - a.final_score);
+    } else if (sort_by === 'distance') {
+      processedListings.sort((a, b) => {
+        if (a.distance_km === b.distance_km) {
+          return a.price_per_rak - b.price_per_rak;
+        }
+        return a.distance_km - b.distance_km;
+      });
     } else {
       processedListings.sort((a, b) => a.total_cost - b.total_cost);
     }

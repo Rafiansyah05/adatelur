@@ -37,10 +37,8 @@ export function MobileTopNavbar() {
           <span className="text-xl font-bold text-text-main tracking-tight">adatelur.</span>
         </div>
         
-        {/* Kanan: Notifikasi -> halaman baru */}
-        <Link href="/notifications" className="flex h-10 w-10 items-center justify-center rounded-full text-text-main hover:bg-neutral-100">
-          <Bell className="h-6 w-6" />
-        </Link>
+        {/* Kanan: Kosong (untuk balance spacing) */}
+        <div className="w-10"></div>
       </header>
     );
   }

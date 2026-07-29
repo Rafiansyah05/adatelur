@@ -253,7 +253,7 @@ export default function CheckoutQrisPage() {
           <h2 className="text-2xl font-bold mb-3 text-text-main">Pembayaran Berhasil</h2>
           <p className="text-neutral-500 mb-2">Pesanan Anda berhasil dibuat.</p>
           <p className="text-neutral-500 mb-8">
-            Anda akan diarahkan ke Riwayat Pesanan dalam <br/>
+            Anda akan diarahkan ke Riwayat Pesanan dalam <br />
             <span className="text-primary-600 font-bold text-xl">{successCountdown}</span> detik
           </p>
           <Button onClick={() => router.replace('/orders')} variant="primary" className="w-full">Lihat Sekarang</Button>
@@ -315,7 +315,7 @@ export default function CheckoutQrisPage() {
                 <span>Rp {ongkir.toLocaleString('id-ID')}</span>
               </div>
               <div className="flex justify-between text-sm text-neutral-600">
-                <span>Biaya Layanan (1.5%)</span>
+                <span>Biaya Layanan</span>
                 <span>Rp {biayaLayanan.toLocaleString('id-ID')}</span>
               </div>
               <div className="flex justify-between text-base font-bold text-text-main pt-3 border-t border-neutral-100">

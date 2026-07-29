@@ -7,7 +7,7 @@ import { OrderModal } from '@/components/ui/OrderModal';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Label } from '@/components/ui/Label';
-import { ChevronLeft, AlertCircle, SearchX } from 'lucide-react';
+import { ChevronLeft, AlertCircle, SearchX, Search, X } from 'lucide-react';
 import { RecommendParams, RecommendationResult } from '../page'; // Reuse types
 
 async function fetchRecommendations(params: RecommendParams): Promise<{ data: RecommendationResult[] }> {
@@ -29,7 +29,7 @@ function RecommendationsContent() {
   const initialRak = parseInt(searchParams.get('rak') || '1', 10);
   const initialMethod = (searchParams.get('method') as 'pickup' | 'delivery') || 'pickup';
 
-  const [rakQuantity, setRakQuantity] = useState<number>(initialRak);
+  const [rakQuantity, setRakQuantity] = useState<number | ''>(initialRak);
   const [method, setMethod] = useState<'pickup' | 'delivery'>(initialMethod);
   const [errorMsg, setErrorMsg] = useState<string>('');
 
@@ -39,6 +39,8 @@ function RecommendationsContent() {
   
   const [selectedPeternak, setSelectedPeternak] = useState<RecommendationResult | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  
+  const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
 
   // Function to load recommendations
   const loadRecommendations = (qty: number, meth: 'pickup' | 'delivery') => {
@@ -114,7 +116,7 @@ function RecommendationsContent() {
 
   const handleApply = (e: React.FormEvent) => {
     e.preventDefault();
-    if (rakQuantity < 1) {
+    if (rakQuantity === '' || rakQuantity < 1) {
       setErrorMsg('Jumlah rak minimal 1');
       return;
     }
@@ -144,7 +146,7 @@ function RecommendationsContent() {
       <div className="w-full grid grid-cols-1 md:grid-cols-[320px_1fr] lg:grid-cols-[360px_1fr] gap-8 md:mt-4 mt-20 px-4 md:px-0 max-w-7xl mx-auto">
 
         {/* Left Grid: Sticky Form */}
-        <div className="w-full">
+        <div className="w-full hidden md:block">
           <div className="md:sticky md:top-24 bg-white md:border border-neutral-100 md:shadow-sm rounded-lg p-6 mb-6">
             <h2 className="text-xl font-bold text-neutral-900 mb-5 hidden md:block">Sesuaikan Pesanan</h2>
 
@@ -156,7 +158,7 @@ function RecommendationsContent() {
                   type="number"
                   min="1"
                   value={rakQuantity}
-                  onChange={(e) => setRakQuantity(Number(e.target.value))}
+                  onChange={(e) => setRakQuantity(e.target.value === '' ? '' : Number(e.target.value))}
                   className="h-12 rounded-xl text-lg bg-neutral-50 border-neutral-200 focus:bg-white transition-colors"
                 />
               </div>
@@ -184,7 +186,7 @@ function RecommendationsContent() {
                 type="submit"
                 variant="primary"
                 className="h-12 w-full mt-2 rounded-lg font-semibold shadow-sm hover:shadow-md transition-all"
-                disabled={isLoading}
+                disabled={isLoading || rakQuantity === '' || rakQuantity < 1}
               >
                 {isLoading ? 'Mencari...' : 'Terapkan'}
               </Button>
@@ -236,7 +238,7 @@ function RecommendationsContent() {
                     totalOrders={item.total_completed_orders}
                     score={item.final_score}
                     pricePerRak={item.price_per_rak}
-                    rakQuantity={rakQuantity}
+                    rakQuantity={rakQuantity === '' ? 1 : rakQuantity}
                     estimatedOngkir={item.ongkir_amount}
                     distanceKm={item.distance_km}
                     isTopPick={index === 0}
@@ -261,12 +263,83 @@ function RecommendationsContent() {
           }}
           peternakId={selectedPeternak.peternak_id}
           peternakName={selectedPeternak.peternak_name}
-          rakQuantity={rakQuantity}
+          rakQuantity={rakQuantity === '' ? 1 : rakQuantity}
           method={method as 'pickup' | 'delivery'}
           pricePerRak={selectedPeternak.price_per_rak}
           estimatedOngkir={selectedPeternak.ongkir_amount}
           listingId={selectedPeternak.listing_id}
         />
+      )}
+
+      {/* Mobile FAB for Filter */}
+      <div className="md:hidden fixed bottom-6 right-6 z-40">
+        <button
+          onClick={() => setIsMobileFilterOpen(true)}
+          className="flex h-14 w-14 items-center justify-center rounded-full bg-primary-400 text-primary-950 shadow-lg hover:bg-primary-500 active:scale-95 transition-all"
+        >
+          <Search className="h-6 w-6" />
+        </button>
+      </div>
+
+      {/* Mobile Filter Modal */}
+      {isMobileFilterOpen && (
+        <div className="md:hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
+          <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl animate-in fade-in zoom-in-95">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-bold text-neutral-900">Pencarian Peternak</h2>
+              <button onClick={() => setIsMobileFilterOpen(false)} className="rounded-full p-2 hover:bg-neutral-100 text-neutral-500">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            
+            <form onSubmit={(e) => {
+              handleApply(e);
+              if (!(rakQuantity === '' || rakQuantity < 1)) {
+                setIsMobileFilterOpen(false);
+              }
+            }} className="flex flex-col gap-5">
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="mobile_rak_quantity" className="font-semibold text-neutral-700">Jumlah Rak</Label>
+                <Input
+                  id="mobile_rak_quantity"
+                  type="number"
+                  min="1"
+                  value={rakQuantity}
+                  onChange={(e) => setRakQuantity(e.target.value === '' ? '' : Number(e.target.value))}
+                  className="h-12 rounded-xl text-lg bg-neutral-50 border-neutral-200 focus:bg-white transition-colors"
+                />
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <Label className="font-semibold text-neutral-700">Metode Pengantaran</Label>
+                <div className="relative">
+                  <select
+                    value={method}
+                    onChange={(e) => setMethod(e.target.value as 'pickup' | 'delivery')}
+                    className="w-full h-12 appearance-none rounded-lg bg-neutral-50 border border-neutral-100 px-4 text-neutral-900 font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-500 transition-colors"
+                  >
+                    <option value="pickup">Ambil Sendiri (Pickup)</option>
+                    <option value="delivery">Diantar (Delivery)</option>
+                  </select>
+                  <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-neutral-500">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6" /></svg>
+                  </div>
+                </div>
+              </div>
+
+              {errorMsg && <p className="text-sm font-semibold text-danger">{errorMsg}</p>}
+
+              <Button
+                type="submit"
+                variant="primary"
+                className="h-12 w-full mt-2 rounded-lg font-semibold shadow-sm hover:shadow-md transition-all"
+                disabled={isLoading || rakQuantity === '' || rakQuantity < 1}
+              >
+                {isLoading ? 'Mencari...' : 'Cari'}
+              </Button>
+            </form>
+          </div>
+        </div>
       )}
     </div>
   );

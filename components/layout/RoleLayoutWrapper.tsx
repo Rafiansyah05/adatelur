@@ -14,10 +14,10 @@ interface RoleLayoutWrapperProps {
 export function RoleLayoutWrapper({ children, items }: RoleLayoutWrapperProps) {
   const pathname = usePathname();
   
-  // Hide layout elements on auth/registration pages
-  const isAuthPage = pathname.startsWith('/register') || pathname === '/login';
+  // Hide layout elements on auth/registration and checkout pages
+  const isNoLayoutPage = pathname.startsWith('/register') || pathname === '/login' || pathname.startsWith('/checkout');
 
-  if (isAuthPage) {
+  if (isNoLayoutPage) {
     return <div className="flex min-h-screen flex-col bg-bg-base">{children}</div>;
   }
 
