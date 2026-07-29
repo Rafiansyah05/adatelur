@@ -31,11 +31,7 @@ export async function POST(request: Request, { params }: { params: { id: string 
 
     const { data: order, error: orderErr } = await adminSupabase
       .from('orders')
-<<<<<<< HEAD
-      .select('id, consumer_id, peternak_id, order_status, rating')
-=======
       .select('id, consumer_id, order_status, rating, peternak_id')
->>>>>>> FixingBug
       .eq('id', orderId)
       .single();
 
@@ -55,10 +51,7 @@ export async function POST(request: Request, { params }: { params: { id: string 
       return NextResponse.json({ error: 'Pesanan ini sudah diberi rating' }, { status: 400 });
     }
 
-<<<<<<< HEAD
-=======
     // 1. Update rating on orders table
->>>>>>> FixingBug
     const { error: updateErr } = await adminSupabase
       .from('orders')
       .update({ rating })
