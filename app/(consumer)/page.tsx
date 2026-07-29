@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { ScoreCard } from '@/components/ui/ScoreCard';
 import { TopPeternakCard } from '@/components/ui/TopPeternakCard';
 import { OrderModal } from '@/components/ui/OrderModal';
@@ -60,6 +61,21 @@ export default function Home() {
 
   const [selectedPeternak, setSelectedPeternak] = useState<RecommendationResult | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const nearestRef = useRef<HTMLDivElement>(null);
+  const topRef = useRef<HTMLDivElement>(null);
+
+  const scrollLeft = (ref: React.RefObject<HTMLDivElement>) => {
+    if (ref.current) {
+      ref.current.scrollBy({ left: -320, behavior: 'smooth' });
+    }
+  };
+
+  const scrollRight = (ref: React.RefObject<HTMLDivElement>) => {
+    if (ref.current) {
+      ref.current.scrollBy({ left: 320, behavior: 'smooth' });
+    }
+  };
 
   // Listen to custom event for peternak removal if timeout
   useEffect(() => {
@@ -263,9 +279,17 @@ export default function Home() {
             <h2 className="text-xl md:text-3xl font-black text-neutral-900 tracking-tight">Peternak Terdekat</h2>
             <p className="text-xs md:text-base text-neutral-500 font-medium">Berdasarkan lokasi Anda (Stok Tersedia).</p>
           </div>
+          <div className="flex items-center gap-2">
+            <button onClick={() => scrollLeft(nearestRef)} className="flex h-8 w-8 md:h-10 md:w-10 items-center justify-center rounded-full bg-white border border-neutral-200 text-neutral-600 hover:bg-neutral-50 transition-colors shadow-sm">
+              <ChevronLeft className="h-4 w-4 md:h-5 md:w-5" />
+            </button>
+            <button onClick={() => scrollRight(nearestRef)} className="flex h-8 w-8 md:h-10 md:w-10 items-center justify-center rounded-full bg-white border border-neutral-200 text-neutral-600 hover:bg-neutral-50 transition-colors shadow-sm">
+              <ChevronRight className="h-4 w-4 md:h-5 md:w-5" />
+            </button>
+          </div>
         </div>
 
-        <div className="w-full overflow-x-auto pb-4 -mx-6 px-6 md:mx-0 md:px-0 hide-scrollbar">
+        <div ref={nearestRef} className="w-full overflow-x-auto pb-4 -mx-6 px-6 md:mx-0 md:px-0 hide-scrollbar scroll-smooth">
           {isLoadingNearest ? (
             <div className="flex gap-6 min-w-max">
               {[1, 2, 3, 4].map(i => (
@@ -316,9 +340,17 @@ export default function Home() {
             <h2 className="text-xl md:text-3xl font-black text-neutral-900 tracking-tight">Peternak Terbaik</h2>
             <p className="text-xs md:text-base text-neutral-500 font-medium">Berdasarkan skor dan kualitas sistem kami.</p>
           </div>
+          <div className="flex items-center gap-2">
+            <button onClick={() => scrollLeft(topRef)} className="flex h-8 w-8 md:h-10 md:w-10 items-center justify-center rounded-full bg-white border border-neutral-200 text-neutral-600 hover:bg-neutral-50 transition-colors shadow-sm">
+              <ChevronLeft className="h-4 w-4 md:h-5 md:w-5" />
+            </button>
+            <button onClick={() => scrollRight(topRef)} className="flex h-8 w-8 md:h-10 md:w-10 items-center justify-center rounded-full bg-white border border-neutral-200 text-neutral-600 hover:bg-neutral-50 transition-colors shadow-sm">
+              <ChevronRight className="h-4 w-4 md:h-5 md:w-5" />
+            </button>
+          </div>
         </div>
 
-        <div className="w-full overflow-x-auto pb-4 -mx-6 px-6 md:mx-0 md:px-0 hide-scrollbar">
+        <div ref={topRef} className="w-full overflow-x-auto pb-4 -mx-6 px-6 md:mx-0 md:px-0 hide-scrollbar scroll-smooth">
           {isLoadingTop ? (
             <div className="flex gap-6 min-w-max">
               {[1, 2, 3, 4].map(i => (

@@ -26,6 +26,10 @@ export const updateSession = async (request: NextRequest) => {
           )
         },
       },
+      cookieOptions: {
+        maxAge: 60 * 60 * 24 * 365, // 1 year
+        path: '/',
+      },
     }
   )
 

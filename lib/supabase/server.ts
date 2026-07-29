@@ -24,6 +24,10 @@ export function createClient() {
         fetch: (input: RequestInfo | URL, init?: RequestInit) =>
           fetch(input, { ...init, cache: 'no-store' }),
       },
+      cookieOptions: {
+        maxAge: 60 * 60 * 24 * 365, // 1 year
+        path: '/',
+      },
     }
   );
 }
