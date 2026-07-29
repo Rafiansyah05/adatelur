@@ -265,7 +265,7 @@ export function AnalyticsSection() {
       </div>
 
       {/* Charts section */}
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-6">
         <Card className="p-6 border-neutral-100 bg-white shadow-xs">
           {/* Revenue Chart header with dynamic filter */}
           <div className="flex justify-between items-center mb-4">
@@ -358,75 +358,7 @@ export function AnalyticsSection() {
           </ResponsiveContainer>
         </Card>
 
-        {/* Rating trend chart */}
-        <Card className="p-6 border-neutral-100 bg-white shadow-xs">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-bold text-neutral-800 uppercase tracking-wider">Tren Rating</h3>
-            {data.summary.averageRating > 0 && (
-              <span className="text-xs font-semibold text-neutral-500 bg-neutral-100 border border-neutral-200 rounded-full px-3 py-1">
-                Rata-rata: ⭐ {data.summary.averageRating.toFixed(1)}
-              </span>
-            )}
-          </div>
-          {data.ratingTrend.every((p) => p.averageRating === null) ? (
-            <div className="flex h-[260px] items-center justify-center">
-              <p className="text-sm text-neutral-400 text-center font-medium">
-                Belum ada rating dari pelanggan.
-              </p>
-            </div>
-          ) : (
-            <ResponsiveContainer width="100%" height={260}>
-              <LineChart data={data.ratingTrend} margin={{ top: 16, right: 8, left: 8, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke={CHART_GRID} vertical={false} />
-                <XAxis
-                  dataKey="label"
-                  stroke={CHART_AXIS}
-                  fontSize={12}
-                  tickLine={false}
-                  axisLine={false}
-                />
-                <YAxis
-                  stroke={CHART_AXIS}
-                  fontSize={12}
-                  tickLine={false}
-                  axisLine={false}
-                  domain={[0, 5]}
-                  ticks={[1, 2, 3, 4, 5]}
-                  width={28}
-                />
-                <Tooltip
-                  contentStyle={TOOLTIP_STYLE}
-                  formatter={(value: any) =>
-                    value !== null ? [`⭐ ${Number(value).toFixed(1)}`, 'Rating'] : ['Tidak ada rating', '']
-                  }
-                />
-                {/* Reference line for overall average */}
-                {data.summary.averageRating > 0 && (
-                  <ReferenceLine
-                    y={data.summary.averageRating}
-                    stroke={CHART_SUCCESS}
-                    strokeDasharray="4 4"
-                    strokeOpacity={0.5}
-                  />
-                )}
-                <Line
-                  type="monotone"
-                  dataKey="averageRating"
-                  name="Rating"
-                  stroke={CHART_SUCCESS}
-                  strokeWidth={2.5}
-                  dot={({ cx, cy, value }: any) =>
-                    value !== null ? (
-                      <circle key={`dot-${cx}-${cy}`} cx={cx} cy={cy} r={5} fill={CHART_SUCCESS} stroke="#fff" strokeWidth={2} />
-                    ) : <g key={`empty-${cx}-${cy}`} />
-                  }
-                  activeDot={{ r: 7, stroke: CHART_SUCCESS, strokeWidth: 2, fill: '#fff' }}
-                  connectNulls={true}
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          )}
-        </Card>
+
       </div>
     </div>
   );
