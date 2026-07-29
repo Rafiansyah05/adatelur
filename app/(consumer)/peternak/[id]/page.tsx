@@ -30,7 +30,7 @@ export default function PeternakDetail({ params }: { params: { id: string } }) {
   const [data, setData] = useState<PeternakData | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedSlot, setSelectedSlot] = useState<string>('');
-  const [quantity, setQuantity] = useState<number>(1);
+  const [quantity, setQuantity] = useState<number | ''>(1);
   const [method, setMethod] = useState<'pickup' | 'delivery'>('pickup');
   const [consumerAddress, setConsumerAddress] = useState<any>(null);
   const [showSummary, setShowSummary] = useState(false);
@@ -60,6 +60,10 @@ export default function PeternakDetail({ params }: { params: { id: string } }) {
     return <div className="p-8 text-center text-text-desc">Memuat detail peternak...</div>;
   if (!data) return <div className="p-8 text-center text-text-desc">Peternak tidak ditemukan.</div>;
 
+  const availableStock = data ? (data.stock_rak || 0) - (data.sold_rak_today || 0) : 0;
+  const parsedQuantity = typeof quantity === 'number' ? quantity : 0;
+  const isOverStock = parsedQuantity > availableStock;
+
   const computeOngkir = () => {
     if (method === 'pickup' || !consumerAddress || !data.farm_latitude || !data.farm_longitude)
       return 0;
@@ -84,15 +88,11 @@ export default function PeternakDetail({ params }: { params: { id: string } }) {
       return;
     }
 
-    // show summary modal
     setShowSummary(true);
-    // save last search for possible re-route
     try {
       sessionStorage.setItem('last_recommend_params', JSON.stringify({ quantity, method }));
     } catch {}
   };
-
-
 
   const handleConfirmOrder = async () => {
     if (!data.listing_id) {
@@ -162,14 +162,30 @@ export default function PeternakDetail({ params }: { params: { id: string } }) {
                   <label className="text-body-medium text-text-main block mb-2">Jumlah rak</label>
                   <div className="flex items-center gap-3">
                     <button 
-                      onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                      className="flex h-10 w-10 items-center justify-center rounded-md border border-border bg-white text-text-main hover:bg-bg-surface"
+                      onClick={() => setQuantity(Math.max(1, parsedQuantity - 1))}
+                      className="flex h-10 w-10 items-center justify-center rounded-md border border-border bg-white text-text-main hover:bg-bg-surface disabled:opacity-50"
+                      disabled={parsedQuantity <= 1}
                     >
                       -
                     </button>
-                    <span className="text-h3 w-8 text-center">{quantity}</span>
+                    <input
+                      type="number"
+                      value={quantity}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        if (val === '') {
+                          setQuantity('');
+                        } else {
+                          const num = parseInt(val);
+                          if (!isNaN(num) && num >= 1) {
+                            setQuantity(num);
+                          }
+                        }
+                      }}
+                      className={`w-20 h-10 text-center text-h3 rounded-md border ${isOverStock ? 'border-danger text-danger bg-red-50 focus:ring-danger' : 'border-border'} focus:outline-none focus:ring-2 focus:ring-primary-500`}
+                    />
                     <button 
-                      onClick={() => setQuantity(quantity + 1)}
+                      onClick={() => setQuantity(parsedQuantity + 1)}
                       className="flex h-10 w-10 items-center justify-center rounded-md border border-border bg-white text-text-main hover:bg-bg-surface"
                     >
                       +

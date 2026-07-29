@@ -6,6 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { Bell, Search, User, X, MapPin, ArrowRight } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import { PeternakDetailModal } from '@/components/ui/PeternakDetailModal';
 
 export interface NavItem {
   label: string;
@@ -22,6 +23,7 @@ export function TopNavbar({ items }: { items: NavItem[] }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [selectedPeternakForModal, setSelectedPeternakForModal] = useState<any>(null);
 
   const supabase = createClient();
 
@@ -196,8 +198,7 @@ export function TopNavbar({ items }: { items: NavItem[] }) {
                         <div
                           key={peternak.id}
                           onClick={() => {
-                            setShowSearchSidebar(false);
-                            router.push(`/search?q=${encodeURIComponent(peternak.full_name)}`);
+                            setSelectedPeternakForModal(peternak);
                           }}
                           className="flex items-start gap-4 rounded-xl border border-neutral-100 p-4 transition-all hover:border-primary-400 hover:shadow-md cursor-pointer"
                         >
@@ -291,6 +292,12 @@ export function TopNavbar({ items }: { items: NavItem[] }) {
               </div>
             </div>
           </div>
+          
+          <PeternakDetailModal
+            isOpen={!!selectedPeternakForModal}
+            onClose={() => setSelectedPeternakForModal(null)}
+            peternak={selectedPeternakForModal}
+          />
         </>
       )}
     </>

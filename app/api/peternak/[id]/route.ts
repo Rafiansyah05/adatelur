@@ -98,12 +98,14 @@ export async function GET(request: Request, { params }: { params: { id: string }
 
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);
-    const { data: ordersToday } = await adminClient
+    const { data: ordersToday, error: ordersError } = await adminClient
       .from('orders')
       .select('rak_quantity')
       .eq('peternak_id', actualPeternakId)
       .gte('created_at', todayStart.toISOString())
-      .not('status', 'in', '(rejected,cancelled)');
+      .in('order_status', ['waiting', 'accepted', 'in_delivery', 'completed']);
+      
+    if (ordersError) console.error("Error fetching ordersToday:", ordersError);
 
     const soldRakToday = (ordersToday || []).reduce((sum, order) => sum + (order.rak_quantity || 0), 0);
 

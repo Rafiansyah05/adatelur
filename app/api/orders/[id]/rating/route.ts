@@ -51,7 +51,6 @@ export async function POST(request: Request, { params }: { params: { id: string 
       return NextResponse.json({ error: 'Pesanan ini sudah diberi rating' }, { status: 400 });
     }
 
-    // 1. Update rating on orders table
     const { error: updateErr } = await adminSupabase
       .from('orders')
       .update({ rating })
@@ -61,7 +60,7 @@ export async function POST(request: Request, { params }: { params: { id: string 
       return NextResponse.json({ error: 'Gagal menyimpan rating pesanan' }, { status: 500 });
     }
 
-    // 2. Insert into ratings table (used by scoring system and chart)
+
     const { error: ratingInsertErr } = await adminSupabase
       .from('ratings')
       .insert({
@@ -72,12 +71,10 @@ export async function POST(request: Request, { params }: { params: { id: string 
       });
 
     if (ratingInsertErr) {
-      // rollback order rating update if insert fails
       await adminSupabase.from('orders').update({ rating: null }).eq('id', orderId);
       return NextResponse.json({ error: 'Gagal menyimpan data rating' }, { status: 500 });
     }
 
-    // 3. Recalculate score immediately
     try {
       await recalculatePeternakScore(order.peternak_id);
     } catch (e) {

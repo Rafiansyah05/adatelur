@@ -29,7 +29,7 @@ function SearchResults() {
   const [popupStep, setPopupStep] = useState<1 | 2>(1);
   const [peternakDetail, setPeternakDetail] = useState<any>(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
-  const [quantity, setQuantity] = useState(1);
+  const [quantity, setQuantity] = useState<number | ''>(1);
   const [method, setMethod] = useState<'pickup' | 'delivery'>('pickup');
   const [consumerAddress, setConsumerAddress] = useState<any>(null);
   const [showOrderModal, setShowOrderModal] = useState(false);
@@ -119,8 +119,9 @@ function SearchResults() {
     );
   };
 
+  const parsedQuantity = typeof quantity === 'number' ? quantity : 0;
   const availableStock = peternakDetail ? (peternakDetail.stock_rak || 0) - (peternakDetail.sold_rak_today || 0) : 0;
-  const isOverStock = quantity > availableStock;
+  const isOverStock = parsedQuantity > availableStock;
 
   const handleLanjut = () => {
     setShowPopup(false);
@@ -278,19 +279,30 @@ function SearchResults() {
                       <label className="text-body-medium font-bold text-text-main block mb-2">Jumlah Rak</label>
                       <div className="flex items-center gap-3">
                         <button 
-                          onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                          className="flex h-10 w-10 items-center justify-center rounded-md border border-border bg-white text-text-main hover:bg-bg-surface"
+                          onClick={() => setQuantity(Math.max(1, (typeof quantity === 'number' ? quantity : 0) - 1))}
+                          className="flex h-10 w-10 items-center justify-center rounded-md border border-border bg-white text-text-main hover:bg-bg-surface disabled:opacity-50"
+                          disabled={typeof quantity === 'number' && quantity <= 1}
                         >
                           -
                         </button>
                         <input
                           type="number"
                           value={quantity}
-                          onChange={(e) => setQuantity(parseInt(e.target.value) || 1)}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            if (val === '') {
+                              setQuantity('');
+                            } else {
+                              const num = parseInt(val);
+                              if (!isNaN(num) && num >= 1) {
+                                setQuantity(num);
+                              }
+                            }
+                          }}
                           className={`w-20 h-10 text-center text-h3 rounded-md border ${isOverStock ? 'border-danger text-danger bg-red-50 focus:ring-danger' : 'border-border focus:ring-primary-500'} focus:outline-none focus:ring-2`}
                         />
                         <button 
-                          onClick={() => setQuantity(quantity + 1)}
+                          onClick={() => setQuantity((typeof quantity === 'number' ? quantity : 0) + 1)}
                           className="flex h-10 w-10 items-center justify-center rounded-md border border-border bg-white text-text-main hover:bg-bg-surface"
                         >
                           +
@@ -323,7 +335,7 @@ function SearchResults() {
                         variant="primary" 
                         onClick={handleLanjut} 
                         className="flex-1"
-                        disabled={isOverStock}
+                        disabled={isOverStock || !quantity}
                       >
                         Lanjut
                       </Button>
@@ -343,7 +355,7 @@ function SearchResults() {
           onClose={() => setShowOrderModal(false)}
           peternakId={peternakDetail.id}
           peternakName={peternakDetail.full_name}
-          rakQuantity={quantity}
+          rakQuantity={parsedQuantity}
           method={method}
           pricePerRak={peternakDetail.price_per_rak}
           estimatedOngkir={computeOngkir()}
