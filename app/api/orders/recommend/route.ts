@@ -8,7 +8,7 @@ export async function POST(request: Request) {
     const supabase = createAdminClient();
     
     const body = await request.json();
-    const { rak_quantity, fulfillment_method, consumer_lat, consumer_lng, sort_by = 'efficiency' } = body;
+    const { rak_quantity, fulfillment_method, consumer_lat, consumer_lng, sort_by = 'efficiency', ignore_stock = false } = body;
 
     if (!rak_quantity || rak_quantity < 1 || !fulfillment_method) {
       return NextResponse.json({ error: 'Invalid parameters' }, { status: 400 });
@@ -36,7 +36,7 @@ export async function POST(request: Request) {
           id,
           price_per_rak,
           stock_rak,
-          is_available
+          is_listing_active
         ),
         peternak_scores (
           final_score,
@@ -72,7 +72,7 @@ export async function POST(request: Request) {
       .from('orders')
       .select('peternak_id, rak_quantity')
       .in('peternak_id', peternakIds)
-      .in('order_status', ['accepted', 'completed', 'in_delivery'])
+      .in('order_status', ['waiting', 'accepted', 'completed', 'in_delivery'])
       .gte('created_at', startOfToday);
 
     const todaySoldMap = peternakIds.reduce((acc: any, id) => {
@@ -100,7 +100,7 @@ export async function POST(request: Request) {
         avatar_url: p.avatar_url,
         price_per_rak: listing?.price_per_rak || 50000, 
         stock_rak: remainingStock, // Use actual remaining stock
-        is_available: (listing?.is_available ?? false) && remainingStock > 0,
+        is_available: listing?.is_listing_active ?? false,
         farm_address: pd.farm_address || 'Alamat belum diatur',
         farm_latitude: pd.farm_latitude || 0,
         farm_longitude: pd.farm_longitude || 0,
@@ -113,11 +113,11 @@ export async function POST(request: Request) {
       // Allow suspended for now based on user request
       // if (l.is_suspended) return false;
       
-      // If we need stock filtering, filter out those who don't have enough stock
-      if (l.stock_rak < rak_quantity) return false;
+      // Filter out if explicitly unavailable (closed manually)
+      if (l.is_available === false) return false;
       
-      // Filter out if explicitly unavailable
-      if (l.is_available === false && l.stock_rak === 0) return false;
+      // If we need stock filtering, filter out those who don't have enough remaining stock
+      if (!ignore_stock && l.stock_rak < rak_quantity) return false;
       
       return true;
     });

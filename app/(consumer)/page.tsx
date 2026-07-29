@@ -16,6 +16,7 @@ export interface RecommendParams {
   consumer_lat?: number;
   consumer_lng?: number;
   sort_by?: 'score' | 'efficiency';
+  ignore_stock?: boolean;
 }
 
 export interface RecommendationResult {
@@ -74,7 +75,8 @@ export default function Home() {
           fulfillment_method: 'pickup',
           consumer_lat: lat,
           consumer_lng: lng,
-          sort_by: 'score'
+          sort_by: 'score',
+          ignore_stock: true
         });
         // Get top 10
         setTopPeternak(result.data.slice(0, 10));

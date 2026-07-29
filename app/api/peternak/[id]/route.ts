@@ -26,7 +26,7 @@ export async function GET(request: Request, { params }: { params: { id: string }
             id,
             price_per_rak,
             stock_rak,
-            is_available
+            is_listing_active
           ),
           peternak_scores (
             final_score
@@ -80,7 +80,7 @@ export async function GET(request: Request, { params }: { params: { id: string }
       },
       listing_id: listing?.id || `dummy-${p?.id}`,
       price_per_rak: listing?.price_per_rak || 50000,
-      is_available: listing?.is_available ?? true,
+      is_available: listing?.is_listing_active ?? true,
     };
 
     const todayDateStr = new Date().toISOString().split('T')[0];

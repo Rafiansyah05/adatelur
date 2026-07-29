@@ -18,7 +18,7 @@ export function TopNavbar({ items }: { items: NavItem[] }) {
   const pathname = usePathname();
   const router = useRouter();
 
-  const [showNotifSidebar, setShowNotifSidebar] = useState(false);
+
   const [showSearchSidebar, setShowSearchSidebar] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<any[]>([]);
@@ -129,13 +129,7 @@ export function TopNavbar({ items }: { items: NavItem[] }) {
                 </div>
               </div>
 
-              <button
-                onClick={() => setShowNotifSidebar(true)}
-                className="relative flex h-10 w-10 items-center justify-center rounded-full bg-neutral-100 text-text-main hover:bg-neutral-200 transition-colors"
-              >
-                <Bell className="h-5 w-5" />
-                <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-danger"></span>
-              </button>
+
 
               <Link href="/profile" className="flex h-10 w-10 items-center justify-center rounded-full bg-neutral-100 text-text-main hover:bg-neutral-200 transition-colors">
                 <User className="h-5 w-5" />
@@ -242,56 +236,7 @@ export function TopNavbar({ items }: { items: NavItem[] }) {
             </div>
           </div>
 
-          <div
-            className={`fixed inset-0 z-50 transition-opacity duration-300 ${showNotifSidebar ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
-          >
-            <div
-              className="absolute inset-0 bg-black/20 backdrop-blur-sm"
-              onClick={() => setShowNotifSidebar(false)}
-            />
-            <div className={`absolute right-0 top-0 h-full w-full max-w-sm bg-white shadow-2xl transition-transform duration-300 ease-in-out ${showNotifSidebar ? 'translate-x-0' : 'translate-x-full'}`}>
-              <div className="flex h-full flex-col">
-                <div className="flex items-center justify-between border-b border-neutral-100 p-6">
-                  <h2 className="text-xl font-bold text-text-main">Notifikasi</h2>
-                  <button onClick={() => setShowNotifSidebar(false)} className="rounded-full p-2 text-neutral-500 hover:bg-neutral-100 transition-colors">
-                    <X className="h-5 w-5" />
-                  </button>
-                </div>
 
-                <div className="flex-1 overflow-y-auto p-6">
-                  <div className="flex flex-col gap-3">
-                    <div className="rounded-xl bg-primary-50 p-4 border border-primary-100 cursor-pointer hover:bg-primary-100 transition-colors" onClick={() => {
-                      setShowNotifSidebar(false);
-                      router.push('/notifications');
-                    }}>
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="h-2 w-2 rounded-full bg-primary-500"></span>
-                        <p className="font-bold text-primary-900 text-sm">Pesanan Diterima!</p>
-                      </div>
-                      <p className="text-primary-700 text-xs pl-4">Peternak &quot;Sinar Terang&quot; sedang menyiapkan pesanan Anda.</p>
-                      <p className="text-[10px] text-primary-500 mt-2 pl-4">Baru saja</p>
-                    </div>
-
-                    <div className="rounded-xl bg-white p-4 border border-neutral-100">
-                      <p className="font-bold text-text-main text-sm mb-1">Selamat datang di Adatelur</p>
-                      <p className="text-neutral-500 text-xs">Mulai cari peternak telur terdekat dan lakukan pesanan pertamamu.</p>
-                      <p className="text-[10px] text-neutral-400 mt-2">1 hari yang lalu</p>
-                    </div>
-                  </div>
-
-                  <button
-                    onClick={() => {
-                      setShowNotifSidebar(false);
-                      router.push('/notifications');
-                    }}
-                    className="mt-6 w-full rounded-full border border-neutral-200 py-2.5 text-center text-sm font-semibold text-text-main hover:bg-neutral-50 transition-colors"
-                  >
-                    Lihat Semua Notifikasi
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
           
           <PeternakDetailModal
             isOpen={!!selectedPeternakForModal}
