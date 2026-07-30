@@ -1,128 +1,247 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import * as React from 'react';
+import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
+import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import { Label } from '@/components/ui/Label';
-import { createClient } from '@/lib/supabase/client';
-import Link from 'next/link';
+import { Eye, EyeOff, CheckCircle2 } from 'lucide-react';
+
+const BACKGROUND_IMAGES = [
+  'https://images.unsplash.com/photo-1598965675045-45c5e72c7d05?auto=format&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1501430654243-c934cec2e1c0?auto=format&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1587486913049-53fc88980cfc?auto=format&fit=crop&q=80',
+];
 
 export default function ResetPasswordPage() {
   const router = useRouter();
-  const supabase = createClient();
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [errorMsg, setErrorMsg] = useState('');
-  const [success, setSuccess] = useState(false);
+  const [password, setPassword] = React.useState('');
+  const [confirmPassword, setConfirmPassword] = React.useState('');
+  const [showPassword, setShowPassword] = React.useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = React.useState(false);
+  const [errorMessage, setErrorMessage] = React.useState('');
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const [isSuccess, setIsSuccess] = React.useState(false);
+  const [bgIndex, setBgIndex] = React.useState(0);
 
-  useEffect(() => {
-    // Check if user is actually authenticated from the recovery link
-    const checkSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        // Sometimes the session is not immediately available, supabase client handles the hash on load
-        const { data: hashSession } = await supabase.auth.getSession();
-        if (!hashSession.session) {
-          setErrorMsg('Tautan reset password tidak valid atau sudah kadaluarsa.');
+  React.useEffect(() => {
+    const interval = setInterval(() => {
+      setBgIndex((prev) => (prev + 1) % BACKGROUND_IMAGES.length);
+    }, 5000);
+    return () => clearInterval(interval);
+  }, []);
+
+  React.useEffect(() => {
+    const initSession = async () => {
+      const supabase = createClient();
+      const params = new URLSearchParams(window.location.search);
+      const email = params.get('email');
+      const token = params.get('token');
+      const token_hash = params.get('token_hash');
+      const code = params.get('code');
+
+      if (email && token) {
+        const { error } = await supabase.auth.verifyOtp({
+          email,
+          token,
+          type: 'recovery',
+        });
+        if (error) {
+          setErrorMessage('Tautan reset kata sandi tidak valid atau telah kadaluarsa.');
         }
+      } else if (token_hash) {
+        const { error } = await supabase.auth.verifyOtp({
+          token_hash,
+          type: 'recovery',
+        });
+        if (error) {
+          setErrorMessage('Tautan reset kata sandi tidak valid atau telah kadaluarsa.');
+        }
+      } else if (code) {
+        await supabase.auth.exchangeCodeForSession(code);
       }
     };
-    checkSession();
-  }, [supabase.auth]);
+    initSession();
+  }, []);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setErrorMsg('');
-
-    if (password !== confirmPassword) {
-      setErrorMsg('Password dan konfirmasi password tidak cocok');
-      return;
-    }
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setErrorMessage('');
 
     if (password.length < 6) {
-      setErrorMsg('Password minimal 6 karakter');
+      setErrorMessage('Kata sandi minimal harus 6 karakter.');
       return;
     }
 
-    setLoading(true);
+    if (password !== confirmPassword) {
+      setErrorMessage('Konfirmasi kata sandi tidak cocok.');
+      return;
+    }
+
+    setIsSubmitting(true);
 
     try {
+      const supabase = createClient();
       const { error } = await supabase.auth.updateUser({ password });
 
       if (error) {
-        throw error;
+        throw new Error(error.message || 'Gagal memperbarui kata sandi. Tautan mungkin telah kadaluarsa.');
       }
 
-      setSuccess(true);
-      // Wait a moment before redirecting
-      setTimeout(() => {
-        router.push('/login');
-      }, 3000);
+      setIsSuccess(true);
     } catch (err: any) {
-      setErrorMsg(err.message || 'Gagal mereset password');
+      setErrorMessage(err.message);
     } finally {
-      setLoading(false);
+      setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-primary-50 px-4">
-      <div className="w-full max-w-md rounded-lg bg-white p-8 border border-border">
-        <div className="text-center mb-8">
-          <h1 className="text-display text-text-main mb-2">Buat Password Baru</h1>
-          <p className="text-body-small text-text-desc">
-            Silakan masukkan password baru Anda.
-          </p>
+    <div className="relative flex min-h-screen overflow-hidden bg-neutral-900">
+      {BACKGROUND_IMAGES.map((src, idx) => (
+        <div
+          key={src}
+          className="absolute inset-0 z-0 transition-opacity duration-1000 ease-in-out"
+          style={{ opacity: bgIndex === idx ? 0.4 : 0 }}
+        >
+          <Image
+            src={src}
+            alt="Background"
+            fill
+            className="object-cover"
+            priority={idx === 0}
+          />
+        </div>
+      ))}
+      <div className="absolute inset-0 z-0 bg-black/40" />
+
+      <div className="relative z-10 flex w-full h-screen">
+        <div className="hidden lg:flex w-[55%] flex-col justify-between p-16 xl:p-24">
+          <div className="flex items-center gap-3">
+            <Image
+              src="/icons/icon-512x512.png"
+              alt="adatelur Logo"
+              width={48}
+              height={48}
+              className="rounded-sm object-contain"
+            />
+            <span className="text-[28px] font-extrabold text-white tracking-tight">adatelur.</span>
+          </div>
+
+          <div>
+            <h1 className="text-[52px] font-extrabold text-white mb-4 leading-[1.1] tracking-tight">
+              Kata Sandi Baru,<br />Keamanan Baru.
+            </h1>
+            <p className="text-[18px] text-neutral-200 max-w-md leading-relaxed font-medium">
+              Buat kata sandi baru yang kuat untuk melindung akun Anda.
+            </p>
+          </div>
         </div>
 
-        {success ? (
-          <div className="rounded-md bg-success-bg p-4 text-center border border-success">
-            <p className="text-success-text font-medium mb-4">
-              Password berhasil diubah! Anda akan dialihkan ke halaman Login...
-            </p>
-            <Link href="/login" className="text-primary-700 font-bold hover:underline">
-              Masuk Sekarang
-            </Link>
-          </div>
-        ) : (
-          <form onSubmit={handleSubmit} className="flex flex-col gap-5">
-            <div>
-              <Label htmlFor="password" className="mb-2 block">Password Baru</Label>
-              <Input
-                id="password"
-                type="password"
-                required
-                placeholder="Minimal 6 karakter"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
+        <div className="flex w-full lg:w-[45%] flex-col justify-center items-center p-6">
+          <div className="w-full max-w-[420px]">
+            <div className="flex lg:hidden items-center justify-center gap-3 mb-8">
+              <Image
+                src="/icons/icon-512x512.png"
+                alt="adatelur Logo"
+                width={48}
+                height={48}
+                className="rounded-sm object-contain"
               />
+              <span className="text-[28px] font-extrabold text-white tracking-tight">adatelur.</span>
             </div>
-            
-            <div>
-              <Label htmlFor="confirmPassword" className="mb-2 block">Konfirmasi Password</Label>
-              <Input
-                id="confirmPassword"
-                type="password"
-                required
-                placeholder="Tulis ulang password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-              />
-            </div>
-            
-            {errorMsg && (
-              <p className="text-sm font-medium text-red-600 bg-red-50 p-3 rounded-md border border-red-100">
-                {errorMsg}
-              </p>
-            )}
 
-            <Button type="submit" disabled={loading} className="w-full h-12 text-base font-bold">
-              {loading ? 'Menyimpan...' : 'Simpan Password Baru'}
-            </Button>
-          </form>
-        )}
+            <div className="p-8 sm:p-10 bg-white rounded-sm">
+              {isSuccess ? (
+                <div className="space-y-6 text-center py-4">
+                  <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
+                    <CheckCircle2 className="h-8 w-8" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-extrabold text-neutral-900 mb-2">Kata Sandi Diperbarui!</h3>
+                    <p className="text-sm text-neutral-600 leading-relaxed font-medium">
+                      Kata sandi akun Anda telah berhasil diubah. Silakan masuk menggunakan kata sandi baru Anda.
+                    </p>
+                  </div>
+                  <Button
+                    type="button"
+                    onClick={() => router.push('/login')}
+                    className="w-full min-h-[52px] text-[15px] font-bold rounded-sm text-neutral-900 bg-primary-400 hover:bg-primary-500 transition-none"
+                  >
+                    Masuk Sekarang
+                  </Button>
+                </div>
+              ) : (
+                <>
+                  <div className="mb-8 text-center">
+                    <h2 className="text-[24px] font-extrabold text-neutral-900 mb-2 tracking-tight">Buat Kata Sandi Baru</h2>
+                    <p className="text-[14px] text-neutral-500 font-medium">Masukkan kata sandi baru untuk akun Anda.</p>
+                  </div>
+
+                  <form className="space-y-5" onSubmit={handleSubmit}>
+                    <div className="space-y-2">
+                      <div className="relative">
+                        <Input
+                          id="new-password"
+                          type={showPassword ? 'text' : 'password'}
+                          placeholder="Kata Sandi Baru"
+                          value={password}
+                          onChange={(event) => setPassword(event.target.value)}
+                          className="min-h-[52px] rounded-sm bg-white border border-neutral-200 focus:bg-white focus:border-primary-400 focus:outline-none transition-none font-medium placeholder:text-neutral-400 px-5 pr-12 hover:border-neutral-300"
+                          required
+                        />
+                        <button
+                          type="button"
+                          className="absolute right-4 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 focus:outline-none"
+                          onClick={() => setShowPassword(!showPassword)}
+                        >
+                          {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <div className="relative">
+                        <Input
+                          id="confirm-password"
+                          type={showConfirmPassword ? 'text' : 'password'}
+                          placeholder="Konfirmasi Kata Sandi Baru"
+                          value={confirmPassword}
+                          onChange={(event) => setConfirmPassword(event.target.value)}
+                          className="min-h-[52px] rounded-sm bg-white border border-neutral-200 focus:bg-white focus:border-primary-400 focus:outline-none transition-none font-medium placeholder:text-neutral-400 px-5 pr-12 hover:border-neutral-300"
+                          required
+                        />
+                        <button
+                          type="button"
+                          className="absolute right-4 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 focus:outline-none"
+                          onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                        >
+                          {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                        </button>
+                      </div>
+                    </div>
+
+                    {errorMessage && (
+                      <p className="text-[13px] text-red-500 font-medium text-center bg-red-50 p-3 rounded-sm border border-red-100">
+                        {errorMessage}
+                      </p>
+                    )}
+
+                    <Button
+                      type="submit"
+                      className="w-full min-h-[52px] text-[15px] font-bold rounded-sm text-neutral-900 bg-primary-400 hover:bg-primary-500 transition-none"
+                      disabled={isSubmitting}
+                    >
+                      {isSubmitting ? 'Memperbarui...' : 'Simpan Kata Sandi Baru'}
+                    </Button>
+                  </form>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

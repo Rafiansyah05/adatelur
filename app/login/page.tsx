@@ -37,6 +37,15 @@ export default function LoginPage() {
     return () => clearInterval(interval);
   }, []);
 
+  React.useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const search = window.location.search;
+      if (search.includes('token_hash=') || search.includes('type=recovery')) {
+        router.replace(`/auth/reset-password${search}`);
+      }
+    }
+  }, [router]);
+
   const handleGoogleLogin = async () => {
     setErrorMessage('');
     const supabase = createClient();

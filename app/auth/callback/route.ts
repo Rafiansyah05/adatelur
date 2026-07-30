@@ -18,7 +18,9 @@ function getBaseUrl(request: Request) {
 
 export async function GET(request: Request) {
   const baseUrl = getBaseUrl(request);
-  const code = new URL(request.url).searchParams.get('code');
+  const searchParams = new URL(request.url).searchParams;
+  const code = searchParams.get('code');
+  const nextParam = searchParams.get('next');
 
   if (!code) {
     return NextResponse.redirect(`${baseUrl}/login?error=oauth`);
@@ -29,6 +31,10 @@ export async function GET(request: Request) {
 
   if (error) {
     return NextResponse.redirect(`${baseUrl}/login?error=oauth`);
+  }
+
+  if (nextParam) {
+    return NextResponse.redirect(`${baseUrl}${nextParam}`);
   }
 
   const {

@@ -40,8 +40,21 @@ export const updateSession = async (request: NextRequest) => {
   } = await supabase.auth.getUser()
 
   const pathname = request.nextUrl.pathname
+  const searchParams = request.nextUrl.searchParams
 
-  const publicRoutes = ['/login', '/register', '/register-consumer', '/choose-role', '/auth/callback']
+  if (searchParams.has('token_hash') || searchParams.get('type') === 'recovery') {
+    if (pathname !== '/auth/reset-password') {
+      const url = request.nextUrl.clone()
+      url.pathname = '/auth/reset-password'
+      const redirectResponse = NextResponse.redirect(url)
+      supabaseResponse.cookies.getAll().forEach((cookie) => {
+        redirectResponse.cookies.set(cookie)
+      })
+      return redirectResponse
+    }
+  }
+
+  const publicRoutes = ['/login', '/register', '/register-consumer', '/choose-role', '/auth']
 
   const isAuthOrStatic =
     pathname.startsWith('/_next') || pathname.startsWith('/api') || pathname.includes('.')
@@ -62,7 +75,7 @@ export const updateSession = async (request: NextRequest) => {
     return redirectResponse
   }
 
-  if (user && isPublicRoute && !pathname.startsWith('/register')) {
+  if (user && isPublicRoute && !pathname.startsWith('/register') && !pathname.startsWith('/auth/reset-password')) {
     const url = request.nextUrl.clone()
     url.pathname = '/'
     const redirectResponse = NextResponse.redirect(url)
