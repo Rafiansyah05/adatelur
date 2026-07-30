@@ -14,8 +14,12 @@ interface RoleLayoutWrapperProps {
 export function RoleLayoutWrapper({ children, items }: RoleLayoutWrapperProps) {
   const pathname = usePathname();
   
-  // Hide layout elements on auth/registration and checkout pages
-  const isNoLayoutPage = pathname.startsWith('/register') || pathname === '/login' || pathname.startsWith('/checkout');
+  // Hide layout elements on auth/registration, checkout, and assistant pages
+  const isNoLayoutPage = 
+    pathname.startsWith('/register') || 
+    pathname === '/login' || 
+    pathname.startsWith('/checkout') || 
+    pathname === '/dashboard/assistant';
 
   if (isNoLayoutPage) {
     return <div className="flex min-h-screen flex-col bg-bg-base">{children}</div>;
@@ -23,8 +27,8 @@ export function RoleLayoutWrapper({ children, items }: RoleLayoutWrapperProps) {
 
   return (
     <div className="flex min-h-screen flex-col bg-bg-base overflow-x-clip">
-      <TopNavbar items={items} />
-      {!pathname.startsWith('/dashboard') && !pathname.startsWith('/recommendations') && <MobileTopNavbar />}
+      {pathname !== '/dashboard/wallet' && <TopNavbar items={items} />}
+      {!pathname.startsWith('/recommendations') && <MobileTopNavbar />}
       
       <div className="flex flex-1 flex-col pb-20 md:pb-8">
         <main className="mx-auto w-full max-w-[1200px] flex-1 px-4 py-6 md:px-8 md:py-8">

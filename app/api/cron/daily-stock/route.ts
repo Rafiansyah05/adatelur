@@ -56,15 +56,8 @@ export async function GET(request: Request) {
 
     const stockMap = new Map((listings ?? []).map((l) => [l.peternak_id, l.stock_rak]));
 
-    // Reset all peternak stock to 0 daily at 00:00 (run by cron)
-    const { error: resetError } = await supabase
-      .from('listings')
-      .update({ stock_rak: 0 })
-      .in('peternak_id', peternakIds);
-
-    if (resetError) {
-      console.error('Failed to reset daily stock:', resetError);
-    }
+    // Removed automatic reset to 0; stock_rak represents the baseline daily capacity
+    // and remaining stock is calculated dynamically based on daily orders.
 
     const { data: completedHistory } = await supabase
       .from('order_status_history')

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import { User, MapPin, Lock, LogOut, Camera, CheckCircle2, AlertCircle } from 'lucide-react';
+import { User, MapPin, Lock, LogOut, Camera, CheckCircle2, AlertCircle, Eye, EyeOff } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
@@ -41,10 +41,18 @@ export default function ConsumerProfilePage() {
   const [isSavingAddress, setIsSavingAddress] = useState(false);
   const [addressMessage, setAddressMessage] = useState({ text: '', isError: false });
 
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [isCurrentPasswordVerified, setIsCurrentPasswordVerified] = useState(false);
+  const [isVerifyingPassword, setIsVerifyingPassword] = useState(false);
+
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
   const [passwordMessage, setPasswordMessage] = useState({ text: '', isError: false });
+
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
 
@@ -180,6 +188,30 @@ export default function ConsumerProfilePage() {
     }
   };
 
+  const handleVerifyCurrentPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPasswordMessage({ text: '', isError: false });
+    setIsVerifyingPassword(true);
+
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email: email,
+        password: currentPassword,
+      });
+
+      if (error) {
+        throw new Error('Password saat ini salah.');
+      }
+
+      setIsCurrentPasswordVerified(true);
+      setPasswordMessage({ text: 'Password saat ini benar. Silakan masukkan password baru.', isError: false });
+    } catch (err: any) {
+      setPasswordMessage({ text: err.message, isError: true });
+    } finally {
+      setIsVerifyingPassword(false);
+    }
+  };
+
   const handleUpdatePassword = async (e: React.FormEvent) => {
     e.preventDefault();
     setPasswordMessage({ text: '', isError: false });
@@ -203,9 +235,11 @@ export default function ConsumerProfilePage() {
 
       if (error) throw error;
       
-      setPasswordMessage({ text: 'Password berhasil diperbarui.', isError: false });
+      setPasswordMessage({ text: 'Informasi password anda saat ini sudah berubah.', isError: false });
       setNewPassword('');
       setConfirmPassword('');
+      setCurrentPassword('');
+      setIsCurrentPasswordVerified(false);
     } catch (err: any) {
       setPasswordMessage({ text: err.message, isError: true });
     } finally {
@@ -459,9 +493,46 @@ export default function ConsumerProfilePage() {
                     </div>
                     <h4 className="text-lg font-bold text-neutral-900 mb-2">Login dengan Google</h4>
                     <p className="text-sm text-neutral-500 max-w-sm">
-                      Anda mendaftar dan masuk menggunakan akun Google. Oleh karena itu, pengaturan password dikelola langsung oleh Google.
+                      Anda sebelumnya masuk menggunakan akun Google, sehingga Anda tidak bisa mengganti password melalui aplikasi ini. Pengaturan keamanan dikelola langsung oleh Google.
                     </p>
                   </div>
+                ) : !isCurrentPasswordVerified ? (
+                  <form onSubmit={handleVerifyCurrentPassword} className="flex flex-col gap-5 max-w-md">
+                    {passwordMessage.text && (
+                      <div className={`p-3 rounded-lg text-sm font-medium flex items-center gap-2 ${passwordMessage.isError ? 'bg-red-50 text-red-600' : 'bg-green-50 text-green-700'}`}>
+                        {passwordMessage.isError ? <AlertCircle className="h-4 w-4" /> : <CheckCircle2 className="h-4 w-4" />}
+                        {passwordMessage.text}
+                      </div>
+                    )}
+                    <div className="flex flex-col gap-2">
+                      <Label className="text-sm font-medium text-neutral-500">Password Saat Ini</Label>
+                      <div className="relative">
+                        <Input
+                          type={showCurrentPassword ? 'text' : 'password'}
+                          value={currentPassword}
+                          onChange={e => setCurrentPassword(e.target.value)}
+                          placeholder="Masukkan password Anda saat ini"
+                          required
+                          className="h-12 bg-neutral-50 border-transparent focus:bg-white transition-colors pr-12"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-neutral-400 hover:text-neutral-600 transition-colors"
+                        >
+                          {showCurrentPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                        </button>
+                      </div>
+                    </div>
+                    <Button
+                      type="submit"
+                      variant="primary"
+                      disabled={isVerifyingPassword || !currentPassword}
+                      className="mt-2 h-12 font-bold max-w-fit px-8"
+                    >
+                      {isVerifyingPassword ? 'Memeriksa...' : 'Lanjutkan'}
+                    </Button>
+                  </form>
                 ) : (
                   <form onSubmit={handleUpdatePassword} className="flex flex-col gap-5 max-w-md">
                     {passwordMessage.text && (
@@ -473,25 +544,43 @@ export default function ConsumerProfilePage() {
                     
                     <div className="flex flex-col gap-2">
                       <Label className="text-sm font-medium text-neutral-500">Password Baru</Label>
-                      <Input 
-                        type="password"
-                        value={newPassword}
-                        onChange={e => setNewPassword(e.target.value)}
-                        placeholder="Minimal 6 karakter"
-                        required
-                        className="h-12 bg-neutral-50 border-transparent focus:bg-white transition-colors"
-                      />
+                      <div className="relative">
+                        <Input 
+                          type={showNewPassword ? 'text' : 'password'}
+                          value={newPassword}
+                          onChange={e => setNewPassword(e.target.value)}
+                          placeholder="Minimal 6 karakter"
+                          required
+                          className="h-12 bg-neutral-50 border-transparent focus:bg-white transition-colors pr-12"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowNewPassword(!showNewPassword)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-neutral-400 hover:text-neutral-600 transition-colors"
+                        >
+                          {showNewPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                        </button>
+                      </div>
                     </div>
                     <div className="flex flex-col gap-2">
                       <Label className="text-sm font-medium text-neutral-500">Konfirmasi Password Baru</Label>
-                      <Input 
-                        type="password"
-                        value={confirmPassword}
-                        onChange={e => setConfirmPassword(e.target.value)}
-                        placeholder="Ulangi password baru"
-                        required
-                        className="h-12 bg-neutral-50 border-transparent focus:bg-white transition-colors"
-                      />
+                      <div className="relative">
+                        <Input 
+                          type={showConfirmPassword ? 'text' : 'password'}
+                          value={confirmPassword}
+                          onChange={e => setConfirmPassword(e.target.value)}
+                          placeholder="Ulangi password baru"
+                          required
+                          className="h-12 bg-neutral-50 border-transparent focus:bg-white transition-colors pr-12"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-neutral-400 hover:text-neutral-600 transition-colors"
+                        >
+                          {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                        </button>
+                      </div>
                     </div>
                     <Button 
                       type="submit" 

@@ -53,18 +53,15 @@ export function AvailabilityManager({ initialListing, initialSlots }: Availabili
     initialListing?.price_per_rak?.toString() ?? ''
   );
   const [stockRak, setStockRak] = React.useState(initialListing?.stock_rak?.toString() ?? '');
-  const [isListingActive, setIsListingActive] = React.useState(
-    initialListing?.is_listing_active ?? true
-  );
 
   const [isSavingListing, setIsSavingListing] = React.useState(false);
   const [isSyncingSlots, setIsSyncingSlots] = React.useState(false);
   const [message, setMessage] = React.useState('');
+  const [activeTab, setActiveTab] = React.useState<'listing' | 'sesi'>('listing');
 
   React.useEffect(() => {
     setPricePerRak(initialListing?.price_per_rak?.toString() ?? '');
     setStockRak(initialListing?.stock_rak?.toString() ?? '');
-    setIsListingActive(initialListing?.is_listing_active ?? true);
   }, [initialListing]);
 
   const handleSaveListing = async () => {
@@ -78,7 +75,7 @@ export function AvailabilityManager({ initialListing, initialSlots }: Availabili
         body: JSON.stringify({
           price_per_rak: Number(pricePerRak),
           stock_rak: Number(stockRak),
-          is_listing_active: isListingActive,
+          is_listing_active: initialListing?.is_listing_active ?? false,
         }),
       });
 
@@ -136,9 +133,9 @@ export function AvailabilityManager({ initialListing, initialSlots }: Availabili
               <Store className="h-5 w-5" />
             </span>
             <div>
-              <p className="text-caption text-text-desc">Status Listing</p>
-              <p className={`text-h2 ${isListingActive ? 'text-success-text' : 'text-text-desc'}`}>
-                {isListingActive ? 'Aktif' : 'Nonaktif'}
+              <p className="text-caption text-text-desc">Status Toko</p>
+              <p className={`text-h2 ${initialListing?.is_listing_active ? 'text-success-text' : 'text-text-desc'}`}>
+                {initialListing?.is_listing_active ? 'Buka' : 'Tutup'}
               </p>
             </div>
           </div>
@@ -192,42 +189,45 @@ export function AvailabilityManager({ initialListing, initialSlots }: Availabili
         </Card>
       ) : null}
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <Card className="space-y-6 p-6">
+      {/* Mobile Tabs */}
+      <div className="md:hidden flex border-b border-border mb-6">
+        <button
+          onClick={() => setActiveTab('listing')}
+          className={`flex-1 py-3 text-sm font-semibold transition-colors border-b-2 ${
+            activeTab === 'listing' ? 'border-primary-500 text-primary-950' : 'border-transparent text-text-desc'
+          }`}
+        >
+          Listing Hari Ini
+        </button>
+        <button
+          onClick={() => setActiveTab('sesi')}
+          className={`flex-1 py-3 text-sm font-semibold transition-colors border-b-2 ${
+            activeTab === 'sesi' ? 'border-primary-500 text-primary-950' : 'border-transparent text-text-desc'
+          }`}
+        >
+          Sesi Waktu
+        </button>
+      </div>
+
+      <div className="grid gap-6 lg:grid-cols-2 items-start">
+        <Card className={`flex flex-col gap-5 p-6 h-fit ${activeTab !== 'listing' ? 'hidden md:flex' : ''}`}>
           <div>
             <h2 className="text-h2 text-text-main mb-1">Listing Hari Ini</h2>
             <p className="text-body text-text-desc">Atur harga dan stok harian.</p>
           </div>
 
-          <div className="space-y-4">
-            <div className="flex items-center justify-between rounded-md border border-border px-4 py-3 bg-bg-surface">
-              <div>
-                <p className="text-body-medium text-text-main">Status Jual</p>
-                <p className="text-caption text-text-desc">Tampilkan di pencarian publik</p>
-              </div>
-              <button
-                type="button"
-                className="rounded-full p-1 focus:outline-none"
-                onClick={() => setIsListingActive((value) => !value)}
-                aria-label="Toggle status listing"
-              >
-                {isListingActive ? (
-                  <ToggleRight className="h-8 w-8 text-success" />
-                ) : (
-                  <ToggleLeft className="h-8 w-8 text-text-desc" />
-                )}
-              </button>
-            </div>
-
+          <div className="flex flex-col gap-4">
             <div className="space-y-3">
               <div>
                 <Label>Harga per rak</Label>
                 <Input
-                  type="number"
-                  min="0"
-                  value={pricePerRak}
-                  onChange={(event) => setPricePerRak(event.target.value)}
-                  placeholder="Contoh: 35000"
+                  type="text"
+                  value={pricePerRak ? `Rp ${new Intl.NumberFormat('id-ID').format(Number(pricePerRak))}` : ''}
+                  onChange={(event) => {
+                    const rawValue = event.target.value.replace(/\D/g, '');
+                    setPricePerRak(rawValue);
+                  }}
+                  placeholder="Rp 35.000"
                   className="mt-1"
                 />
               </div>
@@ -245,12 +245,12 @@ export function AvailabilityManager({ initialListing, initialSlots }: Availabili
             </div>
           </div>
 
-          <Button onClick={handleSaveListing} disabled={isSavingListing} className="w-full">
+          <Button onClick={handleSaveListing} disabled={isSavingListing} className="w-full mt-2">
             {isSavingListing ? 'Menyimpan...' : 'Simpan Listing'}
           </Button>
         </Card>
 
-        <Card className="space-y-6 p-6">
+        <Card className={`flex flex-col gap-5 p-6 ${activeTab !== 'sesi' ? 'hidden md:flex' : ''}`}>
           <div className="flex justify-between items-start">
             <div>
               <h2 className="text-h2 text-text-main mb-1">Sesi Ketersediaan</h2>
@@ -263,7 +263,7 @@ export function AvailabilityManager({ initialListing, initialSlots }: Availabili
             )}
           </div>
 
-          <div className="space-y-2">
+          <div className="flex flex-col gap-2">
             {sessionBlocks.map((session) => {
               const isActive = activeSessions.includes(session);
               return (

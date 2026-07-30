@@ -17,7 +17,7 @@ export default async function PeternakDashboardPage() {
 
   const { data: peternakDetails, error: detailsError } = await supabase
     .from('peternak_details')
-    .select('*')
+    .select('*, profiles(full_name)')
     .eq('profile_id', user.id)
     .single();
 
@@ -48,5 +48,20 @@ export default async function PeternakDashboardPage() {
     .eq('peternak_id', peternakDetails.id)
     .order('start_time', { ascending: true });
 
-  return <PeternakDashboard initialListing={existingListing ?? null} initialSlots={slots ?? []} />;
+  let fullName = 'Peternak';
+  if (peternakDetails?.profiles) {
+    if (Array.isArray(peternakDetails.profiles)) {
+      fullName = peternakDetails.profiles[0]?.full_name || 'Peternak';
+    } else {
+      fullName = (peternakDetails.profiles as any).full_name || 'Peternak';
+    }
+  }
+
+  return (
+    <PeternakDashboard 
+      initialListing={existingListing ?? null} 
+      initialSlots={slots ?? []} 
+      peternakName={fullName} 
+    />
+  );
 }

@@ -23,6 +23,9 @@ interface PeternakData {
   farm_latitude?: number;
   farm_longitude?: number;
   listing_id?: string;
+  stock_rak?: number;
+  sold_rak_today?: number;
+  has_vehicle?: boolean;
 }
 
 export default function PeternakDetail({ params }: { params: { id: string } }) {
@@ -47,6 +50,9 @@ export default function PeternakDetail({ params }: { params: { id: string } }) {
       .then(([petRes, addrRes]) => {
         if (!mounted) return;
         setData(petRes.data || null);
+        if (petRes.data?.has_vehicle === false) {
+          setMethod('pickup');
+        }
         setConsumerAddress(addrRes?.address || null);
         setLoading(false);
       })
@@ -60,7 +66,7 @@ export default function PeternakDetail({ params }: { params: { id: string } }) {
     return <div className="p-8 text-center text-text-desc">Memuat detail peternak...</div>;
   if (!data) return <div className="p-8 text-center text-text-desc">Peternak tidak ditemukan.</div>;
 
-  const availableStock = data ? (data.stock_rak || 0) - (data.sold_rak_today || 0) : 0;
+  const availableStock = data ? Math.max(0, (data.stock_rak || 0) - (data.sold_rak_today || 0)) : 0;
   const parsedQuantity = typeof quantity === 'number' ? quantity : 0;
   const isOverStock = parsedQuantity > availableStock;
 
@@ -202,10 +208,12 @@ export default function PeternakDetail({ params }: { params: { id: string } }) {
                       <input type="radio" name="method" checked={method === 'pickup'} onChange={() => setMethod('pickup')} className="hidden" />
                       Ambil Sendiri
                     </label>
-                    <label className={`flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-md border p-3 text-sm font-bold transition-colors ${method === 'delivery' ? 'border-primary-400 bg-primary-50 text-primary-950' : 'border-border bg-white text-text-main'}`}>
-                      <input type="radio" name="method" checked={method === 'delivery'} onChange={() => setMethod('delivery')} className="hidden" />
-                      Diantar
-                    </label>
+                    {data.has_vehicle !== false && (
+                      <label className={`flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-md border p-3 text-sm font-bold transition-colors ${method === 'delivery' ? 'border-primary-400 bg-primary-50 text-primary-950' : 'border-border bg-white text-text-main'}`}>
+                        <input type="radio" name="method" checked={method === 'delivery'} onChange={() => setMethod('delivery')} className="hidden" />
+                        Diantar
+                      </label>
+                    )}
                   </div>
                 </div>
               </div>
@@ -256,7 +264,7 @@ export default function PeternakDetail({ params }: { params: { id: string } }) {
             <div>
               <p className="text-caption text-text-desc">Total Pembayaran</p>
               <p className="text-h2 text-text-main">
-                Rp {((Number(data.price_per_rak || 0) * quantity) + computeOngkir()).toLocaleString('id-ID')}
+                Rp {((Number(data.price_per_rak || 0) * parsedQuantity) + computeOngkir()).toLocaleString('id-ID')}
               </p>
             </div>
             <Button onClick={handlePesan} variant="primary" className="px-8 h-[48px]">
@@ -300,7 +308,7 @@ export default function PeternakDetail({ params }: { params: { id: string } }) {
             <div className="flex justify-between items-center mb-8">
               <span className="text-body-medium text-text-main">Total Tagihan</span>
               <span className="text-h2 text-primary-700">
-                Rp {((Number(data.price_per_rak || 0) * quantity) + computeOngkir()).toLocaleString('id-ID')}
+                Rp {((Number(data.price_per_rak || 0) * parsedQuantity) + computeOngkir()).toLocaleString('id-ID')}
               </span>
             </div>
             

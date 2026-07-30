@@ -120,7 +120,7 @@ function SearchResults() {
   };
 
   const parsedQuantity = typeof quantity === 'number' ? quantity : 0;
-  const availableStock = peternakDetail ? (peternakDetail.stock_rak || 0) - (peternakDetail.sold_rak_today || 0) : 0;
+  const availableStock = peternakDetail ? Math.max(0, (peternakDetail.stock_rak || 0) - (peternakDetail.sold_rak_today || 0)) : 0;
   const isOverStock = parsedQuantity > availableStock;
 
   const handleLanjut = () => {

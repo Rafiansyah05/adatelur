@@ -1,9 +1,9 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
+import { WalletCard } from '@/components/peternak/WalletCard';
 
 interface WalletTransaction {
   id: string;
@@ -56,9 +56,10 @@ const withdrawalStatusStyle: Record<WithdrawalRecord['status'], { label: string;
 export function WalletView() {
   const [data, setData] = useState<WalletData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [amount, setAmount] = useState('');
+  const [amountRaw, setAmountRaw] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [activeTab, setActiveTab] = useState<'semua' | 'mutasi' | 'pencairan'>('semua');
 
   const load = useCallback(async () => {
     try {
@@ -78,7 +79,7 @@ export function WalletView() {
 
   const handleWithdraw = async (e: React.FormEvent) => {
     e.preventDefault();
-    const value = Number(amount);
+    const value = parseInt(amountRaw.replace(/\D/g, ''), 10);
     if (!Number.isFinite(value) || value <= 0) {
       setMessage({ type: 'error', text: 'Masukkan jumlah yang valid.' });
       return;
@@ -94,8 +95,11 @@ export function WalletView() {
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || 'Gagal mencairkan saldo');
       setMessage({ type: 'success', text: 'Saldo berhasil dicairkan.' });
-      setAmount('');
+      setAmountRaw('');
       await load();
+      // Reset wallet card somehow? The wallet card fetches on mount. 
+      // We can trigger a reload by reloading the page if success, so it updates the card too.
+      window.location.reload();
     } catch (err) {
       setMessage({ type: 'error', text: err instanceof Error ? err.message : 'Terjadi kesalahan' });
     } finally {
@@ -103,8 +107,30 @@ export function WalletView() {
     }
   };
 
+  const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let val = e.target.value.replace(/\D/g, '');
+    if (val === '') {
+      setAmountRaw('');
+      return;
+    }
+    setAmountRaw(Number(val).toLocaleString('id-ID'));
+  };
+
+  const combinedHistory = useMemo(() => {
+    if (!data) return [];
+    const arr: any[] = [];
+    data.transactions.forEach((t) => {
+      arr.push({ ...t, _sortDate: new Date(t.created_at).getTime(), _recordType: 'transaction' });
+    });
+    data.withdrawals.forEach((w) => {
+      arr.push({ ...w, _sortDate: new Date(w.requested_at).getTime(), _recordType: 'withdrawal' });
+    });
+    arr.sort((a, b) => b._sortDate - a._sortDate);
+    return arr;
+  }, [data]);
+
   if (loading) {
-    return <p className="text-body text-text-desc">Memuat...</p>;
+    return <div className="py-10 flex justify-center"><div className="h-8 w-8 animate-spin rounded-full border-4 border-primary-200 border-t-primary-600"></div></div>;
   }
 
   if (!data) {
@@ -114,105 +140,181 @@ export function WalletView() {
   const canWithdraw = data.bank.filled && data.balance > 0;
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="bg-white border border-border rounded-lg shadow-md p-5">
-        <p className="text-caption text-text-desc">Saldo</p>
-        <p className="text-display text-text-main">{formatRupiah(data.balance)}</p>
-      </div>
-
-      {!data.bank.filled && (
-        <div className="bg-danger-light border border-border rounded-lg p-4">
-          <p className="text-body-medium text-danger-text mb-2">
-            Rekening bank belum diisi. Isi dulu sebelum mencairkan saldo.
-          </p>
-          <Link href="/dashboard/profile" className="text-body-medium text-primary-700 underline">
-            Isi rekening di halaman Akun
-          </Link>
+    <div className="flex flex-col lg:grid lg:grid-cols-12 gap-6 items-start">
+      {/* Kolom Kiri: Card Saldo & Form Pencairan */}
+      <div className="lg:col-span-5 flex flex-col gap-6 w-full">
+        <div className="h-[220px]">
+          <WalletCard hideCairkanDana={true} />
         </div>
-      )}
 
-      <div className="bg-white border border-border rounded-lg shadow-md p-5">
-        <h2 className="text-h2 text-text-main mb-4">Cairkan Saldo</h2>
-        <form onSubmit={handleWithdraw} className="flex flex-col gap-3 sm:flex-row sm:items-center">
-          <Input
-            type="number"
-            inputMode="numeric"
-            min={1}
-            value={amount}
-            onChange={(e) => setAmount(e.target.value)}
-            placeholder="Jumlah pencairan (Rp)"
-            disabled={!canWithdraw}
-            className="sm:flex-1"
-          />
-          <Button type="submit" disabled={!canWithdraw || submitting}>
-            {submitting ? 'Memproses...' : 'Cairkan'}
-          </Button>
-        </form>
-        {message && (
-          <p
-            className={
-              message.type === 'success'
-                ? 'mt-3 text-body-medium text-success-text'
-                : 'mt-3 text-body-medium text-danger-text'
-            }
-          >
-            {message.text}
-          </p>
+        {!data.bank.filled && (
+          <div className="bg-danger-light border border-border rounded-xl p-4">
+            <p className="text-body-medium text-danger-text mb-2">
+              Rekening bank belum diisi. Isi dulu sebelum mencairkan saldo.
+            </p>
+            <Link href="/dashboard/profile" className="text-body-medium font-bold text-danger hover:underline">
+              Isi rekening di halaman Akun &rarr;
+            </Link>
+          </div>
         )}
+
+        {/* Cairkan Saldo Section */}
+        <div className="bg-white border border-neutral-200 rounded-2xl shadow-sm overflow-hidden">
+          <div className="p-5 border-b border-neutral-100">
+            <h2 className="text-lg font-bold text-neutral-900">Cairkan Saldo</h2>
+            <p className="text-sm text-neutral-500 mt-1">Masukkan jumlah saldo yang ingin Anda cairkan ke rekening bank.</p>
+          </div>
+          <div className="p-5">
+            <form onSubmit={handleWithdraw} className="flex flex-col gap-4">
+              <div className="relative flex items-center">
+                <span className="absolute left-4 font-semibold text-neutral-500">Rp</span>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  value={amountRaw}
+                  onChange={handleAmountChange}
+                  placeholder="0"
+                  disabled={!canWithdraw}
+                  className="w-full pl-11 pr-4 py-3 rounded-xl border border-neutral-300 focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 font-medium text-neutral-900 transition-colors disabled:bg-neutral-100"
+                />
+              </div>
+              <Button variant="primary" type="submit" disabled={!canWithdraw || submitting || !amountRaw} className="w-full h-[48px] rounded-xl font-bold">
+                {submitting ? 'Memproses...' : 'Ajukan Pencairan'}
+              </Button>
+            </form>
+            {message && (
+              <div className={`mt-4 p-3 rounded-lg text-sm font-medium ${message.type === 'success' ? 'bg-success-light text-success-text' : 'bg-danger-light text-danger-text'}`}>
+                {message.text}
+              </div>
+            )}
+          </div>
+        </div>
       </div>
 
-      <div className="bg-white border border-border rounded-lg shadow-md p-5">
-        <h2 className="text-h2 text-text-main mb-4">Riwayat Pencairan</h2>
-        {data.withdrawals.length === 0 ? (
-          <p className="text-body text-text-desc">Belum ada pengajuan pencairan.</p>
-        ) : (
-          <ul className="flex flex-col divide-y divide-border">
-            {data.withdrawals.map((w) => (
-              <li key={w.id} className="flex items-center justify-between gap-3 py-3">
-                <div>
-                  <p className="text-body-medium text-text-main">{formatRupiah(w.amount)}</p>
-                  <p className="text-caption text-text-desc">
-                    {w.bank_name} - {w.bank_account_number}
-                  </p>
-                  <p className="text-caption text-text-desc">{formatDate(w.requested_at)}</p>
-                </div>
-                <span
-                  className={`rounded-full px-3 py-1 text-caption ${withdrawalStatusStyle[w.status].className}`}
-                >
-                  {withdrawalStatusStyle[w.status].label}
-                </span>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
+      {/* Kolom Kanan: Tab Riwayat */}
+      <div className="lg:col-span-7 flex flex-col w-full">
+        <div className="bg-white border border-neutral-200 rounded-2xl shadow-sm overflow-hidden">
+          <div className="flex border-b border-neutral-200 overflow-x-auto hide-scrollbar">
+            <button 
+              onClick={() => setActiveTab('semua')}
+              className={`flex-1 min-w-max py-4 px-4 text-sm font-bold border-b-2 transition-colors ${activeTab === 'semua' ? 'border-primary-500 text-primary-900' : 'border-transparent text-neutral-500 hover:text-neutral-700'}`}
+            >
+              Semua
+            </button>
+            <button 
+              onClick={() => setActiveTab('mutasi')}
+              className={`flex-1 min-w-max py-4 px-4 text-sm font-bold border-b-2 transition-colors ${activeTab === 'mutasi' ? 'border-primary-500 text-primary-900' : 'border-transparent text-neutral-500 hover:text-neutral-700'}`}
+            >
+              Riwayat Mutasi
+            </button>
+            <button 
+              onClick={() => setActiveTab('pencairan')}
+              className={`flex-1 min-w-max py-4 px-4 text-sm font-bold border-b-2 transition-colors ${activeTab === 'pencairan' ? 'border-primary-500 text-primary-900' : 'border-transparent text-neutral-500 hover:text-neutral-700'}`}
+            >
+              Pencairan Dana
+            </button>
+          </div>
 
-      <div className="bg-white border border-border rounded-lg shadow-md p-5">
-        <h2 className="text-h2 text-text-main mb-4">Riwayat Mutasi</h2>
-        {data.transactions.length === 0 ? (
-          <p className="text-body text-text-desc">Belum ada mutasi saldo.</p>
-        ) : (
-          <ul className="flex flex-col divide-y divide-border">
-            {data.transactions.map((t) => (
-              <li key={t.id} className="flex items-center justify-between gap-3 py-3">
-                <div>
-                  <p className="text-body text-text-main">{t.note || (t.type === 'credit' ? 'Pemasukan' : 'Pengeluaran')}</p>
-                  <p className="text-caption text-text-desc">{formatDate(t.created_at)}</p>
-                </div>
-                <span
-                  className={
-                    t.type === 'credit'
-                      ? 'text-body-medium text-success-text'
-                      : 'text-body-medium text-danger-text'
-                  }
-                >
-                  {t.type === 'credit' ? '+' : '-'}
-                  {formatRupiah(t.amount)}
-                </span>
-              </li>
-            ))}
-          </ul>
-        )}
+          <div className="p-0">
+            {activeTab === 'semua' && (
+              <div className="flex flex-col">
+                {combinedHistory.length === 0 ? (
+                  <div className="p-8 text-center text-neutral-500 text-sm">Belum ada riwayat transaksi.</div>
+                ) : (
+                  <ul className="flex flex-col divide-y divide-neutral-100">
+                    {combinedHistory.map((item, idx) => {
+                      if (item._recordType === 'transaction') {
+                        return (
+                          <li key={`tx-${item.id}`} className="flex items-center justify-between p-5 hover:bg-neutral-50 transition-colors">
+                            <div className="flex flex-col gap-1">
+                              <p className="text-sm font-bold text-neutral-900">{item.note || (item.type === 'credit' ? 'Pemasukan' : 'Pengeluaran')}</p>
+                              <p className="text-xs text-neutral-500">{formatDate(item.created_at)}</p>
+                            </div>
+                            <span className={`font-bold ${item.type === 'credit' ? 'text-success-text' : 'text-danger-text'}`}>
+                              {item.type === 'credit' ? '+' : '-'}{formatRupiah(item.amount)}
+                            </span>
+                          </li>
+                        );
+                      } else {
+                        return (
+                          <li key={`wd-${item.id}`} className="flex items-center justify-between p-5 hover:bg-neutral-50 transition-colors">
+                            <div className="flex flex-col gap-1">
+                              <p className="text-sm font-bold text-neutral-900">Penarikan Saldo</p>
+                              <p className="text-xs text-neutral-500">
+                                {item.bank_name} - {item.bank_account_number}
+                              </p>
+                              <p className="text-xs text-neutral-500">{formatDate(item.requested_at)}</p>
+                            </div>
+                            <div className="flex flex-col items-end gap-1">
+                              <span className="font-bold text-neutral-900">
+                                {formatRupiah(item.amount)}
+                              </span>
+                              <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${withdrawalStatusStyle[item.status as WithdrawalRecord['status']].className}`}>
+                                {withdrawalStatusStyle[item.status as WithdrawalRecord['status']].label}
+                              </span>
+                            </div>
+                          </li>
+                        );
+                      }
+                    })}
+                  </ul>
+                )}
+              </div>
+            )}
+
+            {activeTab === 'mutasi' && (
+              <div className="flex flex-col">
+                {data.transactions.length === 0 ? (
+                  <div className="p-8 text-center text-neutral-500 text-sm">Belum ada riwayat mutasi.</div>
+                ) : (
+                  <ul className="flex flex-col divide-y divide-neutral-100">
+                    {data.transactions.map((item) => (
+                      <li key={`mut-${item.id}`} className="flex items-center justify-between p-5 hover:bg-neutral-50 transition-colors">
+                        <div className="flex flex-col gap-1">
+                          <p className="text-sm font-bold text-neutral-900">{item.note || (item.type === 'credit' ? 'Pemasukan' : 'Pengeluaran')}</p>
+                          <p className="text-xs text-neutral-500">{formatDate(item.created_at)}</p>
+                        </div>
+                        <span className={`font-bold ${item.type === 'credit' ? 'text-success-text' : 'text-danger-text'}`}>
+                          {item.type === 'credit' ? '+' : '-'}{formatRupiah(item.amount)}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            )}
+
+            {activeTab === 'pencairan' && (
+              <div className="flex flex-col">
+                {data.withdrawals.length === 0 ? (
+                  <div className="p-8 text-center text-neutral-500 text-sm">Belum ada pengajuan pencairan.</div>
+                ) : (
+                  <ul className="flex flex-col divide-y divide-neutral-100">
+                    {data.withdrawals.map((item) => (
+                      <li key={`wd2-${item.id}`} className="flex items-center justify-between p-5 hover:bg-neutral-50 transition-colors">
+                        <div className="flex flex-col gap-1">
+                          <p className="text-sm font-bold text-neutral-900">Penarikan Saldo</p>
+                          <p className="text-xs text-neutral-500">
+                            {item.bank_name} - {item.bank_account_number}
+                          </p>
+                          <p className="text-xs text-neutral-500">{formatDate(item.requested_at)}</p>
+                        </div>
+                        <div className="flex flex-col items-end gap-1">
+                          <span className="font-bold text-neutral-900">
+                            {formatRupiah(item.amount)}
+                          </span>
+                          <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${withdrawalStatusStyle[item.status as WithdrawalRecord['status']].className}`}>
+                            {withdrawalStatusStyle[item.status as WithdrawalRecord['status']].label}
+                          </span>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );

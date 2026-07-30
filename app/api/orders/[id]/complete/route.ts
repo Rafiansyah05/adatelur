@@ -3,7 +3,7 @@ import { createAdminClient } from '@/lib/supabase/admin';
 
 export async function POST(request: Request, { params }: { params: { id: string } }) {
   try {
-    const { photo_base64 } = await request.json();
+    const { photo_base64, latitude, longitude } = await request.json();
 
     if (!photo_base64) {
       return NextResponse.json({ error: 'Foto bukti pengiriman wajib dilampirkan' }, { status: 400 });
@@ -49,7 +49,9 @@ export async function POST(request: Request, { params }: { params: { id: string 
 
     await supabase.from('delivery_proof').insert({
       order_id: orderId,
-      photo_url: photoUrl
+      photo_url: photoUrl,
+      latitude: latitude || null,
+      longitude: longitude || null
     });
 
     const { error: updateError } = await supabase

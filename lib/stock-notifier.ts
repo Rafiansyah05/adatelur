@@ -30,7 +30,7 @@ export async function handleStockCheck(supabase: any, peternakId: string) {
     // 3. Check if today's sold quantity meets or exceeds stock_rak
     if (todayRakSold >= listing.stock_rak) {
       const originalStock = listing.stock_rak;
-      
+
       // Set stock to 0 to prevent further recommendations
       await supabase
         .from('listings')
@@ -52,13 +52,13 @@ export async function handleStockCheck(supabase: any, peternakId: string) {
           .maybeSingle();
 
         if (profile?.phone_number) {
-          const message = 
+          const message =
             `*Pemberitahuan adatelur - Stok Habis!*\n\n` +
             `Halo ${profile.full_name},\n` +
             `Stok telur harian Anda hari ini sudah habis terjual (*${todayRakSold}/${originalStock} rak*).\n\n` +
             `Untuk sementara, Anda tidak akan masuk dalam rekomendasi konsumen sampai Anda memperbarui stok.\n\n` +
             `Silakan perbarui stok rak Anda melalui tautan di bawah ini:\n` +
-            `https://adatelur.com/dashboard/availability`;
+            `https://adatelur/dashboard/availability`;
 
           await sendWhatsAppMessage(profile.phone_number, message);
         }

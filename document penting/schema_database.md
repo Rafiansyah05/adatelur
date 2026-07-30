@@ -1,4 +1,4 @@
-# Schema Database — adatelur.com
+# Schema Database — adatelur
 
 **Database Engine:** PostgreSQL (via Supabase)
 Versi: 1.0 | Tanggal: 21 Juli 2026

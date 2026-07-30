@@ -21,7 +21,7 @@ async function testCharge() {
       },
       customer_details: {
         first_name: 'Pelanggan',
-        email: 'customer@adatelur.com'
+        email: 'customer@adatelur'
       },
       qris: {
         acquirer: 'gopay'

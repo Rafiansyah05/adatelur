@@ -1,4 +1,4 @@
-# Tech Stack — adatelur.com
+# Tech Stack — adatelur
 
 Versi: 1.0 | Tanggal: 21 Juli 2026
 Rujukan: `prd.md`, `schema_database.md`
@@ -106,7 +106,7 @@ Koordinat lat/long peternak & konsumen bisa diambil dari **HTML5 Geolocation API
 
 ### 3.6 PWA — Fitur Wajib, Bukan Opsional
 
-Sesuai PRD, kedua role (konsumen & peternak) mengakses lewat PWA yang sama (1 domain, `adatelur.com`), dibedakan lewat routing berdasarkan `role` di tabel `profiles`.
+Sesuai PRD, kedua role (konsumen & peternak) mengakses lewat PWA yang sama (1 domain, `adatelur`), dibedakan lewat routing berdasarkan `role` di tabel `profiles`.
 
 Yang wajib ada:
 - `manifest.json` — berisi nama app, icon set (192px, 512px), `theme_color` = `#FFDC36` (warna primer, lihat `design_system.md`), `background_color` = `#FFFFFF`, `display: standalone`.

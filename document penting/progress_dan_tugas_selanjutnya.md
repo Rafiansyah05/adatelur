@@ -1,6 +1,6 @@
 # Progress dan Tugas Selanjutnya (Project Handoff)
 
-Dokumen ini disusun untuk merekam jejak (track record) pengembangan proyek **Adatelur.com** dan mendefinisikan langkah-langkah selanjutnya. Dokumen ini sangat penting dibaca oleh *AI Agent* selanjutnya agar dapat memahami _state_ proyek saat ini dan dapat mengeksekusi sisa tugas dengan tepat tanpa mengulangi pekerjaan yang sudah selesai.
+Dokumen ini disusun untuk merekam jejak (track record) pengembangan proyek **adatelur** dan mendefinisikan langkah-langkah selanjutnya. Dokumen ini sangat penting dibaca oleh *AI Agent* selanjutnya agar dapat memahami _state_ proyek saat ini dan dapat mengeksekusi sisa tugas dengan tepat tanpa mengulangi pekerjaan yang sudah selesai.
 
 ---
 

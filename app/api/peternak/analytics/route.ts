@@ -87,8 +87,8 @@ export async function GET() {
     const ratingRows: RatingRow[] = ratings ?? [];
     const txs = transactions ?? [];
 
-    // The nominal for total pendapatan follows the actual wallet balance (saldo)
-    const totalRevenue = Number(wallet?.balance ?? 0);
+    // Total revenue is the sum of all 'credit' transactions (income), so it never decreases when withdrawing
+    const totalRevenue = txs.filter(tx => tx.type === 'credit').reduce((sum, tx) => sum + Number(tx.amount), 0);
     const totalRakSold = completedOrders.reduce((sum, order) => sum + Number(order.rak_quantity), 0);
     const totalCompletedOrders = completedOrders.length;
 
@@ -137,13 +137,10 @@ export async function GET() {
       };
     });
 
-    let lastBalance = 0;
     for (const day of daily) {
-      const txsBefore = txs.filter(tx => new Date(tx.created_at).getTime() <= day.endTime);
-      if (txsBefore.length > 0) {
-        lastBalance = Number(txsBefore[txsBefore.length - 1].balance_after);
-      }
-      day.revenue = lastBalance;
+      const startOfDay = day.endTime - MS_PER_DAY + 1;
+      const dayTxs = txs.filter(tx => tx.type === 'credit' && new Date(tx.created_at).getTime() > startOfDay && new Date(tx.created_at).getTime() <= day.endTime);
+      day.revenue = dayTxs.reduce((sum, tx) => sum + Number(tx.amount), 0);
     }
 
     // 2. Weekly wallet balance trend data (Last 12 weeks)
@@ -158,13 +155,10 @@ export async function GET() {
       };
     });
 
-    lastBalance = 0;
     for (const week of weekly) {
-      const txsBefore = txs.filter(tx => new Date(tx.created_at).getTime() <= week.endTime);
-      if (txsBefore.length > 0) {
-        lastBalance = Number(txsBefore[txsBefore.length - 1].balance_after);
-      }
-      week.revenue = lastBalance;
+      const startOfWeek = week.endTime - MS_PER_WEEK + 1;
+      const weekTxs = txs.filter(tx => tx.type === 'credit' && new Date(tx.created_at).getTime() > startOfWeek && new Date(tx.created_at).getTime() <= week.endTime);
+      week.revenue = weekTxs.reduce((sum, tx) => sum + Number(tx.amount), 0);
     }
 
     // 3. Monthly wallet balance trend data (Last 6 months)
@@ -182,13 +176,14 @@ export async function GET() {
       };
     });
 
-    lastBalance = 0;
     for (const month of monthly) {
-      const txsBefore = txs.filter(tx => new Date(tx.created_at).getTime() <= month.endTime);
-      if (txsBefore.length > 0) {
-        lastBalance = Number(txsBefore[txsBefore.length - 1].balance_after);
-      }
-      month.revenue = lastBalance;
+      const d = new Date(month.endTime);
+      d.setDate(1);
+      d.setHours(0, 0, 0, 0);
+      const startOfMonth = d.getTime();
+      
+      const monthTxs = txs.filter(tx => tx.type === 'credit' && new Date(tx.created_at).getTime() >= startOfMonth && new Date(tx.created_at).getTime() <= month.endTime);
+      month.revenue = monthTxs.reduce((sum, tx) => sum + Number(tx.amount), 0);
     }
 
     const monthlyClean = monthly.map(({ label, revenue, rakSold }) => ({ label, revenue, rakSold }));

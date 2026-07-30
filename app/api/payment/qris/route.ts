@@ -26,7 +26,7 @@ export async function POST(req: Request) {
     }
 
     const adminSupabase = createAdminClient();
-    
+
     // Check if order exists and belongs to user
     const { data: order } = await adminSupabase
       .from('orders')
@@ -45,8 +45,8 @@ export async function POST(req: Request) {
 
     // Midtrans Qris Transaction
     const grossAmount = Math.round(Number(order.total_amount) * 1.015); // + 1.5% fee
-    const midtransOrderId = `ADT-${order_id.substring(0,8)}-${Date.now()}`;
-    
+    const midtransOrderId = `ADT-${order_id.substring(0, 8)}-${Date.now()}`;
+
     const isProduction = process.env.MIDTRANS_IS_PRODUCTION === 'true';
     const parameter = {
       payment_type: isProduction ? 'qris' : 'gopay',
@@ -56,13 +56,13 @@ export async function POST(req: Request) {
       },
       customer_details: {
         first_name: order.consumer.full_name || 'Pelanggan',
-        email: user.email || 'customer@adatelur.com'
+        email: user.email || 'customer@adatelur'
       },
       item_details: [{
         id: order_id,
         price: grossAmount,
         quantity: 1,
-        name: `Pembayaran Adatelur - ${order_id.substring(0,8)}`
+        name: `Pembayaran Adatelur - ${order_id.substring(0, 8)}`
       }],
       custom_expiry: {
         order_time: new Date().toISOString().replace('T', ' ').substring(0, 19) + ' +0000',
@@ -72,7 +72,7 @@ export async function POST(req: Request) {
     };
 
     const chargeResponse = await coreApi.charge(parameter);
-    
+
     if (chargeResponse.status_code !== '201') {
       throw new Error('Failed to generate QRIS from Midtrans: ' + chargeResponse.status_message);
     }
@@ -92,8 +92,8 @@ export async function POST(req: Request) {
     const deeplinkAction = chargeResponse.actions?.find((a: any) => a.name === 'deeplink-redirect');
     const qrisUrl = publicQrisAction?.url || defaultQrisAction?.url || chargeResponse.actions?.[0]?.url;
 
-    return NextResponse.json({ 
-      success: true, 
+    return NextResponse.json({
+      success: true,
       qris_url: qrisUrl,
       qr_string: chargeResponse.qr_string || null,
       deeplink_url: deeplinkAction?.url || null,

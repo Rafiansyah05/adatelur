@@ -122,10 +122,10 @@ export function AssistantChat({ firstName }: { firstName?: string }) {
   const isEmpty = messages.length === 0;
 
   return (
-    <div className="mx-auto flex h-[calc(100dvh-9rem)] min-h-[480px] w-full max-w-3xl flex-col md:h-[calc(100dvh-11rem)]">
-      <div ref={scrollRef} className="flex-1 overflow-y-auto">
+    <div className="flex flex-col flex-1 h-full min-h-0 w-full relative">
+      <div ref={scrollRef} className="flex-1 overflow-y-auto flex flex-col">
         {isEmpty ? (
-          <div className="flex h-full flex-col items-center justify-center px-2 text-center">
+          <div className="flex flex-1 flex-col items-center justify-center px-2 text-center pb-8">
             <span className="mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-primary-100 text-primary-700">
               <Sparkles className="h-8 w-8" />
             </span>
@@ -189,14 +189,26 @@ export function AssistantChat({ firstName }: { firstName?: string }) {
 
       {error ? <p className="pt-2 text-caption text-danger-text">{error}</p> : null}
 
-      <form onSubmit={handleSubmit} className="pt-3">
-        <div className="flex items-center gap-2 rounded-2xl border border-border bg-white px-3 py-2 shadow-sm transition-colors focus-within:border-primary-400">
-          <input
+      <form onSubmit={handleSubmit} className="pt-3 pb-2">
+        <div className="flex items-end gap-2 rounded-2xl border border-border bg-neutral-50 px-3 py-2 shadow-sm transition-colors focus-within:border-primary-400">
+          <textarea
             value={input}
-            onChange={(event) => setInput(event.target.value)}
+            onChange={(event) => {
+              setInput(event.target.value);
+              event.target.style.height = 'auto';
+              event.target.style.height = `${event.target.scrollHeight}px`;
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                handleSubmit(e as any);
+              }
+            }}
+            rows={1}
             placeholder="Tulis pertanyaan Anda..."
             disabled={isSending}
-            className="flex-1 bg-transparent px-1 text-body text-text-main placeholder:text-text-muted focus:outline-none disabled:opacity-60"
+            className="flex-1 resize-none bg-transparent px-1 py-2 text-body text-text-main placeholder:text-text-muted focus:outline-none disabled:opacity-60 max-h-32"
+            style={{ minHeight: '40px' }}
           />
           <button
             type="submit"

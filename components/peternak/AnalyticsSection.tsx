@@ -113,10 +113,10 @@ export function AnalyticsSection() {
   const [data, setData] = React.useState<AnalyticsData | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
   const [error, setError] = React.useState('');
-  
+
   // timeframe filter: semua vs hariIni
   const [timeframe, setTimeframe] = React.useState<'semua' | 'hariIni'>('semua');
-  
+
   // chart filter: hari vs minggu vs bulan
   const [chartFilter, setChartFilter] = React.useState<'hari' | 'minggu' | 'bulan'>('minggu');
 
@@ -157,9 +157,9 @@ export function AnalyticsSection() {
           <div className="h-8 w-48 bg-neutral-100 rounded" />
           <div className="h-10 w-32 bg-neutral-100 rounded-full" />
         </div>
-        <div className="mb-6 grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-5">
+        <div className="mb-6 grid grid-cols-2 gap-4">
           {[1, 2, 3, 4, 5].map((item) => (
-            <div key={item} className="h-28 rounded-lg bg-neutral-100" />
+            <div key={item} className={`h-28 rounded-lg bg-neutral-100 ${item === 1 ? 'col-span-2' : 'col-span-1'}`} />
           ))}
         </div>
         <div className="grid gap-6 lg:grid-cols-2">
@@ -187,39 +187,35 @@ export function AnalyticsSection() {
   return (
     <div className="w-full">
       {/* Timeframe selector header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-        <div>
-          <h2 className="text-xl font-bold text-neutral-800">Ringkasan Statistik</h2>
-          <p className="text-xs text-neutral-500">Pantau performa penjualan telur Anda secara langsung</p>
+      <div className="flex justify-between items-start sm:items-center gap-4 mb-6">
+        <div className="flex-1 min-w-0">
+          <h2 className="text-xl font-bold text-neutral-800 truncate sm:whitespace-normal">Ringkasan Statistik</h2>
+          <p className="text-xs text-neutral-500 mt-1 leading-relaxed">
+            Pantau performa penjualan Anda
+          </p>
         </div>
-        <div className="bg-neutral-100 p-1 rounded-full flex gap-1 border border-neutral-200 self-stretch sm:self-auto justify-center">
-          <button
-            onClick={() => setTimeframe('semua')}
-            className={cn(
-              "px-5 py-1.5 rounded-full text-xs font-bold transition-all duration-300",
-              timeframe === 'semua'
-                ? "bg-white text-primary-800 shadow-xs"
-                : "text-neutral-500 hover:text-neutral-800"
-            )}
-          >
-            Semua
-          </button>
-          <button
-            onClick={() => setTimeframe('hariIni')}
-            className={cn(
-              "px-5 py-1.5 rounded-full text-xs font-bold transition-all duration-300",
-              timeframe === 'hariIni'
-                ? "bg-white text-primary-800 shadow-xs"
-                : "text-neutral-500 hover:text-neutral-800"
-            )}
-          >
-            Hari Ini
-          </button>
+
+        <div className="shrink-0">
+          <div className="relative">
+            <select
+              value={timeframe}
+              onChange={(e) => setTimeframe(e.target.value as 'semua' | 'hariIni')}
+              className="appearance-none bg-white border border-neutral-200 text-neutral-700 text-sm font-bold rounded-lg pl-4 pr-10 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all cursor-pointer shadow-sm hover:bg-neutral-50"
+            >
+              <option value="semua">Semua Waktu</option>
+              <option value="hariIni">Hari Ini</option>
+            </select>
+            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-neutral-500">
+              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+              </svg>
+            </div>
+          </div>
         </div>
       </div>
 
       {/* Summary grid */}
-      <div className="mb-6 grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-5">
+      <div className="mb-6 grid grid-cols-2 gap-4">
         <SummaryTile
           icon={<Wallet className={iconClass} />}
           label="Total Pendapatan"
@@ -229,6 +225,7 @@ export function AnalyticsSection() {
               : formatRupiah(data.summary.todayRevenue)
           }
           description="Sudah dipotong biaya admin 3,5% per transaksi"
+          className="col-span-2"
         />
         <SummaryTile
           icon={<Package className={iconClass} />}
@@ -273,8 +270,8 @@ export function AnalyticsSection() {
               {chartFilter === 'hari'
                 ? 'Pendapatan per Hari'
                 : chartFilter === 'minggu'
-                ? 'Pendapatan per Minggu'
-                : 'Pendapatan per Bulan'}
+                  ? 'Pendapatan per Minggu'
+                  : 'Pendapatan per Bulan'}
             </h3>
             <div className="bg-neutral-100 p-0.5 rounded-lg flex gap-0.5 border border-neutral-200">
               <button
@@ -319,8 +316,8 @@ export function AnalyticsSection() {
                 chartFilter === 'hari'
                   ? data.daily
                   : chartFilter === 'minggu'
-                  ? data.weekly
-                  : data.monthly
+                    ? data.weekly
+                    : data.monthly
               }
               margin={{ top: 8, right: 8, left: 8, bottom: 0 }}
             >

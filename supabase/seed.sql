@@ -1,4 +1,4 @@
--- Seed Data untuk adatelur.com (Dummy Data)
+-- Seed Data untuk adatelur (Dummy Data)
 
 -- 1. Insert Dummy Users ke auth.users (agar foreign key di profiles tidak error)
 -- Note: UUID sudah di-hardcode agar relasi antar tabel terjaga.

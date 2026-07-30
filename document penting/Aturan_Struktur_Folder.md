@@ -1,6 +1,6 @@
 # Panduan & Aturan Struktur Folder Monorepo (Next.js)
 
-Dokumen ini adalah panduan wajib bagi seluruh _Developer_ maupun _AI Agent_ yang bekerja di dalam proyek **adatelur.com**. Proyek ini menggunakan konsep **"Monorepo Berbasis Route Groups"** pada Next.js (App Router), di mana aplikasi Konsumen dan aplikasi Peternak berada di dalam satu _codebase_ namun terisolasi satu sama lain secara visual dan tata letak (_layout_).
+Dokumen ini adalah panduan wajib bagi seluruh _Developer_ maupun _AI Agent_ yang bekerja di dalam proyek **adatelur**. Proyek ini menggunakan konsep **"Monorepo Berbasis Route Groups"** pada Next.js (App Router), di mana aplikasi Konsumen dan aplikasi Peternak berada di dalam satu _codebase_ namun terisolasi satu sama lain secara visual dan tata letak (_layout_).
 
 Jika ada penambahan fitur baru, Anda **WAJIB** membaca dan mengikuti panduan struktur ini agar tidak merusak tata letak atau menyebabkan konflik _routing_.
 
@@ -22,7 +22,7 @@ Oleh karena itu, **Anda DILARANG KERAS membuat dua rute dengan *path* (nama fold
 Berikut adalah hirarki pasti dari tempat Anda harus meletakkan kode:
 
 ```text
-adatelur.com/
+adatelur/
 ├── app/
 │   ├── (consumer)/                   # -> ROUTE GROUP: Aplikasi Sisi Konsumen
 │   │   ├── layout.tsx                # Layout Konsumen (Sidebar/Bottom Nav Konsumen)

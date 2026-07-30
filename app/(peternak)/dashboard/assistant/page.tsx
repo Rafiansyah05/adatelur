@@ -1,6 +1,8 @@
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { AssistantChat } from '@/components/peternak/AssistantChat';
+import { ArrowLeft } from 'lucide-react';
+import Link from 'next/link';
 
 export const dynamic = 'force-dynamic';
 
@@ -38,8 +40,20 @@ export default async function AssistantPage() {
   const firstName = profile?.full_name?.trim().split(' ')[0] || '';
 
   return (
-    <div className="w-full">
-      <AssistantChat firstName={firstName} />
+    <div className="flex flex-col min-h-[100dvh] bg-bg-base">
+      <header className="sticky top-0 z-50 flex items-center justify-between bg-white px-4 py-3 shadow-sm border-b border-border">
+        <Link href="/dashboard" className="rounded-full p-2 hover:bg-neutral-100 transition-colors">
+          <ArrowLeft className="h-5 w-5 text-text-main" />
+        </Link>
+        <h1 className="text-lg font-bold text-text-main absolute left-1/2 -translate-x-1/2">
+          AdaSisten
+        </h1>
+        <div className="w-9" /> {/* Spacer */}
+      </header>
+      
+      <main className="flex-1 w-full max-w-3xl mx-auto flex flex-col p-4 overflow-hidden">
+        <AssistantChat firstName={firstName} />
+      </main>
     </div>
   );
 }

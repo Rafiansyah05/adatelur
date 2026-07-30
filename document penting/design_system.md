@@ -1,4 +1,4 @@
-# Design System — adatelur.com
+# Design System — adatelur
 
 **Versi:** 2.1 | **Tanggal:** 23 Juli 2026 | **Sprint:** MVP 9-hari  
 **Rujukan:** `prd.md`, `tech_stack.md`, `schema_database.md`
@@ -712,7 +712,7 @@ Gunakan untuk QA visual cepat & referensi team — tidak perlu buka banyak file.
 
 ## Kesimpulan
 
-Desain system ini menggabungkan **elegantsi modern** (Gojek/Tokopedia style) dengan **aksesibilitas tinggi** untuk pengguna Indonesia yang beragam. Setiap token, komponen, dan guideline dirancang untuk membuat adatelur.com terasa **premium, professional, dan mudah digunakan**.
+Desain system ini menggabungkan **elegantsi modern** (Gojek/Tokopedia style) dengan **aksesibilitas tinggi** untuk pengguna Indonesia yang beragam. Setiap token, komponen, dan guideline dirancang untuk membuat adatelur terasa **premium, professional, dan mudah digunakan**.
 
 **Konsistensi adalah kunci.** Dengan base components yang solid & design token yang ketat, hasil akhir akan terasa terpadu profesional — jauh dari kesan "generic AI slop". 🎯
 

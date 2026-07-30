@@ -14,7 +14,7 @@ export default function ConsumerOrdersPage() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'aktif' | 'riwayat'>('aktif');
   const [trackingOrder, setTrackingOrder] = useState<any | null>(null);
-  const [proofPhotoUrl, setProofPhotoUrl] = useState<string | null>(null);
+  const [proofData, setProofData] = useState<any | null>(null);
   const [ratingOrderId, setRatingOrderId] = useState<string | null>(null);
   const supabase = createClient();
 
@@ -84,19 +84,25 @@ export default function ConsumerOrdersPage() {
   };
 
   return (
-    <div className="mx-auto w-full max-w-4xl py-4 md:py-8 relative">
-      <h1 className="text-display text-text-main mb-6">Pesanan Saya</h1>
-      
-      <div className="flex gap-4 mb-6 border-b border-border">
+    <div className="mx-auto w-full max-w-4xl pb-4 md:pb-8 relative">
+      <div className="sticky top-14 md:top-[72px] z-30 mb-6 -mx-4 md:mx-0 flex w-full border-b border-border bg-white shadow-sm md:shadow-none">
         <button 
           onClick={() => setActiveTab('aktif')}
-          className={`pb-3 font-semibold transition-colors border-b-2 px-2 ${activeTab === 'aktif' ? 'border-primary-500 text-primary-700' : 'border-transparent text-text-desc hover:text-text-main'}`}
+          className={`flex-1 border-b-2 py-3 text-sm font-bold transition-colors text-center ${
+            activeTab === 'aktif' 
+              ? 'border-primary-500 text-primary-700' 
+              : 'border-transparent text-text-desc hover:text-text-main'
+          }`}
         >
           Berlangsung
         </button>
         <button 
           onClick={() => setActiveTab('riwayat')}
-          className={`pb-3 font-semibold transition-colors border-b-2 px-2 ${activeTab === 'riwayat' ? 'border-primary-500 text-primary-700' : 'border-transparent text-text-desc hover:text-text-main'}`}
+          className={`flex-1 border-b-2 py-3 text-sm font-bold transition-colors text-center ${
+            activeTab === 'riwayat' 
+              ? 'border-primary-500 text-primary-700' 
+              : 'border-transparent text-text-desc hover:text-text-main'
+          }`}
         >
           Riwayat
         </button>
@@ -213,7 +219,7 @@ export default function ConsumerOrdersPage() {
                   <Button 
                     onClick={() => {
                       if (order.order_status === 'completed' && order.delivery_proof?.photo_url) {
-                        setProofPhotoUrl(order.delivery_proof.photo_url);
+                        setProofData(order.delivery_proof);
                       } else {
                         setTrackingOrder(order);
                       }
@@ -227,12 +233,12 @@ export default function ConsumerOrdersPage() {
 
                 {/* Pickup: Lihat Bukti (selesai) / Lokasi Peternak (aktif) */}
                 {order.fulfillment_method === 'pickup' && (
-                  order.order_status === 'completed' && order.delivery_proof?.photo_url ? (
-                    <Button
-                      onClick={() => setProofPhotoUrl(order.delivery_proof.photo_url)}
-                      variant="primary"
-                      className="font-bold text-sm flex-1 md:flex-none px-4"
-                    >
+                    order.order_status === 'completed' && order.delivery_proof?.photo_url ? (
+                      <Button
+                        onClick={() => setProofData(order.delivery_proof)}
+                        variant="primary"
+                        className="font-bold text-sm flex-1 md:flex-none px-4"
+                      >
                       Lihat Bukti
                     </Button>
                   ) : order.peternak?.farm_latitude && order.peternak?.farm_longitude ? (
@@ -337,21 +343,43 @@ export default function ConsumerOrdersPage() {
       )}
 
       {/* Proof Photo Modal */}
-      {proofPhotoUrl && (
+      {proofData && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/90 p-4">
           <button 
-            onClick={() => setProofPhotoUrl(null)}
+            onClick={() => setProofData(null)}
             className="absolute top-4 right-4 p-2 bg-white/10 hover:bg-white/20 rounded-full text-white transition-colors"
           >
             <X size={24} />
           </button>
-          <div className="relative w-full max-w-2xl aspect-square md:aspect-video rounded-lg overflow-hidden animate-in zoom-in-95 duration-200">
-            <Image 
-              src={proofPhotoUrl}
-              alt="Bukti Pengiriman"
-              fill
-              className="object-contain"
-            />
+          <div className="relative w-full max-w-2xl bg-white rounded-lg overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="relative w-full aspect-square md:aspect-video bg-black">
+              <Image 
+                src={proofData.photo_url}
+                alt="Bukti Pengiriman"
+                fill
+                className="object-contain"
+              />
+            </div>
+            {(proofData.latitude || proofData.captured_at) && (
+              <div className="p-4 bg-white flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                {proofData.captured_at && (
+                  <div className="flex items-center gap-2 text-sm text-text-main">
+                    <Clock className="h-4 w-4 text-primary-600" />
+                    <span className="font-medium">{new Date(proofData.captured_at).toLocaleString('id-ID')}</span>
+                  </div>
+                )}
+                {proofData.latitude && proofData.longitude && (
+                  <a 
+                    href={`https://www.google.com/maps/search/?api=1&query=${proofData.latitude},${proofData.longitude}`} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 text-sm text-primary-600 hover:text-primary-700 font-bold"
+                  >
+                    <MapPin className="h-4 w-4" /> Lihat Titik Lokasi
+                  </a>
+                )}
+              </div>
+            )}
           </div>
         </div>
       )}

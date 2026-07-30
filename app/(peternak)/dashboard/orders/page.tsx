@@ -12,6 +12,7 @@ const historyStatusLabel: Record<string, string> = {
   rejected: 'Ditolak',
   expired: 'Hangus',
   cancelled: 'Dibatalkan',
+  waiting: 'Hangus',
 };
 
 export default function PeternakOrdersPage() {
@@ -30,6 +31,9 @@ export default function PeternakOrdersPage() {
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [activeOrderId, setActiveOrderId] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [locationData, setLocationData] = useState<{lat: number, lng: number} | null>(null);
+  const [locationStatus, setLocationStatus] = useState<'idle' | 'loading' | 'granted' | 'denied'>('idle');
+  const [proofData, setProofData] = useState<any | null>(null);
   
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -161,6 +165,22 @@ export default function PeternakOrdersPage() {
       setStream(mediaStream);
       setIsCameraOpen(true);
       setActiveOrderId(orderId);
+      
+      if (navigator.geolocation) {
+        setLocationStatus('loading');
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            setLocationData({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+            setLocationStatus('granted');
+          },
+          (err) => {
+            console.log('Location access denied or unavailable', err);
+            setLocationStatus('denied');
+          }
+        );
+      } else {
+        setLocationStatus('denied');
+      }
     } catch (err) {
       alert('Gagal mengakses kamera. Pastikan browser memiliki izin.');
     }
@@ -174,6 +194,7 @@ export default function PeternakOrdersPage() {
     setIsCameraOpen(false);
     setPhotoPreview(null);
     setActiveOrderId(null);
+    setLocationStatus('idle');
   };
 
   const capturePhoto = () => {
@@ -207,7 +228,11 @@ export default function PeternakOrdersPage() {
       const res = await fetch(`/api/orders/${activeOrderId}/complete`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ photo_base64: photoPreview })
+        body: JSON.stringify({ 
+          photo_base64: photoPreview,
+          latitude: locationData?.lat,
+          longitude: locationData?.lng
+        })
       });
       
       if (!res.ok) {
@@ -233,7 +258,7 @@ export default function PeternakOrdersPage() {
     return (
       <div className="w-full">
         <div className="mb-6 h-7 w-40 animate-pulse rounded-lg bg-neutral-100" />
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div className="flex flex-col gap-4">
           {[1, 2, 3].map((item) => (
             <div key={item} className="h-32 animate-pulse rounded-lg bg-neutral-100" />
           ))}
@@ -242,9 +267,12 @@ export default function PeternakOrdersPage() {
     );
   }
 
-  const incomingOrders = orders.filter(o => o.order_status === 'waiting');
+  const incomingOrders = orders.filter(o => o.order_status === 'waiting' && new Date(o.response_deadline).getTime() > now);
   const activeProcessOrders = orders.filter(o => ['accepted', 'processing', 'in_delivery'].includes(o.order_status));
-  const historyOrders = orders.filter(o => ['completed', 'rejected', 'expired', 'cancelled'].includes(o.order_status));
+  const historyOrders = orders.filter(o => 
+    ['completed', 'rejected', 'expired', 'cancelled'].includes(o.order_status) || 
+    (o.order_status === 'waiting' && new Date(o.response_deadline).getTime() <= now)
+  );
   const visibleHistory = showAllHistory ? historyOrders : historyOrders.slice(0, 10);
 
   const formatCountdown = (deadlineTime: string) => {
@@ -258,6 +286,47 @@ export default function PeternakOrdersPage() {
 
   return (
     <div className="w-full">
+      {/* Proof Photo Modal */}
+      {proofData && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/90 p-4">
+          <button 
+            onClick={() => setProofData(null)}
+            className="absolute top-4 right-4 p-2 bg-white/10 hover:bg-white/20 rounded-full text-white transition-colors"
+          >
+            <X size={24} />
+          </button>
+          <div className="relative w-full max-w-2xl bg-white rounded-lg overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="relative w-full aspect-square md:aspect-video bg-black">
+              <img 
+                src={proofData.photo_url}
+                alt="Bukti Pengiriman"
+                className="w-full h-full object-contain"
+              />
+            </div>
+            {(proofData.latitude || proofData.captured_at) && (
+              <div className="p-4 bg-white flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                {proofData.captured_at && (
+                  <div className="flex items-center gap-2 text-sm text-text-main">
+                    <Clock className="h-4 w-4 text-primary-600" />
+                    <span className="font-medium">{new Date(proofData.captured_at).toLocaleString('id-ID')}</span>
+                  </div>
+                )}
+                {proofData.latitude && proofData.longitude && (
+                  <a 
+                    href={`https://www.google.com/maps/search/?api=1&query=${proofData.latitude},${proofData.longitude}`} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 text-sm text-primary-600 hover:text-primary-700 font-bold"
+                  >
+                    <MapPin className="h-4 w-4" /> Lihat Titik Lokasi
+                  </a>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {isCameraOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black">
           <div className="w-full max-w-md h-full md:h-auto md:max-h-[90vh] bg-neutral-900 md:rounded-xl flex flex-col relative overflow-hidden">
@@ -279,10 +348,20 @@ export default function PeternakOrdersPage() {
 
             <div className="p-6 bg-neutral-900 pb-10">
               {!photoPreview ? (
-                <div className="flex justify-center">
-                  <button onClick={capturePhoto} className="h-16 w-16 bg-white rounded-full border-4 border-neutral-400 flex items-center justify-center shadow-lg active:scale-95 transition-transform">
-                    <Camera className="text-black" />
+                <div className="flex flex-col items-center gap-3">
+                  <button 
+                    onClick={capturePhoto} 
+                    disabled={locationStatus !== 'granted'}
+                    className={`h-16 w-16 rounded-full border-4 flex items-center justify-center shadow-lg transition-transform ${
+                      locationStatus === 'granted' 
+                        ? 'bg-white border-neutral-400 active:scale-95' 
+                        : 'bg-neutral-600 border-neutral-500 opacity-50 cursor-not-allowed'
+                    }`}
+                  >
+                    <Camera className={locationStatus === 'granted' ? 'text-black' : 'text-neutral-400'} />
                   </button>
+                  {locationStatus === 'loading' && <span className="text-xs text-primary-400 animate-pulse">Menunggu akses lokasi...</span>}
+                  {locationStatus === 'denied' && <span className="text-xs text-danger text-center font-semibold">Akses lokasi wajib diizinkan untuk memotret bukti</span>}
                 </div>
               ) : (
                 <div className="flex gap-4">
@@ -315,9 +394,7 @@ export default function PeternakOrdersPage() {
         </div>
       )}
 
-      <h1 className="text-3xl font-bold text-neutral-900 mb-2">Kelola Pesanan</h1>
-
-      <div className="mt-6 mb-6 flex gap-1 overflow-x-auto border-b border-border">
+      <div className="sticky top-16 md:top-[76px] z-30 mb-6 -mx-4 px-4 md:mx-0 md:px-0 flex gap-1 overflow-x-auto border-b border-border bg-white pt-2 pb-1 shadow-sm md:shadow-none">
         {[
           { key: 'masuk' as const, label: 'Baru Masuk', count: incomingOrders.length },
           { key: 'diproses' as const, label: 'Diproses & Diantar', count: activeProcessOrders.length },
@@ -341,18 +418,18 @@ export default function PeternakOrdersPage() {
       {activeTab === 'masuk' && (
       <div className="mb-8">
         {incomingOrders.length === 0 ? (
-          <div className="flex flex-col items-center justify-center gap-2 rounded-lg border border-border bg-bg-surface py-8 text-center">
-            <Package className="h-6 w-6 text-text-muted" />
-            <p className="text-sm text-text-desc">Tidak ada pesanan menunggu persetujuan.</p>
+          <div className="flex flex-col items-center justify-center gap-3 rounded-lg border border-border bg-bg-surface min-h-[50vh] text-center px-4">
+            <Package className="h-12 w-12 text-neutral-300" />
+            <p className="text-sm md:text-base text-text-desc">Tidak ada pesanan menunggu persetujuan.</p>
           </div>
         ) : (
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <div className="flex flex-col gap-4">
             {incomingOrders.map(order => {
               const countdown = formatCountdown(order.response_deadline);
               const isExpired = countdown === 'Habis';
               return (
-                <Card key={order.id} className="p-5 border border-border border-l-4 border-l-primary-500 rounded-xl flex flex-col md:flex-row md:items-center justify-between gap-5 transition-all bg-white">
-                  <div className="flex flex-1 items-start gap-4">
+                <Card key={order.id} className="p-5 md:p-6 border border-border border-l-4 border-l-primary-500 rounded-xl flex flex-col md:flex-row md:items-start md:justify-between gap-5 transition-all bg-white hover:shadow-sm">
+                  <div className="flex items-start gap-4 flex-1">
                     <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary-50 text-lg font-bold text-primary-900 overflow-hidden border border-primary-100">
                       {order.consumer?.avatar_url ? (
                         <img 
@@ -366,21 +443,21 @@ export default function PeternakOrdersPage() {
                     </div>
                     
                     <div className="flex-1">
-                      <div className="flex flex-wrap items-center gap-3 mb-2">
-                        <span className="font-bold text-text-main">Order #{order.id.split('-')[0].toUpperCase()}</span>
+                      <div className="flex flex-wrap items-center gap-3 mb-1">
+                        <span className="font-bold text-text-main text-base">Order #{order.id.split('-')[0].toUpperCase()}</span>
                         <span className="flex items-center gap-1 bg-danger-light text-danger-text px-2 py-1 rounded text-xs font-bold animate-pulse">
                           <Clock className="h-3 w-3" />
                           <span>{countdown}</span>
                         </span>
                       </div>
-                      <p className="text-sm text-text-desc mb-1">
+                      <p className="text-sm text-text-desc mb-2">
                         {new Date(order.created_at).toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' })}
                       </p>
-                      <p className="text-body-medium text-text-main mb-2">
+                      <p className="text-body-medium text-text-main font-semibold mb-3">
                         {order.consumer?.full_name || 'Pembeli'} • {order.rak_quantity} Rak
                       </p>
                       
-                      <div className="flex flex-wrap items-center gap-2 mt-2">
+                      <div className="flex flex-wrap items-center gap-2">
                         <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded border ${
                           order.fulfillment_method === 'pickup'
                             ? 'bg-primary-50 text-primary-700 border-primary-200'
@@ -390,21 +467,27 @@ export default function PeternakOrdersPage() {
                             ? <><ShoppingBag className="h-3 w-3" /> Ambil Sendiri</>
                             : <><Truck className="h-3 w-3" /> Diantar</>}
                         </span>
+                        {order.delivery_slot && (
+                          <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded border bg-primary-50 text-primary-700 border-primary-200">
+                            <Clock className="h-3 w-3" />
+                            {order.delivery_slot.start_time.substring(0,5)} – {order.delivery_slot.end_time.substring(0,5)} WIB
+                          </span>
+                        )}
                       </div>
                     </div>
                   </div>
 
-                  <div className="flex flex-col items-end gap-3 md:pl-6 md:border-l md:border-neutral-100 w-full md:w-auto mt-4 pt-4 border-t border-neutral-100 md:mt-0 md:pt-0 md:border-t-0">
-                    <div className="flex flex-col items-end w-full md:w-auto">
-                      <span className="text-xs text-text-desc mb-1">Total Pesanan</span>
-                      <span className="font-bold text-text-main text-lg">
+                  <div className="flex flex-col gap-3 md:pl-6 md:border-l md:border-border min-w-[200px] w-full md:w-auto mt-4 pt-4 border-t border-border md:mt-0 md:pt-0 md:border-t-0">
+                    <div className="flex flex-row md:flex-col items-center md:items-end justify-between w-full mb-1 md:mb-2">
+                      <span className="text-sm text-text-desc">Total Pesanan</span>
+                      <span className="font-bold text-text-main text-lg md:text-xl">
                         Rp {Number(order.total_amount).toLocaleString('id-ID')}
                       </span>
                     </div>
 
-                    <div className="flex flex-col gap-2 w-full mt-2">
-                      <Button variant="primary" className="w-full font-bold text-sm" onClick={() => handleRespond(order.id, 'accept')} disabled={isExpired}>Terima</Button>
-                      <Button variant="secondary" className="w-full text-sm" onClick={() => handleRespond(order.id, 'reject')} disabled={isExpired}>Tolak</Button>
+                    <div className="flex flex-row md:flex-col gap-2 w-full">
+                      <Button variant="primary" className="flex-1 font-bold text-sm" onClick={() => handleRespond(order.id, 'accept')} disabled={isExpired}>Terima</Button>
+                      <Button variant="secondary" className="flex-1 text-sm" onClick={() => handleRespond(order.id, 'reject')} disabled={isExpired}>Tolak</Button>
                     </div>
                   </div>
                 </Card>
@@ -418,12 +501,12 @@ export default function PeternakOrdersPage() {
       {activeTab === 'diproses' && (
       <div className="mb-8">
         {activeProcessOrders.length === 0 ? (
-          <div className="flex flex-col items-center justify-center gap-2 rounded-lg border border-border bg-bg-surface py-8 text-center">
-            <Package className="h-6 w-6 text-text-muted" />
-            <p className="text-sm text-text-desc">Tidak ada pesanan aktif saat ini.</p>
+          <div className="flex flex-col items-center justify-center gap-3 rounded-lg border border-border bg-bg-surface min-h-[50vh] text-center px-4">
+            <Package className="h-12 w-12 text-neutral-300" />
+            <p className="text-sm md:text-base text-text-desc">Tidak ada pesanan aktif saat ini.</p>
           </div>
         ) : (
-          <div className="grid gap-4 lg:grid-cols-2">
+          <div className="flex flex-col gap-4">
             {activeProcessOrders.map(order => (
               <Card key={order.id} onClick={() => router.push(`/dashboard/orders/${order.id}`)} className="p-5 md:p-6 border border-border rounded-xl flex flex-col md:flex-row md:items-center justify-between gap-5 transition-all hover:shadow-sm hover:border-primary-200 bg-white cursor-pointer">
                 <div className="flex flex-1 items-start gap-4">
@@ -536,39 +619,84 @@ export default function PeternakOrdersPage() {
       {activeTab === 'riwayat' && (
       <div>
         {historyOrders.length === 0 ? (
-          <div className="flex flex-col items-center justify-center gap-2 rounded-lg border border-border bg-bg-surface py-8 text-center">
-            <Package className="h-6 w-6 text-text-muted" />
-            <p className="text-sm text-text-desc">Belum ada riwayat pesanan.</p>
+          <div className="flex flex-col items-center justify-center gap-3 rounded-lg border border-border bg-bg-surface min-h-[50vh] text-center px-4">
+            <Package className="h-12 w-12 text-neutral-300" />
+            <p className="text-sm md:text-base text-text-desc">Belum ada riwayat pesanan.</p>
           </div>
         ) : (
           <>
           <div className="flex flex-col gap-3">
             {visibleHistory.map(order => (
-              <Card key={order.id} className="p-4 border border-border flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 hover:bg-bg-surface">
-                <div className="flex items-center gap-3 w-full sm:w-auto">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary-50 text-base font-bold text-primary-900 overflow-hidden border border-primary-100">
-                    {order.consumer?.avatar_url ? (
-                      <img 
-                        src={order.consumer.avatar_url} 
-                        alt={order.consumer?.full_name || 'Pembeli'} 
-                        className="h-full w-full object-cover"
-                      />
-                    ) : (
-                      <span>{(order.consumer?.full_name || 'P')[0].toUpperCase()}</span>
-                    )}
+              <Card key={order.id} className="p-4 md:p-6 mb-4 border border-border hover:shadow-sm transition-shadow">
+                <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+                  {/* Kolom Kiri: Info Pesanan */}
+                  <div className="flex items-start gap-4 flex-1">
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary-50 text-lg font-bold text-primary-900 overflow-hidden border border-primary-100">
+                      {order.consumer?.avatar_url ? (
+                        <img 
+                          src={order.consumer.avatar_url} 
+                          alt={order.consumer?.full_name || 'Pembeli'} 
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <span>{(order.consumer?.full_name || 'P')[0].toUpperCase()}</span>
+                      )}
+                    </div>
+                    
+                    <div className="flex-1">
+                      <div className="flex flex-wrap items-center gap-2 mb-1">
+                        <span className="font-bold text-text-main text-base">
+                          Order #{order.id.slice(0, 8)}
+                        </span>
+                        <span className={`px-2 py-0.5 rounded text-xs font-bold ${
+                          order.order_status === 'completed' ? 'bg-success-bg text-success-text border border-success' :
+                          'bg-danger-light text-danger-text border border-danger'
+                        }`}>
+                          {historyStatusLabel[order.order_status] || order.order_status.toUpperCase()}
+                        </span>
+                      </div>
+                      <p className="text-sm text-text-desc mb-1">
+                        {new Date(order.created_at).toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' })}
+                      </p>
+                      <p className="text-body-medium text-text-main mb-2">
+                        {order.consumer?.full_name} • {order.rak_quantity} Rak
+                      </p>
+                      
+                      <div className="flex flex-wrap items-center gap-2 mt-2">
+                        <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded border ${
+                          order.fulfillment_method === 'pickup'
+                            ? 'bg-primary-50 text-primary-700 border-primary-200'
+                            : 'bg-success-bg text-success-text border border-success'
+                        }`}>
+                          {order.fulfillment_method === 'pickup'
+                            ? <><ShoppingBag className="h-3 w-3" /> Ambil Sendiri</>
+                            : <><Truck className="h-3 w-3" /> Diantar</>}
+                        </span>
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <p className="font-bold text-text-main mb-0.5">Order #{order.id.slice(0, 8)}</p>
-                    <p className="text-xs text-text-desc">{new Date(order.created_at).toLocaleDateString('id-ID')} • {order.consumer?.full_name} • Rp {Number(order.total_amount).toLocaleString('id-ID')}</p>
+                  
+                  {/* Kolom Kanan: Harga + Aksi */}
+                  <div className="flex flex-col items-end gap-3 md:pl-6 md:border-l md:border-neutral-100 w-full md:w-auto mt-4 pt-4 border-t border-neutral-100 md:mt-0 md:pt-0 md:border-t-0">
+                    <div className="flex flex-col items-end">
+                      <span className="text-xs text-text-desc mb-1">Total Pesanan</span>
+                      <span className="font-bold text-text-main text-lg">
+                        Rp {Number(order.total_amount).toLocaleString('id-ID')}
+                      </span>
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
+                      {order.order_status === 'completed' && order.delivery_proof?.photo_url && (
+                        <Button 
+                          variant="primary" 
+                          className="font-bold text-sm flex-1 md:flex-none px-4 text-neutral-900"
+                          onClick={() => setProofData(order.delivery_proof)}
+                        >
+                          Lihat Bukti
+                        </Button>
+                      )}
+                    </div>
                   </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <span className={`px-3 py-1 rounded-full text-xs font-bold ${
-                    order.order_status === 'completed' ? 'bg-success-bg text-success-text border border-success' :
-                    'bg-danger-light text-danger-text border border-danger'
-                  }`}>
-                    {historyStatusLabel[order.order_status] || order.order_status}
-                  </span>
                 </div>
               </Card>
             ))}

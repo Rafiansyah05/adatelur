@@ -81,22 +81,6 @@ export async function POST(request: Request, { params }: { params: { id: string 
       console.error('Failed to recalculate score on rating submit:', e);
     }
 
-    const { error: ratingErr } = await adminSupabase.from('ratings').insert({
-      order_id: orderId,
-      consumer_id: order.consumer_id,
-      peternak_id: order.peternak_id,
-      rating_value: rating,
-    });
-
-    if (ratingErr) {
-      return NextResponse.json({ error: 'Gagal menyimpan rating' }, { status: 500 });
-    }
-
-    try {
-      await adminSupabase.rpc('recalculate_peternak_score', { p_peternak_id: order.peternak_id });
-    } catch (scoreError) {
-      console.error('Gagal menghitung ulang skor peternak', scoreError);
-    }
 
     return NextResponse.json({ success: true, message: 'Rating berhasil disimpan' });
   } catch (error) {

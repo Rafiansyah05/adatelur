@@ -1,8 +1,11 @@
 'use client';
 
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { AnalyticsSection } from '@/components/peternak/AnalyticsSection';
 import { WalletCard } from '@/components/peternak/WalletCard';
-import { CheckCircle2, Clock3 } from 'lucide-react';
+import { ToggleRight, ToggleLeft, TrendingUp, Settings, Store } from 'lucide-react';
+import Link from 'next/link';
 
 interface ListingRecord {
   id?: string;
@@ -22,28 +25,82 @@ interface DeliverySlotRecord {
 interface PeternakDashboardProps {
   initialListing: ListingRecord | null;
   initialSlots: DeliverySlotRecord[];
+  peternakName?: string;
 }
 
-export function PeternakDashboard({ initialListing }: PeternakDashboardProps) {
-  const isListingActive = initialListing?.is_listing_active ?? false;
+export function PeternakDashboard({ initialListing, peternakName }: PeternakDashboardProps) {
+  const router = useRouter();
+  const [isListingActive, setIsListingActive] = useState(initialListing?.is_listing_active ?? false);
+  const [isToggling, setIsToggling] = useState(false);
+
+  const handleToggle = async () => {
+    if (!initialListing) {
+      alert("Silakan atur harga dan stok di menu Atur Ketersediaan terlebih dahulu.");
+      return;
+    }
+
+    const newStatus = !isListingActive;
+    // Optimistic UI update
+    setIsListingActive(newStatus);
+    setIsToggling(true);
+
+    try {
+      const response = await fetch('/api/listings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          price_per_rak: initialListing.price_per_rak,
+          stock_rak: initialListing.stock_rak,
+          is_listing_active: newStatus,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Gagal merubah status toko');
+      }
+
+      router.refresh();
+    } catch (error) {
+      alert("Terjadi kesalahan saat merubah status toko.");
+      // Revert status on error
+      setIsListingActive(!newStatus);
+    } finally {
+      setIsToggling(false);
+    }
+  };
 
   return (
     <div className="w-full">
-      <div className="mb-6 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <h1 className="text-h1 text-text-main">Dashboard Peternak</h1>
-        <div className="flex items-center gap-2 self-start rounded-full border border-border bg-white px-4 py-2 text-sm text-text-main shadow-sm md:self-auto">
+      <div className="mb-6 flex flex-row items-center justify-between gap-3 overflow-hidden">
+        <h1 className="text-h1 font-bold text-text-main truncate min-w-0">
+          Halo, {peternakName ?? 'Peternak'}
+        </h1>
+        <button 
+          onClick={handleToggle}
+          disabled={isToggling}
+          className="flex items-center gap-2 shrink-0 rounded-full border border-border bg-white px-3 py-1.5 md:px-4 md:py-2 text-xs md:text-sm text-text-main shadow-sm hover:bg-neutral-50 transition-colors focus:outline-none disabled:opacity-70"
+        >
           {isListingActive ? (
-            <CheckCircle2 className="h-4 w-4 text-success" />
+            <ToggleRight className="h-6 w-6 md:h-7 md:w-7 text-success" />
           ) : (
-            <Clock3 className="h-4 w-4 text-text-desc" />
+            <ToggleLeft className="h-6 w-6 md:h-7 md:w-7 text-text-desc" />
           )}
-          {isListingActive ? 'Toko Buka (Publik)' : 'Toko Tutup (Sembunyi)'}
-        </div>
+          <span className="hidden md:inline font-semibold">{isListingActive ? 'Buka (Publik)' : 'Tutup (Sembunyi)'}</span>
+          <span className="md:hidden font-semibold">{isListingActive ? 'Buka' : 'Tutup'}</span>
+        </button>
       </div>
 
-      <WalletCard />
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        {/* Kolom Kiri: Dompet */}
+        <div className="lg:col-span-4 flex flex-col gap-6">
+          <WalletCard />
+        </div>
 
-      <AnalyticsSection />
+        {/* Kolom Kanan: Analytics */}
+        <div className="lg:col-span-8 flex flex-col gap-6 min-w-0">
+          <AnalyticsSection />
+        </div>
+      </div>
     </div>
   );
 }

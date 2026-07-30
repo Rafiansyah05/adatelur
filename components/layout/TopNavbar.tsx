@@ -7,11 +7,13 @@ import { Bell, Search, User, X, MapPin, ArrowRight } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { PeternakDetailModal } from '@/components/ui/PeternakDetailModal';
+import { IncomingOrderBadge } from '@/components/peternak/IncomingOrderBadge';
 
 export interface NavItem {
   label: string;
   href: string;
   icon?: React.ReactNode;
+  badge?: React.ReactNode;
 }
 
 export function TopNavbar({ items }: { items: NavItem[] }) {
@@ -103,8 +105,9 @@ export function TopNavbar({ items }: { items: NavItem[] }) {
                 href={item.href}
                 className="relative py-2 text-sm font-semibold transition-colors"
               >
-                <span className={isActive ? 'text-text-main' : 'text-neutral-500 hover:text-text-main'}>
+                <span className={isActive ? 'text-text-main flex items-center relative' : 'text-neutral-500 hover:text-text-main flex items-center relative'}>
                   {item.label}
+                  {item.href === '/dashboard/orders' && <IncomingOrderBadge />}
                 </span>
                 {isActive && (
                   <span className="absolute bottom-0 left-0 w-full h-[3px] rounded-t-full bg-text-main" />

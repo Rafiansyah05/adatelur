@@ -3,7 +3,7 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { ScoreCard } from '@/components/ui/ScoreCard';
-import { OrderModal } from '@/components/ui/OrderModal';
+import { PeternakDetailModal } from '@/components/ui/PeternakDetailModal';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Label } from '@/components/ui/Label';
@@ -255,19 +255,22 @@ function RecommendationsContent() {
       </div>
 
       {selectedPeternak && (
-        <OrderModal
+        <PeternakDetailModal
           isOpen={isModalOpen}
           onClose={() => {
             setIsModalOpen(false);
             setSelectedPeternak(null);
           }}
-          peternakId={selectedPeternak.peternak_id}
-          peternakName={selectedPeternak.peternak_name}
-          rakQuantity={rakQuantity === '' ? 1 : rakQuantity}
-          method={method as 'pickup' | 'delivery'}
-          pricePerRak={selectedPeternak.price_per_rak}
-          estimatedOngkir={selectedPeternak.ongkir_amount}
-          listingId={selectedPeternak.listing_id}
+          peternak={{
+            id: selectedPeternak.peternak_id,
+            full_name: selectedPeternak.peternak_name,
+            avatar_url: selectedPeternak.avatar_url,
+            address: selectedPeternak.farm_address,
+          }}
+          initialStep={2}
+          fixedQuantity={typeof rakQuantity === 'number' ? rakQuantity : 1}
+          fixedMethod={method as 'pickup' | 'delivery'}
+          isFixedOrderParams={true}
         />
       )}
 

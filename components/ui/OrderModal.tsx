@@ -41,31 +41,50 @@ export function OrderModal({
 
   const [timeSlots, setTimeSlots] = useState<{id: string; label: string}[]>([]);
   const [isLoadingSlots, setIsLoadingSlots] = useState(false);
+  const [availableStock, setAvailableStock] = useState<number | null>(null);
+
+  const [localRak, setLocalRak] = useState<number | ''>(rakQuantity || '');
+  const [localMethod, setLocalMethod] = useState<'pickup' | 'delivery'>(method);
 
   useEffect(() => {
     if (isOpen) {
-      const fetchSlots = async () => {
+      setLocalRak(rakQuantity || '');
+      setLocalMethod(method || 'pickup');
+    }
+  }, [isOpen, rakQuantity, method]);
+
+  useEffect(() => {
+    if (isOpen) {
+      const fetchDetail = async () => {
         setIsLoadingSlots(true);
-        const { data, error } = await supabase
-          .from('delivery_slots')
-          .select('id, start_time, end_time')
-          .eq('peternak_id', peternakId)
-          .eq('is_active', true)
-          .order('start_time', { ascending: true });
-          
-        if (data) {
-          const formattedSlots = data.map(slot => ({
-            id: slot.id,
-            label: `${slot.start_time.substring(0, 5)} - ${slot.end_time.substring(0, 5)}`
-          }));
-          setTimeSlots(formattedSlots);
-          if (formattedSlots.length > 0) setSelectedSlot(formattedSlots[0].id);
+        try {
+          const res = await fetch(`/api/peternak/${peternakId}`).then((r) => r.json());
+          if (res.data) {
+            const remStock = Math.max(0, (res.data.stock_rak || 0) - (res.data.sold_rak_today || 0));
+            setAvailableStock(remStock);
+
+            if (res.data.delivery_slots && Array.isArray(res.data.delivery_slots) && res.data.delivery_slots.length > 0) {
+              const formattedSlots = res.data.delivery_slots.map((slot: any) => ({
+                id: slot.id,
+                label: `${slot.start_time.substring(0, 5)} - ${slot.end_time.substring(0, 5)}`
+              }));
+              setTimeSlots(formattedSlots);
+              setSelectedSlot(formattedSlots[0].id);
+            } else {
+              setTimeSlots([]);
+              setSelectedSlot('');
+            }
+          }
+        } catch (e) {
+          console.error(e);
+        } finally {
+          setIsLoadingSlots(false);
         }
-        setIsLoadingSlots(false);
       };
-      fetchSlots();
+
+      fetchDetail();
       
-      if (method === 'delivery') {
+      if (localMethod === 'delivery') {
         const fetchAddresses = async () => {
           const { data: { user } } = await supabase.auth.getUser();
           if (user) {
@@ -79,13 +98,15 @@ export function OrderModal({
         fetchAddresses();
       }
     }
-  }, [isOpen, method, peternakId, supabase]);
+  }, [isOpen, localMethod, peternakId, supabase]);
 
   // Real-time subscription handled by GlobalWaitingModal now
 
   const handleLanjut = async () => {
+    if (!localRak || localRak < 1) return alert('Silakan masukkan jumlah rak yang valid!');
+    if (availableStock !== null && localRak > availableStock) return alert('Sisa stok hari ini tidak mencukupi!');
     if (!selectedSlot) return alert('Silakan pilih slot waktu!');
-    if (method === 'delivery' && !addressId) return alert('Silakan pilih alamat pengiriman!');
+    if (localMethod === 'delivery' && !addressId) return alert('Silakan pilih alamat pengiriman!');
 
     setIsSubmitting(true);
     try {
@@ -94,9 +115,9 @@ export function OrderModal({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           listingId,
-          rakQuantity,
-          fulfillmentMethod: method,
-          consumerAddressId: method === 'delivery' ? addressId : null,
+          rakQuantity: localRak,
+          fulfillmentMethod: localMethod,
+          consumerAddressId: localMethod === 'delivery' ? addressId : null,
           deliverySlotId: selectedSlot || null, // ID slot dari delivery_slots
         })
       });
@@ -164,9 +185,9 @@ export function OrderModal({
 
         <div>
             <h2 className="text-xl font-bold text-text-main mb-1">Pesan dari {peternakName}</h2>
-            <p className="text-sm text-neutral-500 mb-6">Pilih waktu {method === 'pickup' ? 'pengambilan' : 'pengiriman'} pesanan Anda.</p>
+            <p className="text-sm text-neutral-500 mb-6">Sesuaikan pesanan Anda di bawah ini.</p>
 
-            <div className="space-y-4 mb-6">
+            <div className="space-y-5 mb-6 max-h-[60vh] overflow-y-auto pr-2">
               <div>
                 <label className="block text-sm font-semibold text-text-main mb-2">Slot Waktu Hari Ini</label>
                 <select 
@@ -184,7 +205,7 @@ export function OrderModal({
                 </select>
               </div>
 
-              {method === 'delivery' && (
+              {localMethod === 'delivery' && (
                 <div>
                   <label className="block text-sm font-semibold text-text-main mb-2">Alamat Pengiriman</label>
                   {addresses.length === 0 ? (
@@ -221,7 +242,7 @@ export function OrderModal({
               </button>
               <button 
                 onClick={handleLanjut}
-                disabled={isSubmitting || !selectedSlot || (method === 'delivery' && !addressId)}
+                disabled={isSubmitting || !localRak || !selectedSlot || (localMethod === 'delivery' && !addressId) || (availableStock !== null && localRak > availableStock)}
                 className="flex-1 py-3 text-sm font-semibold text-white bg-primary-600 hover:bg-primary-700 rounded-lg transition-colors disabled:opacity-50"
               >
                 {isSubmitting ? 'Memproses...' : 'Lanjut'}

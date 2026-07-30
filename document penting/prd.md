@@ -1,4 +1,4 @@
-# PRD — adatelur.com
+# PRD — adatelur
 
 **Product Requirements Document**
 Versi: 1.0 | Tanggal: 21 Juli 2026 | Status: MVP Build (Kompetisi VeternityBeraksi 2026)
@@ -8,7 +8,7 @@ Tim: Rafi, Rian, Alvin
 
 ## 1. Ringkasan Eksekutif
 
-**adatelur.com** adalah platform web (PWA — Progressive Web App) yang menghubungkan **peternak ayam petelur** langsung ke **konsumen** (rumah tangga & UMKM), memotong seluruh rantai perantara (tengkulak, distributor, warung besar). Platform hanya punya **2 role**: Peternak dan Konsumen — tidak ada admin marketplace yang mengatur harga, tidak ada gudang, tidak ada stok terpusat.
+**adatelur** adalah platform web (PWA — Progressive Web App) yang menghubungkan **peternak ayam petelur** langsung ke **konsumen** (rumah tangga & UMKM), memotong seluruh rantai perantara (tengkulak, distributor, warung besar). Platform hanya punya **2 role**: Peternak dan Konsumen — tidak ada admin marketplace yang mengatur harga, tidak ada gudang, tidak ada stok terpusat.
 
 Karena telur cepat rusak dan pasokan dari 1 peternak terbatas, sistem menekankan **kecepatan keputusan** (window 5 menit untuk peternak approve/reject order) dan **efisiensi rute** (rekomendasi bukan berdasar harga termurah semata, tapi **total biaya optimal** = harga rak + ongkir).
 
@@ -23,7 +23,7 @@ Referensi data pendukung (gap harga, populasi ayam, demand Jawa Barat) ada di do
 3. **Tidak ada kepastian pembeli** — peternak tidak tahu siapa yang butuh telur hari ini.
 4. **Konsumen tidak tahu asal-usul telur** — tidak ada standar kualitas atau transparansi.
 
-adatelur.com menjawab ini dengan marketplace langsung + smart routing + verifikasi kualitas di awal (bukan post-hoc lab test, tapi verifikasi visual saat onboarding + reputasi berjalan).
+adatelur menjawab ini dengan marketplace langsung + smart routing + verifikasi kualitas di awal (bukan post-hoc lab test, tapi verifikasi visual saat onboarding + reputasi berjalan).
 
 ---
 
@@ -55,7 +55,7 @@ Pemilik usaha ternak ayam petelur skala kecil-menengah. **Wajib melalui proses v
 
 ### 5.1 Registrasi & Onboarding
 
-1. Konsumen mengakses `adatelur.com` → landing page standar (hero, penjelasan value proposition, tombol **Daftar**).
+1. Konsumen mengakses `adatelur` → landing page standar (hero, penjelasan value proposition, tombol **Daftar**).
 2. Daftar via:
    - Google OAuth (Supabase Auth), atau
    - Manual: email, password, nama lengkap, nomor telepon.

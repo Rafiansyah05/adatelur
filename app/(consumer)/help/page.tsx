@@ -37,14 +37,14 @@ export default function HelpCenterPage() {
       </div>
 
       <div className="grid md:grid-cols-[1fr_300px] gap-8">
-        
+
         {/* FAQ Section */}
         <div>
           <h2 className="text-h2 text-text-main mb-6">Pertanyaan yang Sering Diajukan (FAQ)</h2>
           <div className="flex flex-col gap-3">
             {faqs.map((faq, idx) => (
-              <Card 
-                key={idx} 
+              <Card
+                key={idx}
                 className="overflow-hidden border border-border cursor-pointer transition-colors hover:border-primary-300"
                 onClick={() => setOpenFaq(openFaq === idx ? null : idx)}
               >
@@ -76,7 +76,7 @@ export default function HelpCenterPage() {
               Hubungi CS
             </Button>
           </Card>
-          
+
           <Card className="p-6 border border-border bg-white">
             <div className="flex h-12 w-12 items-center justify-center rounded-full bg-neutral-100 mb-4 text-text-main">
               <Mail className="h-6 w-6" />
@@ -86,7 +86,7 @@ export default function HelpCenterPage() {
               Punya keluhan detail? Kirimkan email ke kami.
             </p>
             <Button variant="secondary" className="w-full font-bold border-2">
-              support@adatelur.com
+              support@adatelur
             </Button>
           </Card>
         </div>

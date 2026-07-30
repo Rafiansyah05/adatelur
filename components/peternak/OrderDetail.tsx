@@ -149,20 +149,21 @@ export function OrderDetail({ order }: { order: OrderDetailData }) {
 
   return (
     <div className="w-full">
-      <button
-        type="button"
-        onClick={() => router.push('/dashboard/orders')}
-        className="mb-4 inline-flex items-center gap-1 text-sm font-semibold text-text-desc transition-colors hover:text-text-main"
-      >
-        <ArrowLeft className="h-4 w-4" /> Kembali
-      </button>
-
       <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="text-3xl font-bold text-neutral-900">Detail Pesanan</h1>
-          <p className="text-caption text-text-desc mt-1">
-            Order #{order.id.slice(0, 8).toUpperCase()} • {new Date(order.created_at).toLocaleString('id-ID')}
-          </p>
+        <div className="flex items-start gap-3">
+          <button
+            type="button"
+            onClick={() => router.push('/dashboard/orders')}
+            className="mt-1 hidden md:flex shrink-0 items-center justify-center rounded-full p-2 hover:bg-neutral-100 transition-colors"
+          >
+            <ArrowLeft className="h-5 w-5 text-text-main" />
+          </button>
+          <div>
+            <h1 className="text-3xl font-bold text-neutral-900">Detail Pesanan</h1>
+            <p className="text-caption text-text-desc mt-1">
+              Order #{order.id.slice(0, 8).toUpperCase()} • {new Date(order.created_at).toLocaleString('id-ID')}
+            </p>
+          </div>
         </div>
         <span className={`rounded-full px-3 py-1 text-caption font-semibold ${statusBadgeClass(status)}`}>
           {statusLabels[status] || status}

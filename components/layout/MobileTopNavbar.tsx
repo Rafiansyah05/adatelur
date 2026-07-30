@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
-import { Bell, ChevronLeft, Search } from 'lucide-react';
+import { Bell, ArrowLeft, Search } from 'lucide-react';
 import { useState } from 'react';
 
 export function MobileTopNavbar() {
@@ -18,8 +18,13 @@ export function MobileTopNavbar() {
     }
   };
 
-  // 1. Home Page Navbar
-  if (pathname === '/') {
+  // 1. Pages without MobileTopNavbar (they have their own headers)
+  if (pathname === '/dashboard/wallet') {
+    return null;
+  }
+
+  // 2. Home Page Navbar
+  if (pathname === '/' || pathname === '/dashboard') {
     return (
       <header className="sticky top-0 z-50 flex h-16 w-full items-center justify-between bg-white px-4 md:hidden">
         {/* Kiri: Kosong (untuk balance spacing) */}
@@ -47,9 +52,6 @@ export function MobileTopNavbar() {
   if (pathname === '/search') {
     return (
       <header className="sticky top-0 z-50 flex h-16 w-full items-center gap-3 bg-white px-4 shadow-sm md:hidden">
-        <button onClick={() => router.back()} className="text-text-main">
-          <ChevronLeft className="h-6 w-6" />
-        </button>
         <form onSubmit={handleSearch} className="relative flex-1">
           <input
             type="text"
@@ -67,26 +69,33 @@ export function MobileTopNavbar() {
 
   // 3. Dynamic Title Navbars for other pages
   let title = '';
-  let showBack = false;
+  let backUrl = '';
 
-  if (pathname.startsWith('/orders')) {
+  if (pathname === '/orders') {
     title = 'Riwayat Order';
-  } else if (pathname.startsWith('/profile')) {
+  } else if (pathname === '/dashboard/orders') {
+    title = 'Pesanan Masuk';
+  } else if (pathname.startsWith('/dashboard/orders/')) {
+    title = 'Pesanan Masuk';
+    backUrl = '/dashboard/orders';
+  } else if (pathname === '/dashboard/availability') {
+    title = 'Atur Ketersediaan';
+  } else if (pathname.startsWith('/profile') || pathname.startsWith('/dashboard/profile')) {
     title = 'Profile';
   } else if (pathname.startsWith('/notifications')) {
     title = 'Notifikasi';
-    showBack = true; // Sesuai instruksi: ada button backnya kalau diklik mengarah ke home
+    backUrl = '/'; // Sesuai instruksi: ada button backnya kalau diklik mengarah ke home
   } else if (pathname.startsWith('/help')) {
     title = 'Bantuan';
-    showBack = true;
+    backUrl = '/';
   }
 
   return (
     <header className="sticky top-0 z-50 flex h-16 w-full items-center justify-between bg-white px-4 md:hidden">
       <div className="w-10 flex justify-start">
-        {showBack && (
-          <button onClick={() => router.push('/')} className="text-text-main hover:bg-neutral-100 p-1 rounded-full">
-            <ChevronLeft className="h-7 w-7" />
+        {backUrl && (
+          <button onClick={() => router.push(backUrl)} className="rounded-full p-2 hover:bg-neutral-100 transition-colors">
+            <ArrowLeft className="h-5 w-5 text-text-main" />
           </button>
         )}
       </div>

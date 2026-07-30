@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase/server';
 const geminiModel = 'gemini-3.6-flash';
 const geminiStreamUrl = `https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:streamGenerateContent?alt=sse`;
 
-const systemInstruction = `Kamu adalah asisten operasional untuk peternak ayam petelur di platform adatelur.com.
+const systemInstruction = `Kamu adalah asisten operasional untuk peternak ayam petelur di platform adatelur.
 Bantu peternak dengan pertanyaan seputar operasional harian: perawatan ayam, pakan, kualitas dan penyimpanan telur, kebersihan kandang, estimasi produksi, serta tips harga jual.
 Jawab dalam Bahasa Indonesia yang ringkas, jelas, dan praktis.
 Kamu diberi data peternak yang sedang login. Gunakan data itu bila relevan untuk menjawab pertanyaan spesifik tentang peternakan mereka, misalnya soal harga, stok, produksi, atau skor reputasi.
@@ -162,7 +162,7 @@ export async function POST(request: Request) {
                 if (text) {
                   controller.enqueue(encoder.encode(text));
                 }
-              } catch {}
+              } catch { }
             }
           }
         } finally {

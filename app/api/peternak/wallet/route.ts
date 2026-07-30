@@ -14,11 +14,24 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { data: peternakDetail } = await supabase
+    const { data: peternakDetail, error: detailError } = await supabase
       .from('peternak_details')
-      .select('id, bank_name, bank_account_number, bank_account_holder')
+      .select(`
+        id, 
+        bank_name, 
+        bank_account_number, 
+        bank_account_holder,
+        created_at,
+        profiles (
+          full_name
+        )
+      `)
       .eq('profile_id', user.id)
       .maybeSingle();
+
+    if (detailError) {
+       console.error(detailError);
+    }
 
     if (!peternakDetail) {
       return NextResponse.json({ error: 'Peternak tidak ditemukan' }, { status: 403 });
@@ -65,6 +78,16 @@ export async function GET() {
         peternakDetail.bank_account_holder
     );
 
+    let fullName = 'Peternak';
+    if (peternakDetail.profiles) {
+      // In case it returns an array
+      if (Array.isArray(peternakDetail.profiles)) {
+        fullName = peternakDetail.profiles[0]?.full_name || 'Peternak';
+      } else {
+        fullName = (peternakDetail.profiles as any).full_name || 'Peternak';
+      }
+    }
+
     return NextResponse.json({
       balance,
       pending,
@@ -77,6 +100,10 @@ export async function GET() {
       },
       transactions: transactions ?? [],
       withdrawals: withdrawals ?? [],
+      peternak: {
+        full_name: fullName,
+        created_at: peternakDetail.created_at || user.created_at,
+      }
     });
   } catch (error) {
     return NextResponse.json(

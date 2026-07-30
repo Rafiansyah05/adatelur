@@ -26,6 +26,7 @@ export async function POST(request: Request) {
         farm_latitude,
         farm_longitude,
         farm_address,
+        has_vehicle,
         verification_status,
         profiles!inner (
           id,
@@ -36,7 +37,8 @@ export async function POST(request: Request) {
           id,
           price_per_rak,
           stock_rak,
-          is_listing_active
+          is_listing_active,
+          updated_at
         ),
         peternak_scores (
           final_score,
@@ -70,18 +72,10 @@ export async function POST(request: Request) {
     const startOfToday = new Date(new Date().setHours(0,0,0,0)).toISOString();
     const { data: todayOrders } = await supabase
       .from('orders')
-      .select('peternak_id, rak_quantity')
+      .select('peternak_id, rak_quantity, created_at')
       .in('peternak_id', peternakIds)
-      .in('order_status', ['waiting', 'accepted', 'completed', 'in_delivery'])
+      .eq('payment_status', 'paid')
       .gte('created_at', startOfToday);
-
-    const todaySoldMap = peternakIds.reduce((acc: any, id) => {
-      const soldToday = (todayOrders ?? [])
-        .filter((o: any) => o.peternak_id === id)
-        .reduce((sum: number, o: any) => sum + Number(o.rak_quantity), 0);
-      acc[id] = soldToday;
-      return acc;
-    }, {});
 
     // Format raw data and apply stock filtering
     const listings = rawPeternaks.map((pd: any) => {
@@ -89,7 +83,14 @@ export async function POST(request: Request) {
       const listing = Array.isArray(pd.listings) ? pd.listings[0] : pd.listings;
       const score = Array.isArray(pd.peternak_scores) ? pd.peternak_scores[0] : pd.peternak_scores;
       
-      const todaySold = todaySoldMap[pd.id] || 0;
+      const startOfTodayMs = new Date(startOfToday).getTime();
+      const listingUpdatedMs = listing?.updated_at ? new Date(listing.updated_at).getTime() : 0;
+      const cutoffTime = new Date(Math.max(startOfTodayMs, listingUpdatedMs)).toISOString();
+
+      const todaySold = (todayOrders ?? [])
+        .filter((o: any) => o.peternak_id === pd.id && o.created_at >= cutoffTime)
+        .reduce((sum: number, o: any) => sum + Number(o.rak_quantity), 0);
+
       const initialStock = listing?.stock_rak || 0;
       const remainingStock = Math.max(0, initialStock - todaySold);
       
@@ -107,18 +108,13 @@ export async function POST(request: Request) {
         final_score: score?.final_score || 0,
         is_suspended: score?.is_suspended || false,
         average_rating: score?.average_rating || 0,
-        total_completed_orders: completedOrdersCount[pd.id] || 0
+        total_completed_orders: completedOrdersCount[pd.id] || 0,
+        has_vehicle: pd.has_vehicle ?? false,
       };
     }).filter((l: any) => {
-      // Allow suspended for now based on user request
-      // if (l.is_suspended) return false;
-      
-      // Filter out if explicitly unavailable (closed manually)
       if (l.is_available === false) return false;
-      
-      // If we need stock filtering, filter out those who don't have enough remaining stock
+      if (fulfillment_method === 'delivery' && !l.has_vehicle) return false;
       if (!ignore_stock && l.stock_rak < rak_quantity) return false;
-      
       return true;
     });
 

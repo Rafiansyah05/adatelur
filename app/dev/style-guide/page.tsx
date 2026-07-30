@@ -9,9 +9,9 @@ export default function StyleGuidePage() {
   return (
     <div className="min-h-screen bg-cream p-8">
       <div className="mx-auto max-w-4xl space-y-12">
-        
+
         <div>
-          <h1 className="text-h1 text-text-main mb-2">Style Guide - adatelur.com</h1>
+          <h1 className="text-h1 text-text-main mb-2">Style Guide - adatelur</h1>
           <p className="text-text-desc text-body">
             Validasi visual komponen UI. Pastikan tidak ada shadow, gradient, atau warna ungu.
           </p>

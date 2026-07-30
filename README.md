@@ -1,4 +1,4 @@
-# Adatelur.com Platform
+# adatelur Platform
 
 Platform pemesanan telur untuk menghubungkan peternak dan konsumen.
 

@@ -17,6 +17,11 @@ export const metadata: Metadata = {
   title: 'Adatelur',
   description: 'Platform pemesanan telur untuk menghubungkan peternak dan konsumen.',
   manifest: '/manifest.json',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'adatelur',
+  },
   icons: {
     icon: '/icons/icon-192x192.png',
     apple: '/icons/icon-192x192.png',

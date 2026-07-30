@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { User, CreditCard, Lock, LogOut, Camera, CheckCircle2, AlertCircle } from 'lucide-react';
+import { User, CreditCard, Lock, LogOut, Camera, CheckCircle2, AlertCircle, Eye, EyeOff } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
@@ -32,10 +32,18 @@ export default function PeternakProfilePage() {
   const [bankAccountNumber, setBankAccountNumber] = useState('');
   const [bankAccountHolder, setBankAccountHolder] = useState('');
 
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [isCurrentPasswordVerified, setIsCurrentPasswordVerified] = useState(false);
+  const [isVerifyingPassword, setIsVerifyingPassword] = useState(false);
+
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
   const [passwordMessage, setPasswordMessage] = useState({ text: '', isError: false });
+
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
 
@@ -113,6 +121,30 @@ export default function PeternakProfilePage() {
     }
   };
 
+  const handleVerifyCurrentPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPasswordMessage({ text: '', isError: false });
+    setIsVerifyingPassword(true);
+
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email: email,
+        password: currentPassword,
+      });
+
+      if (error) {
+        throw new Error('Password saat ini salah.');
+      }
+
+      setIsCurrentPasswordVerified(true);
+      setPasswordMessage({ text: 'Password saat ini benar. Silakan masukkan password baru.', isError: false });
+    } catch (err: any) {
+      setPasswordMessage({ text: err.message, isError: true });
+    } finally {
+      setIsVerifyingPassword(false);
+    }
+  };
+
   const handleUpdatePassword = async (e: React.FormEvent) => {
     e.preventDefault();
     setPasswordMessage({ text: '', isError: false });
@@ -132,9 +164,11 @@ export default function PeternakProfilePage() {
       const { error } = await supabase.auth.updateUser({ password: newPassword });
       if (error) throw error;
 
-      setPasswordMessage({ text: 'Password berhasil diperbarui.', isError: false });
+      setPasswordMessage({ text: 'Informasi password anda saat ini sudah berubah.', isError: false });
       setNewPassword('');
       setConfirmPassword('');
+      setCurrentPassword('');
+      setIsCurrentPasswordVerified(false);
     } catch (err: any) {
       setPasswordMessage({ text: err.message, isError: true });
     } finally {
@@ -323,13 +357,56 @@ export default function PeternakProfilePage() {
                 {provider === 'google' ? (
                   <div className="flex flex-col items-center justify-center p-8 text-center bg-neutral-50 rounded-xl border border-neutral-100">
                     <div className="h-16 w-16 bg-white rounded-full flex items-center justify-center shadow-sm border border-neutral-100 mb-4">
-                      <Lock className="h-6 w-6 text-neutral-400" />
+                      {/* Google G Logo SVG */}
+                      <svg width="24" height="24" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">
+                        <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"></path>
+                        <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"></path>
+                        <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"></path>
+                        <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"></path>
+                      </svg>
                     </div>
                     <h4 className="text-lg font-bold text-neutral-900 mb-2">Login dengan Google</h4>
                     <p className="text-sm text-neutral-500 max-w-sm">
-                      Anda masuk menggunakan akun Google, jadi pengaturan password dikelola langsung oleh Google.
+                      Anda sebelumnya masuk menggunakan akun Google, sehingga Anda tidak bisa mengganti password melalui aplikasi ini. Pengaturan keamanan dikelola langsung oleh Google.
                     </p>
                   </div>
+                ) : !isCurrentPasswordVerified ? (
+                  <form onSubmit={handleVerifyCurrentPassword} className="flex flex-col gap-5 max-w-md">
+                    {passwordMessage.text && (
+                      <div className={`p-3 rounded-lg text-sm font-medium flex items-center gap-2 ${passwordMessage.isError ? 'bg-red-50 text-red-600' : 'bg-green-50 text-green-700'}`}>
+                        {passwordMessage.isError ? <AlertCircle className="h-4 w-4" /> : <CheckCircle2 className="h-4 w-4" />}
+                        {passwordMessage.text}
+                      </div>
+                    )}
+                    <div className="flex flex-col gap-2">
+                      <Label className="text-sm font-medium text-neutral-500">Password Saat Ini</Label>
+                      <div className="relative">
+                        <Input
+                          type={showCurrentPassword ? 'text' : 'password'}
+                          value={currentPassword}
+                          onChange={e => setCurrentPassword(e.target.value)}
+                          placeholder="Masukkan password Anda saat ini"
+                          required
+                          className="h-12 bg-neutral-50 border-transparent focus:bg-white transition-colors pr-12"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-neutral-400 hover:text-neutral-600 transition-colors"
+                        >
+                          {showCurrentPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                        </button>
+                      </div>
+                    </div>
+                    <Button
+                      type="submit"
+                      variant="primary"
+                      disabled={isVerifyingPassword || !currentPassword}
+                      className="mt-2 h-12 font-bold max-w-fit px-8"
+                    >
+                      {isVerifyingPassword ? 'Memeriksa...' : 'Lanjutkan'}
+                    </Button>
+                  </form>
                 ) : (
                   <form onSubmit={handleUpdatePassword} className="flex flex-col gap-5 max-w-md">
                     {passwordMessage.text && (
@@ -341,25 +418,43 @@ export default function PeternakProfilePage() {
 
                     <div className="flex flex-col gap-2">
                       <Label className="text-sm font-medium text-neutral-500">Password Baru</Label>
-                      <Input
-                        type="password"
-                        value={newPassword}
-                        onChange={e => setNewPassword(e.target.value)}
-                        placeholder="Minimal 6 karakter"
-                        required
-                        className="h-12 bg-neutral-50 border-transparent focus:bg-white transition-colors"
-                      />
+                      <div className="relative">
+                        <Input
+                          type={showNewPassword ? 'text' : 'password'}
+                          value={newPassword}
+                          onChange={e => setNewPassword(e.target.value)}
+                          placeholder="Minimal 6 karakter"
+                          required
+                          className="h-12 bg-neutral-50 border-transparent focus:bg-white transition-colors pr-12"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowNewPassword(!showNewPassword)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-neutral-400 hover:text-neutral-600 transition-colors"
+                        >
+                          {showNewPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                        </button>
+                      </div>
                     </div>
                     <div className="flex flex-col gap-2">
                       <Label className="text-sm font-medium text-neutral-500">Konfirmasi Password Baru</Label>
-                      <Input
-                        type="password"
-                        value={confirmPassword}
-                        onChange={e => setConfirmPassword(e.target.value)}
-                        placeholder="Ulangi password baru"
-                        required
-                        className="h-12 bg-neutral-50 border-transparent focus:bg-white transition-colors"
-                      />
+                      <div className="relative">
+                        <Input
+                          type={showConfirmPassword ? 'text' : 'password'}
+                          value={confirmPassword}
+                          onChange={e => setConfirmPassword(e.target.value)}
+                          placeholder="Ulangi password baru"
+                          required
+                          className="h-12 bg-neutral-50 border-transparent focus:bg-white transition-colors pr-12"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-neutral-400 hover:text-neutral-600 transition-colors"
+                        >
+                          {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                        </button>
+                      </div>
                     </div>
                     <Button
                       type="submit"
