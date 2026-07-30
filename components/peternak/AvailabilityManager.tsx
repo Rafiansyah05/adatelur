@@ -68,7 +68,7 @@ export function AvailabilityManager({ initialListing, initialSlots }: Availabili
   const [pricePerRak, setPricePerRak] = React.useState('');
   const [stockRak, setStockRak] = React.useState('');
 
-  const [isConfirmModalOpen, setIsConfirmModalOpen] = React.useState(false);
+  const [confirmType, setConfirmType] = React.useState<'price' | 'stock' | null>(null);
   const [isSavingListing, setIsSavingListing] = React.useState(false);
   const [isSyncingSlots, setIsSyncingSlots] = React.useState(false);
   const [message, setMessage] = React.useState('');
@@ -81,26 +81,34 @@ export function AvailabilityManager({ initialListing, initialSlots }: Availabili
 
   const parsedPrice = Number(pricePerRak);
   const parsedStock = Number(stockRak);
-  const isFormValid =
-    pricePerRak.trim() !== '' &&
-    stockRak.trim() !== '' &&
-    Number.isFinite(parsedPrice) &&
-    parsedPrice > 0 &&
-    Number.isFinite(parsedStock) &&
-    parsedStock > 0;
 
-  const handleOpenConfirmModal = () => {
-    if (!isFormValid) return;
+  const isPriceValid =
+    pricePerRak.trim() !== '' &&
+    Number.isFinite(parsedPrice) &&
+    parsedPrice > 0;
+
+  const isStockValid =
+    stockRak.trim() !== '' &&
+    Number.isFinite(parsedStock) &&
+    parsedStock > 0 &&
+    (currentPrice > 0 || isPriceValid);
+
+  const handleOpenConfirmPrice = () => {
+    if (!isPriceValid) return;
     setMessage('');
-    setIsConfirmModalOpen(true);
+    setConfirmType('price');
   };
 
-  const handleSaveListing = async () => {
-    if (!isFormValid) return;
+  const handleOpenConfirmStock = () => {
+    if (!isStockValid) return;
+    setMessage('');
+    setConfirmType('stock');
+  };
+
+  const handleSavePrice = async () => {
+    if (!isPriceValid) return;
     setIsSavingListing(true);
     setMessage('');
-
-    const newStock = currentStock + parsedStock;
 
     try {
       const response = await fetch('/api/listings', {
@@ -108,6 +116,42 @@ export function AvailabilityManager({ initialListing, initialSlots }: Availabili
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           price_per_rak: parsedPrice,
+          stock_rak: currentStock,
+          is_listing_active: initialListing?.is_listing_active ?? false,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Gagal menyimpan harga');
+      }
+
+      setCurrentPrice(parsedPrice);
+      setPricePerRak('');
+      setConfirmType(null);
+      setMessage('Harga per rak berhasil disimpan.');
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Terjadi kesalahan');
+    } finally {
+      setIsSavingListing(false);
+    }
+  };
+
+  const handleSaveStock = async () => {
+    if (!isStockValid) return;
+    setIsSavingListing(true);
+    setMessage('');
+
+    const newStock = currentStock + parsedStock;
+    const priceToUse = currentPrice > 0 ? currentPrice : parsedPrice;
+
+    try {
+      const response = await fetch('/api/listings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          price_per_rak: priceToUse,
           stock_rak: newStock,
           is_listing_active: initialListing?.is_listing_active ?? false,
         }),
@@ -116,15 +160,16 @@ export function AvailabilityManager({ initialListing, initialSlots }: Availabili
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Gagal menyimpan listing');
+        throw new Error(data.error || 'Gagal menyimpan stok');
       }
 
       setCurrentStock(newStock);
-      setCurrentPrice(parsedPrice);
-      setPricePerRak('');
+      if (priceToUse !== currentPrice) {
+        setCurrentPrice(priceToUse);
+      }
       setStockRak('');
-      setIsConfirmModalOpen(false);
-      setMessage('Listing harian berhasil disimpan.');
+      setConfirmType(null);
+      setMessage('Stok rak berhasil disimpan.');
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'Terjadi kesalahan');
     } finally {
@@ -248,10 +293,10 @@ export function AvailabilityManager({ initialListing, initialSlots }: Availabili
             <p className="text-xs md:text-sm text-text-desc font-medium">Atur harga dan stok harian.</p>
           </div>
 
-          <div className="flex flex-col gap-4">
-            <div className="space-y-3">
-              <div>
-                <Label className="font-bold text-xs md:text-sm">Harga per rak</Label>
+          <div className="flex flex-col gap-5">
+            <div className="flex flex-col gap-1.5">
+              <Label className="font-bold text-xs md:text-sm">Harga per rak</Label>
+              <div className="flex flex-col sm:flex-row gap-2">
                 <Input
                   type="text"
                   inputMode="numeric"
@@ -262,11 +307,22 @@ export function AvailabilityManager({ initialListing, initialSlots }: Availabili
                     setPricePerRak(sanitized);
                   }}
                   placeholder="Rp 35.000"
-                  className="mt-1 font-semibold text-xs md:text-sm"
+                  className="font-semibold text-xs md:text-sm flex-1"
                 />
+                <Button
+                  type="button"
+                  onClick={handleOpenConfirmPrice}
+                  disabled={!isPriceValid || isSavingListing}
+                  className="font-bold text-xs md:text-sm py-2.5 px-4 shrink-0"
+                >
+                  Simpan Harga
+                </Button>
               </div>
-              <div>
-                <Label className="font-bold text-xs md:text-sm">Stok rak (tersedia)</Label>
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <Label className="font-bold text-xs md:text-sm">Stok rak (tersedia)</Label>
+              <div className="flex flex-col sm:flex-row gap-2">
                 <Input
                   type="text"
                   inputMode="numeric"
@@ -277,19 +333,19 @@ export function AvailabilityManager({ initialListing, initialSlots }: Availabili
                     setStockRak(sanitized);
                   }}
                   placeholder="Contoh: 20"
-                  className="mt-1 font-semibold text-xs md:text-sm"
+                  className="font-semibold text-xs md:text-sm flex-1"
                 />
+                <Button
+                  type="button"
+                  onClick={handleOpenConfirmStock}
+                  disabled={!isStockValid || isSavingListing}
+                  className="font-bold text-xs md:text-sm py-2.5 px-4 shrink-0"
+                >
+                  Simpan Stok
+                </Button>
               </div>
             </div>
           </div>
-
-          <Button
-            onClick={handleOpenConfirmModal}
-            disabled={!isFormValid || isSavingListing}
-            className="w-full mt-2 font-bold text-xs md:text-sm py-2.5 md:py-3"
-          >
-            Simpan Listing
-          </Button>
         </Card>
 
         <Card className={`flex flex-col gap-4 md:gap-5 p-4 md:p-6 ${activeTab !== 'sesi' ? 'hidden md:flex' : ''}`}>
@@ -340,13 +396,15 @@ export function AvailabilityManager({ initialListing, initialSlots }: Availabili
         </Card>
       </div>
 
-      {isConfirmModalOpen && (
+      {confirmType !== null && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
           <div className="bg-white rounded-xl border border-neutral-200 shadow-md w-full max-w-sm md:max-w-md overflow-hidden flex flex-col">
             <div className="flex justify-between items-center p-3.5 md:p-4 border-b border-neutral-100">
-              <h3 className="font-bold text-base md:text-lg text-text-main">Konfirmasi Simpan Listing</h3>
+              <h3 className="font-bold text-base md:text-lg text-text-main">
+                {confirmType === 'price' ? 'Konfirmasi Simpan Harga' : 'Konfirmasi Simpan Stok'}
+              </h3>
               <button
-                onClick={() => setIsConfirmModalOpen(false)}
+                onClick={() => setConfirmType(null)}
                 className="p-1 hover:bg-neutral-100 rounded-md transition-colors"
                 disabled={isSavingListing}
               >
@@ -355,28 +413,36 @@ export function AvailabilityManager({ initialListing, initialSlots }: Availabili
             </div>
 
             <div className="p-4 md:p-6 flex flex-col gap-3.5 md:gap-4">
-              <p className="text-xs md:text-sm text-text-main font-medium leading-relaxed">
-                Apakah anda yakin ingin mengatur harga <span className="font-bold text-primary-950">{formatRupiah(parsedPrice)}</span> dan menambah stok <span className="font-bold text-primary-950">{parsedStock} rak</span>?
-              </p>
-              <div className="p-3 bg-neutral-50 border border-neutral-200 rounded-lg flex items-center gap-2.5 md:gap-3">
-                <AlertCircle className="h-5 w-5 text-primary-700 shrink-0" />
-                <p className="text-xs md:text-sm font-semibold text-text-main">
-                  Stok rak anda akan menjadi <span className="font-black text-primary-800 text-sm md:text-base">{currentStock + parsedStock} rak</span>
+              {confirmType === 'price' ? (
+                <p className="text-xs md:text-sm text-text-main font-medium leading-relaxed">
+                  Apakah Anda yakin ingin mengatur harga per rak menjadi <span className="font-bold text-primary-950">{formatRupiah(parsedPrice)}</span>?
                 </p>
-              </div>
+              ) : (
+                <>
+                  <p className="text-xs md:text-sm text-text-main font-medium leading-relaxed">
+                    Apakah Anda yakin ingin menambah stok sebanyak <span className="font-bold text-primary-950">{parsedStock} rak</span>?
+                  </p>
+                  <div className="p-3 bg-neutral-50 border border-neutral-200 rounded-lg flex items-center gap-2.5 md:gap-3">
+                    <AlertCircle className="h-5 w-5 text-primary-700 shrink-0" />
+                    <p className="text-xs md:text-sm font-semibold text-text-main">
+                      Stok rak Anda akan menjadi <span className="font-black text-primary-800 text-sm md:text-base">{currentStock + parsedStock} rak</span>
+                    </p>
+                  </div>
+                </>
+              )}
             </div>
 
             <div className="p-3.5 md:p-4 border-t border-neutral-100 bg-neutral-50 flex justify-end gap-2.5 md:gap-3">
               <Button
                 variant="outline"
-                onClick={() => setIsConfirmModalOpen(false)}
+                onClick={() => setConfirmType(null)}
                 disabled={isSavingListing}
                 className="font-semibold text-xs md:text-sm px-3 md:px-4 py-2"
               >
                 Batal
               </Button>
               <Button
-                onClick={handleSaveListing}
+                onClick={confirmType === 'price' ? handleSavePrice : handleSaveStock}
                 disabled={isSavingListing}
                 className="font-bold text-xs md:text-sm px-3 md:px-4 py-2"
               >
