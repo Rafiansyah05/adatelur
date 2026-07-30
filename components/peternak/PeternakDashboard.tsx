@@ -75,7 +75,7 @@ export function PeternakDashboard({ initialListing, peternakName }: PeternakDash
         <h1 className="text-h1 font-bold text-text-main truncate min-w-0">
           Halo, {peternakName ?? 'Peternak'}
         </h1>
-        <button 
+        <button
           onClick={handleToggle}
           disabled={isToggling}
           className="flex items-center gap-2 shrink-0 rounded-full border border-border bg-white px-3 py-1.5 md:px-4 md:py-2 text-xs md:text-sm text-text-main shadow-sm hover:bg-neutral-50 transition-colors focus:outline-none disabled:opacity-70"
@@ -85,7 +85,7 @@ export function PeternakDashboard({ initialListing, peternakName }: PeternakDash
           ) : (
             <ToggleLeft className="h-6 w-6 md:h-7 md:w-7 text-text-desc" />
           )}
-          <span className="hidden md:inline font-semibold">{isListingActive ? 'Buka (Publik)' : 'Tutup (Sembunyi)'}</span>
+          <span className="hidden md:inline font-semibold">{isListingActive ? 'Buka' : 'Tutup'}</span>
           <span className="md:hidden font-semibold">{isListingActive ? 'Buka' : 'Tutup'}</span>
         </button>
       </div>

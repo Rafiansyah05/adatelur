@@ -13,8 +13,14 @@ interface ListingData {
 }
 
 export function ListingManager({ initialData }: { initialData?: ListingData | null }) {
-  const [price, setPrice] = useState(initialData?.price_per_rak || 0);
-  const [stock, setStock] = useState(initialData?.stock_rak || 0);
+  const [priceStr, setPriceStr] = useState(
+    initialData?.price_per_rak ? initialData.price_per_rak.toString().replace(/^0+(?!$)/, '') : ''
+  );
+  const [stockStr, setStockStr] = useState(
+    initialData?.stock_rak !== undefined && initialData?.stock_rak !== null
+      ? initialData.stock_rak.toString().replace(/^0+(?!$)/, '')
+      : ''
+  );
   const [isActive, setIsActive] = useState(initialData ? initialData.is_listing_active : true);
   const [msg, setMsg] = useState('');
 
@@ -34,12 +40,16 @@ export function ListingManager({ initialData }: { initialData?: ListingData | nu
     },
     onError: () => {
       setMsg('Terjadi kesalahan.');
-    }
+    },
   });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    mutation.mutate({ price_per_rak: price, stock_rak: stock, is_listing_active: isActive });
+    mutation.mutate({
+      price_per_rak: Number(priceStr),
+      stock_rak: Number(stockStr),
+      is_listing_active: isActive,
+    });
   };
 
   return (
@@ -48,27 +58,37 @@ export function ListingManager({ initialData }: { initialData?: ListingData | nu
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <div className="flex flex-col gap-2">
           <Label>Harga per Rak (Rp)</Label>
-          <Input 
-            type="number" 
-            value={price} 
-            onChange={(e) => setPrice(Number(e.target.value))} 
-            required 
+          <Input
+            type="text"
+            inputMode="numeric"
+            value={priceStr}
+            onChange={(e) => {
+              const raw = e.target.value.replace(/\D/g, '');
+              const sanitized = raw.replace(/^0+(?!$)/, '');
+              setPriceStr(sanitized);
+            }}
+            required
           />
         </div>
         <div className="flex flex-col gap-2">
           <Label>Stok (Jumlah Rak)</Label>
-          <Input 
-            type="number" 
-            value={stock} 
-            onChange={(e) => setStock(Number(e.target.value))} 
-            required 
+          <Input
+            type="text"
+            inputMode="numeric"
+            value={stockStr}
+            onChange={(e) => {
+              const raw = e.target.value.replace(/\D/g, '');
+              const sanitized = raw.replace(/^0+(?!$)/, '');
+              setStockStr(sanitized);
+            }}
+            required
           />
         </div>
         <div className="flex items-center gap-2">
-          <input 
-            type="checkbox" 
-            checked={isActive} 
-            onChange={(e) => setIsActive(e.target.checked)} 
+          <input
+            type="checkbox"
+            checked={isActive}
+            onChange={(e) => setIsActive(e.target.checked)}
             className="h-5 w-5 accent-primary-400"
           />
           <Label>Aktifkan Penjualan Hari Ini</Label>

@@ -40,18 +40,18 @@ export default async function AssistantPage() {
   const firstName = profile?.full_name?.trim().split(' ')[0] || '';
 
   return (
-    <div className="flex flex-col min-h-[100dvh] bg-bg-base">
-      <header className="sticky top-0 z-50 flex items-center justify-between bg-white px-4 py-3 shadow-sm border-b border-border">
+    <div className="flex flex-col h-[100dvh] overflow-hidden bg-bg-base">
+      <header className="sticky top-0 z-50 flex shrink-0 items-center justify-between bg-white px-4 py-3 shadow-sm border-b border-border">
         <Link href="/dashboard" className="rounded-full p-2 hover:bg-neutral-100 transition-colors">
           <ArrowLeft className="h-5 w-5 text-text-main" />
         </Link>
         <h1 className="text-lg font-bold text-text-main absolute left-1/2 -translate-x-1/2">
           AdaSisten
         </h1>
-        <div className="w-9" /> {/* Spacer */}
+        <div className="w-9" />
       </header>
-      
-      <main className="flex-1 w-full max-w-3xl mx-auto flex flex-col p-4 overflow-hidden">
+
+      <main className="flex-1 min-h-0 w-full max-w-3xl mx-auto flex flex-col p-4 overflow-hidden">
         <AssistantChat firstName={firstName} />
       </main>
     </div>

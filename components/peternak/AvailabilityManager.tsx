@@ -50,9 +50,13 @@ export function AvailabilityManager({ initialListing, initialSlots }: Availabili
   const [activeSessions, setActiveSessions] = React.useState<string[]>(initialActiveSessions);
 
   const [pricePerRak, setPricePerRak] = React.useState(
-    initialListing?.price_per_rak?.toString() ?? ''
+    initialListing?.price_per_rak ? initialListing.price_per_rak.toString().replace(/^0+(?!$)/, '') : ''
   );
-  const [stockRak, setStockRak] = React.useState(initialListing?.stock_rak?.toString() ?? '');
+  const [stockRak, setStockRak] = React.useState(
+    initialListing?.stock_rak !== undefined && initialListing?.stock_rak !== null
+      ? initialListing.stock_rak.toString().replace(/^0+(?!$)/, '')
+      : ''
+  );
 
   const [isSavingListing, setIsSavingListing] = React.useState(false);
   const [isSyncingSlots, setIsSyncingSlots] = React.useState(false);
@@ -60,8 +64,14 @@ export function AvailabilityManager({ initialListing, initialSlots }: Availabili
   const [activeTab, setActiveTab] = React.useState<'listing' | 'sesi'>('listing');
 
   React.useEffect(() => {
-    setPricePerRak(initialListing?.price_per_rak?.toString() ?? '');
-    setStockRak(initialListing?.stock_rak?.toString() ?? '');
+    setPricePerRak(
+      initialListing?.price_per_rak ? initialListing.price_per_rak.toString().replace(/^0+(?!$)/, '') : ''
+    );
+    setStockRak(
+      initialListing?.stock_rak !== undefined && initialListing?.stock_rak !== null
+        ? initialListing.stock_rak.toString().replace(/^0+(?!$)/, '')
+        : ''
+    );
   }, [initialListing]);
 
   const handleSaveListing = async () => {
@@ -189,7 +199,6 @@ export function AvailabilityManager({ initialListing, initialSlots }: Availabili
         </Card>
       ) : null}
 
-      {/* Mobile Tabs */}
       <div className="md:hidden flex border-b border-border mb-6">
         <button
           onClick={() => setActiveTab('listing')}
@@ -202,7 +211,7 @@ export function AvailabilityManager({ initialListing, initialSlots }: Availabili
         <button
           onClick={() => setActiveTab('sesi')}
           className={`flex-1 py-3 text-sm font-semibold transition-colors border-b-2 ${
-            activeTab === 'sesi' ? 'border-primary-500 text-primary-950' : 'border-transparent text-text-desc'
+            activeTab === 'sesi' ? 'border-transparent text-text-desc' : 'border-primary-500 text-primary-950'
           }`}
         >
           Sesi Waktu
@@ -222,10 +231,12 @@ export function AvailabilityManager({ initialListing, initialSlots }: Availabili
                 <Label>Harga per rak</Label>
                 <Input
                   type="text"
+                  inputMode="numeric"
                   value={pricePerRak ? `Rp ${new Intl.NumberFormat('id-ID').format(Number(pricePerRak))}` : ''}
                   onChange={(event) => {
                     const rawValue = event.target.value.replace(/\D/g, '');
-                    setPricePerRak(rawValue);
+                    const sanitized = rawValue.replace(/^0+(?!$)/, '');
+                    setPricePerRak(sanitized);
                   }}
                   placeholder="Rp 35.000"
                   className="mt-1"
@@ -234,10 +245,14 @@ export function AvailabilityManager({ initialListing, initialSlots }: Availabili
               <div>
                 <Label>Stok rak (tersedia)</Label>
                 <Input
-                  type="number"
-                  min="0"
+                  type="text"
+                  inputMode="numeric"
                   value={stockRak}
-                  onChange={(event) => setStockRak(event.target.value)}
+                  onChange={(event) => {
+                    const rawValue = event.target.value.replace(/\D/g, '');
+                    const sanitized = rawValue.replace(/^0+(?!$)/, '');
+                    setStockRak(sanitized);
+                  }}
                   placeholder="Contoh: 20"
                   className="mt-1"
                 />
