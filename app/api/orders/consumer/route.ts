@@ -21,7 +21,7 @@ export async function GET() {
         *,
         peternak:peternak_details(farm_address, farm_latitude, farm_longitude, profile:profiles(full_name, phone_number, avatar_url)),
         delivery_slot:delivery_slots(start_time, end_time),
-        delivery_proof(photo_url, captured_at)
+        delivery_proof(photo_url, captured_at, latitude, longitude)
       `)
       .eq('consumer_id', user.id)
       .order('created_at', { ascending: false });

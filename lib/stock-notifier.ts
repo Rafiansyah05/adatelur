@@ -2,42 +2,28 @@ import { sendWhatsAppMessage } from './fonnte';
 
 export async function handleStockCheck(supabase: any, peternakId: string) {
   try {
-    // 1. Fetch listing details
     const { data: listing } = await supabase
       .from('listings')
-      .select('id, stock_rak, is_listing_active')
+      .select('id, stock_rak, is_listing_active, updated_at')
       .eq('peternak_id', peternakId)
       .maybeSingle();
 
     if (!listing || listing.stock_rak <= 0) return;
 
-    // 2. Fetch today's accepted/completed orders
-    const todayStr = new Date(Date.now() + 7 * 60 * 60 * 1000).toISOString().split('T')[0];
+    const startOfTodayMs = new Date(new Date().setHours(0, 0, 0, 0)).getTime();
+    const listingUpdatedMs = listing?.updated_at ? new Date(listing.updated_at).getTime() : 0;
+    const cutoffTime = new Date(Math.max(startOfTodayMs, listingUpdatedMs)).toISOString();
+
     const { data: orders } = await supabase
       .from('orders')
-      .select('rak_quantity, created_at')
+      .select('rak_quantity')
       .eq('peternak_id', peternakId)
-      .in('order_status', ['accepted', 'completed', 'in_delivery']);
+      .eq('payment_status', 'paid')
+      .gte('created_at', cutoffTime);
 
-    let todayRakSold = 0;
-    for (const o of orders ?? []) {
-      const orderDateStr = new Date(new Date(o.created_at).getTime() + 7 * 60 * 60 * 1000).toISOString().split('T')[0];
-      if (orderDateStr === todayStr) {
-        todayRakSold += Number(o.rak_quantity);
-      }
-    }
+    const soldSinceUpdate = (orders ?? []).reduce((sum: number, o: any) => sum + Number(o.rak_quantity), 0);
 
-    // 3. Check if today's sold quantity meets or exceeds stock_rak
-    if (todayRakSold >= listing.stock_rak) {
-      const originalStock = listing.stock_rak;
-
-      // Set stock to 0 to prevent further recommendations
-      await supabase
-        .from('listings')
-        .update({ stock_rak: 0, updated_at: new Date().toISOString() })
-        .eq('id', listing.id);
-
-      // Fetch peternak phone number
+    if (soldSinceUpdate >= listing.stock_rak) {
       const { data: peternak } = await supabase
         .from('peternak_details')
         .select('profile_id')
@@ -55,7 +41,7 @@ export async function handleStockCheck(supabase: any, peternakId: string) {
           const message =
             `*Pemberitahuan adatelur - Stok Habis!*\n\n` +
             `Halo ${profile.full_name},\n` +
-            `Stok telur harian Anda hari ini sudah habis terjual (*${todayRakSold}/${originalStock} rak*).\n\n` +
+            `Stok telur harian Anda batch terbaru sudah habis terjual (*${soldSinceUpdate}/${listing.stock_rak} rak*).\n\n` +
             `Untuk sementara, Anda tidak akan masuk dalam rekomendasi konsumen sampai Anda memperbarui stok.\n\n` +
             `Silakan perbarui stok rak Anda melalui tautan di bawah ini:\n` +
             `https://adatelur/dashboard/availability`;

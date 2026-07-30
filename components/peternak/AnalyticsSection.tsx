@@ -46,6 +46,8 @@ interface AnalyticsData {
     totalRevenue: number;
     totalRakSold: number;
     stockRak: number;
+    soldSinceUpdate?: number;
+    remainingStock?: number;
     completedOrders: number;
     todayRevenue: number;
     todayRakSold: number;
@@ -218,7 +220,7 @@ export function AnalyticsSection() {
       <div className="mb-6 grid grid-cols-2 gap-4">
         <SummaryTile
           icon={<Wallet className={iconClass} />}
-          label="Total Pendapatan"
+          label={timeframe === 'semua' ? 'Total Pendapatan' : 'Pendapatan Hari Ini'}
           value={
             timeframe === 'semua'
               ? formatRupiah(data.summary.totalRevenue)
@@ -227,24 +229,44 @@ export function AnalyticsSection() {
           description="Sudah dipotong biaya admin 3,5% per transaksi"
           className="col-span-2"
         />
-        <SummaryTile
-          icon={<Package className={iconClass} />}
-          label="Rak Terjual"
-          value={
-            timeframe === 'semua'
-              ? `${data.summary.totalRakSold}`
-              : `${data.summary.todayRakSold}/${data.summary.stockRak}`
-          }
-        />
-        <SummaryTile
-          icon={<ClipboardCheck className={iconClass} />}
-          label="Pesanan Selesai"
-          value={
-            timeframe === 'semua'
-              ? `${data.summary.completedOrders}`
-              : `${data.summary.todayCompletedOrders}`
-          }
-        />
+
+        {timeframe === 'hariIni' ? (
+          <>
+            <SummaryTile
+              icon={<Package className={iconClass} />}
+              label="Sisa Stok Rak"
+              value={`${data.summary.remainingStock ?? Math.max(0, data.summary.stockRak - (data.summary.soldSinceUpdate ?? 0))}/${data.summary.stockRak}`}
+              description="Sisa stok dari batch update terbaru"
+            />
+            <SummaryTile
+              icon={<Package className={iconClass} />}
+              label="Rak Terjual Hari Ini"
+              value={`${data.summary.todayRakSold} rak`}
+              description="Total rak terjual sejak 00:00 hari ini"
+            />
+            <SummaryTile
+              icon={<ClipboardCheck className={iconClass} />}
+              label="Pesanan Selesai Hari Ini"
+              value={`${data.summary.todayCompletedOrders}`}
+            />
+          </>
+        ) : (
+          <>
+            <SummaryTile
+              icon={<Package className={iconClass} />}
+              label="Total Rak Terjual"
+              value={`${data.summary.totalRakSold} rak`}
+              description="Total rak terjual sepanjang masa"
+            />
+            <SummaryTile
+              icon={<ClipboardCheck className={iconClass} />}
+              label="Total Pesanan Selesai"
+              value={`${data.summary.completedOrders}`}
+              description="Total pesanan selesai sepanjang masa"
+            />
+          </>
+        )}
+
         <SummaryTile
           icon={<Star className={iconClass} />}
           label="Rata-rata Rating"

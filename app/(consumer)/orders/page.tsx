@@ -219,7 +219,11 @@ export default function ConsumerOrdersPage() {
                   <Button 
                     onClick={() => {
                       if (order.order_status === 'completed' && order.delivery_proof?.photo_url) {
-                        setProofData(order.delivery_proof);
+                        setProofData({
+                          ...order.delivery_proof,
+                          peternak_lat: order.peternak?.farm_latitude,
+                          peternak_lng: order.peternak?.farm_longitude,
+                        });
                       } else {
                         setTrackingOrder(order);
                       }
@@ -235,7 +239,13 @@ export default function ConsumerOrdersPage() {
                 {order.fulfillment_method === 'pickup' && (
                     order.order_status === 'completed' && order.delivery_proof?.photo_url ? (
                       <Button
-                        onClick={() => setProofData(order.delivery_proof)}
+                        onClick={() =>
+                          setProofData({
+                            ...order.delivery_proof,
+                            peternak_lat: order.peternak?.farm_latitude,
+                            peternak_lng: order.peternak?.farm_longitude,
+                          })
+                        }
                         variant="primary"
                         className="font-bold text-sm flex-1 md:flex-none px-4"
                       >
@@ -336,6 +346,23 @@ export default function ConsumerOrdersPage() {
                 <p className="text-sm text-neutral-500 mt-2 text-center">
                   Tanggal: {new Date(trackingOrder.delivery_proof.captured_at).toLocaleString('id-ID')}
                 </p>
+                {(() => {
+                  const lat = trackingOrder.delivery_proof.latitude || trackingOrder.peternak?.farm_latitude;
+                  const lng = trackingOrder.delivery_proof.longitude || trackingOrder.peternak?.farm_longitude;
+                  if (!lat || !lng) return null;
+                  return (
+                    <div className="mt-3 flex justify-center">
+                      <a 
+                        href={`https://www.google.com/maps/search/?api=1&query=${lat},${lng}`} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 text-sm font-bold text-primary-700 hover:underline"
+                      >
+                        <MapPin className="h-4 w-4" /> Lihat Titik Lokasi
+                      </a>
+                    </div>
+                  );
+                })()}
               </div>
             )}
           </div>
@@ -360,26 +387,30 @@ export default function ConsumerOrdersPage() {
                 className="object-contain"
               />
             </div>
-            {(proofData.latitude || proofData.captured_at) && (
-              <div className="p-4 bg-white flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                {proofData.captured_at && (
-                  <div className="flex items-center gap-2 text-sm text-text-main">
-                    <Clock className="h-4 w-4 text-primary-600" />
-                    <span className="font-medium">{new Date(proofData.captured_at).toLocaleString('id-ID')}</span>
-                  </div>
-                )}
-                {proofData.latitude && proofData.longitude && (
-                  <a 
-                    href={`https://www.google.com/maps/search/?api=1&query=${proofData.latitude},${proofData.longitude}`} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2 text-sm text-primary-600 hover:text-primary-700 font-bold"
-                  >
-                    <MapPin className="h-4 w-4" /> Lihat Titik Lokasi
-                  </a>
-                )}
-              </div>
-            )}
+            {(() => {
+              const lat = proofData.latitude || proofData.peternak_lat;
+              const lng = proofData.longitude || proofData.peternak_lng;
+              return (
+                <div className="p-4 bg-white flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  {proofData.captured_at && (
+                    <div className="flex items-center gap-2 text-sm text-text-main">
+                      <Clock className="h-4 w-4 text-primary-600" />
+                      <span className="font-medium">{new Date(proofData.captured_at).toLocaleString('id-ID')}</span>
+                    </div>
+                  )}
+                  {lat && lng && (
+                    <a 
+                      href={`https://www.google.com/maps/search/?api=1&query=${lat},${lng}`} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 text-sm text-primary-600 hover:text-primary-700 font-bold"
+                    >
+                      <MapPin className="h-4 w-4" /> Lihat Titik Lokasi
+                    </a>
+                  )}
+                </div>
+              );
+            })()}
           </div>
         </div>
       )}

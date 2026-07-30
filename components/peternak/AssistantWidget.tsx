@@ -11,7 +11,7 @@ function clamp(value: number, min: number, max: number) {
 export function AssistantWidget() {
   const pathname = usePathname();
   const router = useRouter();
-  const [offset, setOffset] = React.useState({ right: 24, bottom: 88 });
+  const [offset, setOffset] = React.useState({ right: 20, bottom: 48 });
   const dragRef = React.useRef({ startX: 0, startY: 0, right: 0, bottom: 0, moved: false, active: false });
 
   const handlePointerDown = (event: React.PointerEvent) => {
@@ -59,7 +59,11 @@ export function AssistantWidget() {
     !pathname.startsWith('/dashboard/verify') &&
     !pathname.startsWith('/dashboard/rejected');
 
-  if (!isDashboardArea || pathname.startsWith('/dashboard/assistant')) {
+  if (
+    !isDashboardArea ||
+    pathname.startsWith('/dashboard/assistant') ||
+    pathname.startsWith('/dashboard/orders')
+  ) {
     return null;
   }
 

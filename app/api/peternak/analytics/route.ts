@@ -68,7 +68,7 @@ export async function GET() {
         .maybeSingle(),
       supabase
         .from('listings')
-        .select('stock_rak')
+        .select('stock_rak, updated_at')
         .eq('peternak_id', peternakDetail.id)
         .maybeSingle(),
       adminSupabase
@@ -113,6 +113,21 @@ export async function GET() {
         todayCompletedOrders += 1;
       }
     }
+
+    const startOfTodayMs = new Date(new Date().setHours(0, 0, 0, 0)).getTime();
+    const listingUpdatedMs = listing?.updated_at ? new Date(listing.updated_at).getTime() : 0;
+    const cutoffTime = new Date(Math.max(startOfTodayMs, listingUpdatedMs)).toISOString();
+
+    const { data: paidOrdersAfterCutoff } = await adminSupabase
+      .from('orders')
+      .select('rak_quantity')
+      .eq('peternak_id', peternakDetail.id)
+      .eq('payment_status', 'paid')
+      .gte('created_at', cutoffTime);
+
+    const soldSinceUpdate = (paidOrdersAfterCutoff ?? []).reduce((sum, o) => sum + Number(o.rak_quantity), 0);
+    const initialBatchStock = listing?.stock_rak ?? 0;
+    const remainingStock = Math.max(0, initialBatchStock - soldSinceUpdate);
 
     const averageRating = Number(score?.average_rating ?? 0);
     const finalScore = Number(score?.final_score ?? 0);
@@ -259,7 +274,9 @@ export async function GET() {
       summary: {
         totalRevenue,
         totalRakSold,
-        stockRak: listing?.stock_rak ?? 0,
+        stockRak: initialBatchStock,
+        soldSinceUpdate,
+        remainingStock,
         completedOrders: totalCompletedOrders,
         todayRevenue,
         todayRakSold,

@@ -87,6 +87,8 @@ export function OrderDetail({ order }: { order: OrderDetailData }) {
   const isTerminal = ['completed', 'rejected', 'cancelled', 'expired'].includes(status);
   const consumerPhone = order.consumer?.phone_number || '';
 
+  const [locationData, setLocationData] = React.useState<{ lat: number; lng: number } | null>(null);
+
   const markDelivering = async () => {
     setIsUpdating(true);
     try {
@@ -114,7 +116,11 @@ export function OrderDetail({ order }: { order: OrderDetailData }) {
       const res = await fetch(`/api/orders/${order.id}/complete`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ photo_base64: photo }),
+        body: JSON.stringify({
+          photo_base64: photo,
+          latitude: locationData?.lat,
+          longitude: locationData?.lng,
+        }),
       });
       if (!res.ok) {
         const data = await res.json();
@@ -133,6 +139,14 @@ export function OrderDetail({ order }: { order: OrderDetailData }) {
   const openCamera = () => {
     setPhoto(null);
     setIsCameraOpen(true);
+    if (typeof window !== 'undefined' && navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          setLocationData({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+        },
+        () => {}
+      );
+    }
   };
 
   const contactWhatsApp = () => {
