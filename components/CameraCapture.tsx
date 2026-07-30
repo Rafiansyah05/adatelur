@@ -3,7 +3,7 @@
 import * as React from 'react';
 import Webcam from 'react-webcam';
 import { Button } from './ui/Button';
-import { RefreshCw, Check, Camera as CameraIcon } from 'lucide-react';
+import { RefreshCw, Camera as CameraIcon } from 'lucide-react';
 import Image from 'next/image';
 
 interface CameraCaptureProps {
@@ -26,7 +26,7 @@ export function CameraCapture({ onCapture, label, nextButton }: CameraCapturePro
       const imageSrc = webcamRef.current.getScreenshot();
       if (imageSrc) {
         setImage(imageSrc);
-        onCapture(imageSrc); // Immediately pass to parent
+        onCapture(imageSrc);
       }
     }
   }, [webcamRef, onCapture]);
@@ -39,12 +39,15 @@ export function CameraCapture({ onCapture, label, nextButton }: CameraCapturePro
   if (!isClient) return null;
 
   return (
-    <div className="flex flex-col gap-0 border border-neutral-200 rounded-xl overflow-hidden bg-black shadow-lg">
-      <div className="bg-neutral-900 px-4 py-3 text-center border-b border-neutral-800">
-        <h3 className="text-[15px] text-white font-bold tracking-wide">{label}</h3>
+    <div className="w-full flex flex-col border border-neutral-800 rounded-xl overflow-hidden bg-neutral-900 shadow-xl">
+      <div className="bg-neutral-900 px-5 py-4 flex items-center justify-between border-b border-neutral-800">
+        <h3 className="text-base sm:text-lg text-white font-bold tracking-wide">{label}</h3>
+        <span className="text-xs font-semibold text-neutral-400 bg-neutral-800 px-2.5 py-1 rounded-full">
+          {image ? 'Foto Diambil' : 'Kamera Aktif'}
+        </span>
       </div>
 
-      <div className="relative w-full aspect-[4/3] bg-black flex items-center justify-center">
+      <div className="relative w-full aspect-[4/3] bg-black flex items-center justify-center overflow-hidden">
         {!image ? (
           <Webcam
             audio={false}
@@ -58,20 +61,23 @@ export function CameraCapture({ onCapture, label, nextButton }: CameraCapturePro
         )}
 
         {!image && (
-          <div className="absolute inset-0 border-[2px] border-white/20 m-6 rounded-lg pointer-events-none" />
+          <div className="absolute inset-0 border-2 border-white/20 m-4 sm:m-6 rounded-lg pointer-events-none" />
         )}
       </div>
 
-      <div className="bg-neutral-900 p-6 flex flex-col items-center justify-center min-h-[120px]">
+      <div className="bg-neutral-900 p-6 flex flex-col items-center justify-center min-h-[120px] border-t border-neutral-800">
         {!image ? (
-          <button
-            type="button"
-            onClick={capture}
-            className="w-16 h-16 rounded-full bg-white flex items-center justify-center border-4 border-neutral-400 hover:scale-105 active:scale-95 transition-transform"
-            aria-label="Ambil Gambar"
-          >
-            <CameraIcon className="w-6 h-6 text-black" />
-          </button>
+          <div className="flex flex-col items-center gap-2">
+            <button
+              type="button"
+              onClick={capture}
+              className="w-16 h-16 rounded-full bg-white flex items-center justify-center border-4 border-neutral-400 hover:scale-105 active:scale-95 transition-transform shadow-lg cursor-pointer"
+              aria-label="Ambil Gambar"
+            >
+              <CameraIcon className="w-6 h-6 text-black" />
+            </button>
+            <span className="text-xs text-neutral-400 font-medium">Ketuk tombol untuk memotret</span>
+          </div>
         ) : (
           <div className="flex w-full gap-4">
             <Button
@@ -82,11 +88,7 @@ export function CameraCapture({ onCapture, label, nextButton }: CameraCapturePro
               <RefreshCw className="w-5 h-5" />
               Ulangi Foto
             </Button>
-            {nextButton && (
-              <div className="flex-1">
-                {nextButton}
-              </div>
-            )}
+            {nextButton && <div className="flex-1">{nextButton}</div>}
           </div>
         )}
       </div>

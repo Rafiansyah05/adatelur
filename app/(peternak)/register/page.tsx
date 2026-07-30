@@ -13,21 +13,24 @@ import { useRouter } from 'next/navigation';
 
 const codeLength = 6;
 
-// --- Custom Toast Component ---
 interface ToastProps {
   message: string;
   type: 'success' | 'error' | 'info';
   onClose: () => void;
 }
+
 function CustomToast({ message, type, onClose }: ToastProps) {
   React.useEffect(() => {
     const t = setTimeout(onClose, 5000);
     return () => clearTimeout(t);
   }, [onClose]);
 
-  const bgColor = type === 'error' ? 'bg-red-50 border-red-200 text-red-800'
-    : type === 'success' ? 'bg-green-50 border-green-200 text-green-800'
-      : 'bg-blue-50 border-blue-200 text-blue-800';
+  const bgColor =
+    type === 'error'
+      ? 'bg-red-50 border-red-200 text-red-800'
+      : type === 'success'
+        ? 'bg-green-50 border-green-200 text-green-800'
+        : 'bg-blue-50 border-blue-200 text-blue-800';
   const Icon = type === 'error' ? AlertCircle : type === 'success' ? CheckCircle2 : AlertCircle;
 
   return (
@@ -43,7 +46,6 @@ function CustomToast({ message, type, onClose }: ToastProps) {
   );
 }
 
-// --- Custom Modal Component (For Photo Warning) ---
 function ConfirmModal({ isOpen, title, desc, onConfirm, onCancel, confirmText = 'Lanjut' }: any) {
   if (!isOpen) return null;
   return (
@@ -67,7 +69,6 @@ function ConfirmModal({ isOpen, title, desc, onConfirm, onCancel, confirmText = 
 export default function RegisterPeternakPage() {
   const router = useRouter();
 
-  // Toast State
   const [toast, setToast] = React.useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
   const showToast = (message: string, type: 'success' | 'error' | 'info' = 'error') => setToast({ message, type });
 
@@ -75,11 +76,12 @@ export default function RegisterPeternakPage() {
   const [loading, setLoading] = React.useState(false);
   const [timeLeft, setTimeLeft] = React.useState(300);
 
-  // Check if user is already logged in and pending
   React.useEffect(() => {
     const checkExistingSession = async () => {
       const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (user) {
         const { data: details } = await supabase
           .from('peternak_details')
@@ -91,13 +93,6 @@ export default function RegisterPeternakPage() {
           if (details.verification_status === 'verified' || details.registration_method === 'video_call_cs') {
             router.push('/dashboard');
           } else if (details.verification_status === 'pending') {
-            // Restore step
-            if (details.chicken_count > 0 || details.feed_type !== '-') {
-              // Jika data operasional sudah ada (pernah update), bisa ke step 4.
-              // Tapi untuk mempermudah (karena file foto tidak bisa di-prefill di browser), 
-              // kita arahkan ulang ke Step 3 atau 4 tergantung kebutuhan. 
-              // Kita set ke 3 saja agar mereka bisa review ulang atau lanjut ke 4.
-            }
             setStep(3);
           }
         }
@@ -106,7 +101,6 @@ export default function RegisterPeternakPage() {
     checkExistingSession();
   }, [router]);
 
-  // Timer for OTP
   React.useEffect(() => {
     if (step !== 2) return;
     if (timeLeft <= 0) {
@@ -124,7 +118,6 @@ export default function RegisterPeternakPage() {
     return `${m}:${s < 10 ? '0' : ''}${s}`;
   };
 
-  // State Tahap 1 (Akun)
   const [nama, setNama] = React.useState('');
   const [phone, setPhone] = React.useState('');
   const [email, setEmail] = React.useState('');
@@ -135,10 +128,8 @@ export default function RegisterPeternakPage() {
   const [lat, setLat] = React.useState<number | null>(null);
   const [lng, setLng] = React.useState<number | null>(null);
 
-  // State OTP (Tahap 2)
   const [otpToken, setOtpToken] = React.useState('');
 
-  // State Tahap 3 (Operasional)
   const [registrationMethod, setRegistrationMethod] = React.useState<'self_form' | 'video_call_cs' | null>(null);
   const [videoCallAgreed, setVideoCallAgreed] = React.useState(false);
   const [chickenCount, setChickenCount] = React.useState('');
@@ -151,18 +142,14 @@ export default function RegisterPeternakPage() {
   const [vehicleType, setVehicleType] = React.useState('');
   const [experience, setExperience] = React.useState('');
 
-  // State Tahap 4 (Foto - Sub Steps)
   const [photoStep, setPhotoStep] = React.useState(1);
   const [fotoLuar, setFotoLuar] = React.useState<string | null>(null);
   const [fotoDalam, setFotoDalam] = React.useState<string | null>(null);
   const [fotoAyam, setFotoAyam] = React.useState<string | null>(null);
   const [fotoTelur, setFotoTelur] = React.useState<string | null>(null);
 
-  // Confirm Modal State
   const [isConfirmOpen, setIsConfirmOpen] = React.useState(false);
   const [confirmAction, setConfirmAction] = React.useState<(() => void) | null>(null);
-
-  // --- Actions ---
 
   const handleNextStep1 = async () => {
     if (!nama || !phone || !email || !password || !birthDate || !address || lat === null || lng === null) {
@@ -191,9 +178,16 @@ export default function RegisterPeternakPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          email, password, nama, phone: formattedPhone, role: 'peternak',
-          birthDate, address, lat, lng
-        })
+          email,
+          password,
+          nama,
+          phone: formattedPhone,
+          role: 'peternak',
+          birthDate,
+          address,
+          lat,
+          lng,
+        }),
       });
       const result = await response.json();
       if (!response.ok) {
@@ -256,12 +250,21 @@ export default function RegisterPeternakPage() {
 
   const handleNextStep3 = async () => {
     if (registrationMethod === 'self_form') {
-      if (!chickenCount || !eggProd || !eggBroken || !eggClean || !feedType || !cleanliness || !experience || (hasVehicle && !vehicleType)) {
+      if (
+        !chickenCount ||
+        !eggProd ||
+        !eggBroken ||
+        !eggClean ||
+        !feedType ||
+        !cleanliness ||
+        !experience ||
+        (hasVehicle && !vehicleType)
+      ) {
         showToast('Mohon lengkapi semua data operasional.');
         return;
       }
       setStep(4);
-      setPhotoStep(1); // Mulai dari foto pertama
+      setPhotoStep(1);
     } else if (registrationMethod === 'video_call_cs') {
       if (!videoCallAgreed) {
         showToast('Anda harus menyetujui panduan Video Call terlebih dahulu.');
@@ -273,9 +276,19 @@ export default function RegisterPeternakPage() {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            birthDate: new Date().toISOString(), address: '-', lat: 0, lng: 0,
-            registrationMethod: 'video_call_cs', chickenCount: 0, eggProd: 0, eggBroken: 0, eggClean: 0, feedType: '-', experience: 0,
-            hasVehicle: false, vehicleType: ''
+            birthDate: new Date().toISOString(),
+            address: '-',
+            lat: 0,
+            lng: 0,
+            registrationMethod: 'video_call_cs',
+            chickenCount: 0,
+            eggProd: 0,
+            eggBroken: 0,
+            eggClean: 0,
+            feedType: '-',
+            experience: 0,
+            hasVehicle: false,
+            vehicleType: '',
           }),
         });
         if (!response.ok) throw new Error('Gagal memperbarui metode registrasi.');
@@ -290,28 +303,20 @@ export default function RegisterPeternakPage() {
   };
 
   const handleNextPhoto = () => {
-    // Check if current photo is taken
     if (photoStep === 1 && !fotoLuar) return showToast('Ambil foto luar kandang terlebih dahulu.');
     if (photoStep === 2 && !fotoDalam) return showToast('Ambil foto dalam kandang terlebih dahulu.');
     if (photoStep === 3 && !fotoAyam) return showToast('Ambil foto ayam terlebih dahulu.');
     if (photoStep === 4 && !fotoTelur) return showToast('Ambil foto telur terlebih dahulu.');
 
-    // Warning confirmation
     setConfirmAction(() => () => {
       setIsConfirmOpen(false);
       if (photoStep < 4) {
-        setPhotoStep(prev => prev + 1);
+        setPhotoStep((prev) => prev + 1);
       } else {
-        handleFinalSubmit(); // Trigger final submit after last photo
+        handleFinalSubmit();
       }
     });
     setIsConfirmOpen(true);
-  };
-
-  const dataUrlToFile = async (dataUrl: string, filename: string): Promise<File> => {
-    const res = await fetch(dataUrl);
-    const buf = await res.arrayBuffer();
-    return new File([buf], filename, { type: 'image/jpeg' });
   };
 
   const handleFinalSubmit = async () => {
@@ -321,9 +326,19 @@ export default function RegisterPeternakPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          birthDate, address, lat, lng,
-          registrationMethod, chickenCount, eggProd, eggBroken, eggClean, feedType, experience,
-          hasVehicle, vehicleType
+          birthDate,
+          address,
+          lat,
+          lng,
+          registrationMethod,
+          chickenCount,
+          eggProd,
+          eggBroken,
+          eggClean,
+          feedType,
+          experience,
+          hasVehicle,
+          vehicleType,
         }),
       });
 
@@ -334,14 +349,12 @@ export default function RegisterPeternakPage() {
 
       const { peternakId } = await response.json();
 
-      const supabase = createClient();
-
       const photos = [
         { type: 'kandang_luar', src: fotoLuar },
         { type: 'kandang_dalam', src: fotoDalam },
         { type: 'ayam', src: fotoAyam },
         { type: 'telur', src: fotoTelur },
-      ].filter(p => p.src);
+      ].filter((p) => p.src);
 
       if (photos.length > 0) {
         const photoRes = await fetch('/api/auth/complete-peternak-photos', {
@@ -349,9 +362,9 @@ export default function RegisterPeternakPage() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ peternakId, photos }),
         });
-        
+
         if (!photoRes.ok) {
-           console.warn('Gagal mengunggah foto');
+          console.warn('Gagal mengunggah foto');
         }
       }
 
@@ -363,14 +376,12 @@ export default function RegisterPeternakPage() {
     }
   };
 
-  // --- UI Layout ---
-
   const steps = [
     { num: 1, label: 'Data Akun' },
     { num: 2, label: 'Verifikasi' },
     { num: 3, label: 'Kandang' },
     { num: 4, label: 'Foto' },
-    { num: 5, label: 'Selesai' }
+    { num: 5, label: 'Selesai' },
   ];
 
   return (
@@ -386,14 +397,12 @@ export default function RegisterPeternakPage() {
         onCancel={() => setIsConfirmOpen(false)}
       />
 
-      {/* Header Bar */}
       <header className="w-full bg-white border-b border-neutral-200 px-6 py-4 flex items-center justify-between sticky top-0 z-40">
         <div className="flex items-center gap-3">
           <Image src="/icons/icon-512x512.png" alt="adatelur" width={36} height={36} className="rounded-sm object-contain" />
           <span className="text-[20px] font-extrabold text-neutral-900 tracking-tight hidden sm:block">adatelur.</span>
         </div>
 
-        {/* Stepper Desktop */}
         <div className="hidden md:flex items-center gap-6 text-[13px] font-bold">
           {steps.map((s, i) => (
             <React.Fragment key={s.num}>
@@ -408,15 +417,12 @@ export default function RegisterPeternakPage() {
           ))}
         </div>
 
-        {/* Stepper Mobile */}
         <div className="md:hidden text-[13px] font-bold text-neutral-500">
           Tahap {step} dari 5
         </div>
       </header>
 
-      {/* Main Content Area */}
       <main className="flex-1 w-full max-w-5xl mx-auto p-4 sm:p-8 flex flex-col items-center">
-
         <div className="w-full bg-white rounded-sm border border-neutral-200 shadow-sm p-6 sm:p-10 mb-10 relative">
 
           {step === 1 && (
@@ -429,7 +435,6 @@ export default function RegisterPeternakPage() {
               </div>
 
               <div className="space-y-10">
-                {/* Section 1 */}
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-12">
                   <div className="lg:col-span-4">
                     <h3 className="text-[16px] font-bold text-neutral-900">Informasi Personal</h3>
@@ -439,7 +444,8 @@ export default function RegisterPeternakPage() {
                     <div>
                       <Label className="text-neutral-700 font-bold mb-1.5 block">Nama Lengkap Pemilik*</Label>
                       <Input
-                        value={nama} onChange={(e) => setNama(e.target.value)}
+                        value={nama}
+                        onChange={(e) => setNama(e.target.value)}
                         placeholder="Misal: Budi Santoso"
                         className="min-h-[48px] border-neutral-200 bg-neutral-50 focus:bg-white text-[14px] font-medium rounded-sm shadow-none"
                       />
@@ -449,7 +455,9 @@ export default function RegisterPeternakPage() {
                       <div className="relative flex items-center">
                         <span className="absolute left-4 font-bold text-neutral-500 text-[14px]">+62</span>
                         <Input
-                          type="tel" value={phone} maxLength={11}
+                          type="tel"
+                          value={phone}
+                          maxLength={11}
                           onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 11))}
                           placeholder="81234567890"
                           className="min-h-[48px] border-neutral-200 bg-neutral-50 focus:bg-white text-[14px] font-medium rounded-sm pl-12 shadow-none w-full"
@@ -459,7 +467,6 @@ export default function RegisterPeternakPage() {
                   </div>
                 </div>
 
-                {/* Section 2 */}
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-12 pt-8 border-t border-neutral-100">
                   <div className="lg:col-span-4">
                     <h3 className="text-[16px] font-bold text-neutral-900">Akses Masuk</h3>
@@ -469,7 +476,9 @@ export default function RegisterPeternakPage() {
                     <div>
                       <Label className="text-neutral-700 font-bold mb-1.5 block">Email Aktif*</Label>
                       <Input
-                        type="email" value={email} onChange={(e) => setEmail(e.target.value)}
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
                         placeholder="email@contoh.com"
                         className="min-h-[48px] border-neutral-200 bg-neutral-50 focus:bg-white text-[14px] font-medium rounded-sm shadow-none"
                       />
@@ -478,11 +487,17 @@ export default function RegisterPeternakPage() {
                       <Label className="text-neutral-700 font-bold mb-1.5 block">Password*</Label>
                       <div className="relative">
                         <Input
-                          type={showPassword ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)}
+                          type={showPassword ? 'text' : 'password'}
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
                           placeholder="Minimal 6 karakter"
                           className="min-h-[48px] border-neutral-200 bg-neutral-50 focus:bg-white text-[14px] font-medium rounded-sm shadow-none pr-10"
                         />
-                        <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600">
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600"
+                        >
                           {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                         </button>
                       </div>
@@ -490,7 +505,6 @@ export default function RegisterPeternakPage() {
                   </div>
                 </div>
 
-                {/* Section 3 */}
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-12 pt-8 border-t border-neutral-100">
                   <div className="lg:col-span-4">
                     <h3 className="text-[16px] font-bold text-neutral-900">Informasi Tambahan</h3>
@@ -500,7 +514,9 @@ export default function RegisterPeternakPage() {
                     <div>
                       <Label className="text-neutral-700 font-bold mb-1.5 block">Tanggal Lahir*</Label>
                       <Input
-                        type="date" value={birthDate} onChange={(e) => setBirthDate(e.target.value)}
+                        type="date"
+                        value={birthDate}
+                        onChange={(e) => setBirthDate(e.target.value)}
                         className="min-h-[48px] border-neutral-200 bg-neutral-50 focus:bg-white text-[14px] font-medium rounded-sm shadow-none block w-full relative [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-4 [&::-webkit-calendar-picker-indicator]:cursor-pointer"
                       />
                     </div>
@@ -509,7 +525,9 @@ export default function RegisterPeternakPage() {
                       <AddressAutocomplete
                         defaultValue={address}
                         onLocationSelect={(addr, latitude, longitude) => {
-                          setAddress(addr); setLat(latitude); setLng(longitude);
+                          setAddress(addr);
+                          setLat(latitude);
+                          setLng(longitude);
                         }}
                       />
                       {lat && lng && (
@@ -535,7 +553,8 @@ export default function RegisterPeternakPage() {
               <div className="text-center mb-8">
                 <h1 className="text-[28px] font-extrabold text-neutral-900 tracking-tight mb-2">Verifikasi Email</h1>
                 <p className="text-[14px] text-neutral-500 font-medium leading-relaxed">
-                  Kami telah mengirim 6 digit kode OTP ke <br /><span className="font-bold text-neutral-800">{email}</span>
+                  Kami telah mengirim 6 digit kode OTP ke <br />
+                  <span className="font-bold text-neutral-800">{email}</span>
                 </p>
                 <br />
                 <p className="text-[13px] text-neutral-400 font-medium">
@@ -545,16 +564,24 @@ export default function RegisterPeternakPage() {
 
               <div className="relative mb-6">
                 <input
-                  type="text" inputMode="numeric" autoComplete="one-time-code" autoFocus
-                  value={otpToken} onChange={(e) => setOtpToken(e.target.value.replace(/\D/g, '').slice(0, codeLength))}
+                  type="text"
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
+                  autoFocus
+                  value={otpToken}
+                  onChange={(e) => setOtpToken(e.target.value.replace(/\D/g, '').slice(0, codeLength))}
                   className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
                 />
                 <div className="pointer-events-none flex justify-center gap-3">
                   {Array.from({ length: codeLength }).map((_, i) => (
-                    <div key={i} className={`flex h-16 flex-1 items-center justify-center rounded-sm text-[24px] font-bold ${i === otpToken.length
-                      ? 'border-2 border-primary-400 bg-white text-neutral-900 shadow-sm'
-                      : 'border border-neutral-200 bg-neutral-50 text-neutral-900'
-                      }`}>
+                    <div
+                      key={i}
+                      className={`flex h-16 flex-1 items-center justify-center rounded-sm text-[24px] font-bold ${
+                        i === otpToken.length
+                          ? 'border-2 border-primary-400 bg-white text-neutral-900 shadow-sm'
+                          : 'border border-neutral-200 bg-neutral-50 text-neutral-900'
+                      }`}
+                    >
                       {otpToken[i] ?? ''}
                     </div>
                   ))}
@@ -571,13 +598,20 @@ export default function RegisterPeternakPage() {
 
               <div className="mt-8 text-center text-[13px] text-neutral-500 font-medium">
                 Belum menerima kode?{' '}
-                <button type="button" onClick={async () => {
-                  setLoading(true);
-                  const resend = await sendOtpEmail();
-                  setLoading(false);
-                  if (resend.error) showToast('Gagal mengirim ulang OTP');
-                  else { showToast('Kode OTP baru telah dikirim!', 'success'); setTimeLeft(300); }
-                }} className="font-bold text-primary-600 hover:underline">
+                <button
+                  type="button"
+                  onClick={async () => {
+                    setLoading(true);
+                    const resend = await sendOtpEmail();
+                    setLoading(false);
+                    if (resend.error) showToast('Gagal mengirim ulang OTP');
+                    else {
+                      showToast('Kode OTP baru telah dikirim!', 'success');
+                      setTimeLeft(300);
+                    }
+                  }}
+                  className="font-bold text-primary-600 hover:underline"
+                >
                   Kirim ulang
                 </button>
               </div>
@@ -599,7 +633,9 @@ export default function RegisterPeternakPage() {
                     <span className="text-[12px] text-neutral-400 font-normal">CS kami akan memandu Anda</span>
                   </Button>
                   <Button onClick={() => setRegistrationMethod('self_form')} className="py-12 flex flex-col gap-3 h-auto bg-white border border-neutral-200 hover:bg-neutral-50 hover:border-neutral-300 text-neutral-700 font-bold rounded-sm transition-none">
-                    <div className="w-10 h-10 rounded-full bg-neutral-100 flex items-center justify-center mb-1"><FileText className="w-5 h-5 text-neutral-600" /></div>
+                    <div className="w-10 h-10 rounded-full bg-neutral-100 flex items-center justify-center mb-1">
+                      <FileText className="w-5 h-5 text-neutral-600" />
+                    </div>
                     <span className="text-[16px]">Isi Form Sendiri</span>
                     <span className="text-[12px] text-neutral-400 font-normal">Lengkapi formulir secara mandiri</span>
                   </Button>
@@ -632,7 +668,12 @@ export default function RegisterPeternakPage() {
                     disabled={!videoCallAgreed}
                     onClick={(e) => {
                       e.preventDefault();
-                      window.open(`https://wa.me/6281243205089?text=${encodeURIComponent(`Halo CS Adatelur,\n\nSaya ingin dibantu melakukan registrasi peternak via Video Call.\n\nNama: ${nama}\nEmail: ${email}\nNo HP: ${phone}`)}`, '_blank');
+                      window.open(
+                        `https://wa.me/6281243205089?text=${encodeURIComponent(
+                          `Halo CS Adatelur,\n\nSaya ingin dibantu melakukan registrasi peternak via Video Call.\n\nNama: ${nama}\nEmail: ${email}\nNo HP: ${phone}`
+                        )}`,
+                        '_blank'
+                      );
                       handleNextStep3();
                     }}
                     className="w-full min-h-[52px] bg-[#25D366] text-white hover:bg-[#128C7E] font-bold rounded-sm border-transparent"
@@ -709,7 +750,15 @@ export default function RegisterPeternakPage() {
                             Ya, Punya
                           </label>
                           <label className="flex items-center gap-2 cursor-pointer text-[14px] font-bold text-neutral-800">
-                            <input type="radio" checked={!hasVehicle} onChange={() => { setHasVehicle(false); setVehicleType(''); }} className="w-4 h-4 accent-primary-600" />
+                            <input
+                              type="radio"
+                              checked={!hasVehicle}
+                              onChange={() => {
+                                setHasVehicle(false);
+                                setVehicleType('');
+                              }}
+                              className="w-4 h-4 accent-primary-600"
+                            />
                             Tidak Punya
                           </label>
                         </div>
@@ -728,7 +777,9 @@ export default function RegisterPeternakPage() {
                               <option value="Motor">Motor</option>
                             </select>
                             <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-neutral-500">
-                              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+                              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="m6 9 6 6 6-6" />
+                              </svg>
                             </div>
                           </div>
                         </div>
@@ -757,58 +808,85 @@ export default function RegisterPeternakPage() {
                 </div>
                 <h1 className="text-[28px] font-extrabold text-neutral-900 tracking-tight">Dokumentasi Peternakan</h1>
                 <p className="text-[14px] text-neutral-500 font-medium mt-1 leading-relaxed">
-                  {photoStep === 1 ? 'Silakan ambil foto bagian luar kandang secara jelas.'
-                    : photoStep === 2 ? 'Silakan ambil foto area dalam kandang tempat ayam berada.'
-                      : photoStep === 3 ? 'Silakan ambil foto close-up ayam peternakan Anda.'
+                  {photoStep === 1
+                    ? 'Silakan ambil foto bagian luar kandang secara jelas.'
+                    : photoStep === 2
+                      ? 'Silakan ambil foto area dalam kandang tempat ayam berada.'
+                      : photoStep === 3
+                        ? 'Silakan ambil foto close-up ayam peternakan Anda.'
                         : 'Silakan ambil foto telur hasil panen Anda.'}
                 </p>
               </div>
 
-              <div className="bg-neutral-50 rounded-sm border border-neutral-200 p-4 sm:p-6 mb-8">
-                {photoStep === 1 && <CameraCapture
-                  label="1. Tampak Luar Kandang"
-                  onCapture={setFotoLuar}
-                  nextButton={
-                    fotoLuar ? (
-                      <Button onClick={handleNextPhoto} disabled={loading} className="w-full min-h-[52px] bg-primary-500 hover:bg-primary-600 text-white font-bold rounded-lg border-transparent transition-colors shadow-md">
-                        {loading ? 'Memproses...' : 'Lanjut'}
-                      </Button>
-                    ) : null
-                  }
-                />}
-                {photoStep === 2 && <CameraCapture
-                  label="2. Tampak Dalam Kandang"
-                  onCapture={setFotoDalam}
-                  nextButton={
-                    fotoDalam ? (
-                      <Button onClick={handleNextPhoto} disabled={loading} className="w-full min-h-[52px] bg-primary-500 hover:bg-primary-600 text-white font-bold rounded-lg border-transparent transition-colors shadow-md">
-                        {loading ? 'Memproses...' : 'Lanjut'}
-                      </Button>
-                    ) : null
-                  }
-                />}
-                {photoStep === 3 && <CameraCapture
-                  label="3. Foto Ayam"
-                  onCapture={setFotoAyam}
-                  nextButton={
-                    fotoAyam ? (
-                      <Button onClick={handleNextPhoto} disabled={loading} className="w-full min-h-[52px] bg-primary-500 hover:bg-primary-600 text-white font-bold rounded-lg border-transparent transition-colors shadow-md">
-                        {loading ? 'Memproses...' : 'Lanjut'}
-                      </Button>
-                    ) : null
-                  }
-                />}
-                {photoStep === 4 && <CameraCapture
-                  label="4. Foto Telur"
-                  onCapture={setFotoTelur}
-                  nextButton={
-                    fotoTelur ? (
-                      <Button onClick={handleNextPhoto} disabled={loading} className="w-full min-h-[52px] bg-primary-500 hover:bg-primary-600 text-white font-bold rounded-lg border-transparent transition-colors shadow-md">
-                        {loading ? 'Memproses...' : 'Kirim Pendaftaran'}
-                      </Button>
-                    ) : null
-                  }
-                />}
+              <div className="mb-8 w-full">
+                {photoStep === 1 && (
+                  <CameraCapture
+                    label="1. Tampak Luar Kandang"
+                    onCapture={setFotoLuar}
+                    nextButton={
+                      fotoLuar ? (
+                        <Button
+                          onClick={handleNextPhoto}
+                          disabled={loading}
+                          className="w-full min-h-[52px] bg-primary-500 hover:bg-primary-600 text-white font-bold rounded-lg border-transparent transition-colors shadow-md"
+                        >
+                          {loading ? 'Memproses...' : 'Lanjut'}
+                        </Button>
+                      ) : null
+                    }
+                  />
+                )}
+                {photoStep === 2 && (
+                  <CameraCapture
+                    label="2. Tampak Dalam Kandang"
+                    onCapture={setFotoDalam}
+                    nextButton={
+                      fotoDalam ? (
+                        <Button
+                          onClick={handleNextPhoto}
+                          disabled={loading}
+                          className="w-full min-h-[52px] bg-primary-500 hover:bg-primary-600 text-white font-bold rounded-lg border-transparent transition-colors shadow-md"
+                        >
+                          {loading ? 'Memproses...' : 'Lanjut'}
+                        </Button>
+                      ) : null
+                    }
+                  />
+                )}
+                {photoStep === 3 && (
+                  <CameraCapture
+                    label="3. Foto Ayam"
+                    onCapture={setFotoAyam}
+                    nextButton={
+                      fotoAyam ? (
+                        <Button
+                          onClick={handleNextPhoto}
+                          disabled={loading}
+                          className="w-full min-h-[52px] bg-primary-500 hover:bg-primary-600 text-white font-bold rounded-lg border-transparent transition-colors shadow-md"
+                        >
+                          {loading ? 'Memproses...' : 'Lanjut'}
+                        </Button>
+                      ) : null
+                    }
+                  />
+                )}
+                {photoStep === 4 && (
+                  <CameraCapture
+                    label="4. Foto Telur"
+                    onCapture={setFotoTelur}
+                    nextButton={
+                      fotoTelur ? (
+                        <Button
+                          onClick={handleNextPhoto}
+                          disabled={loading}
+                          className="w-full min-h-[52px] bg-primary-500 hover:bg-primary-600 text-white font-bold rounded-lg border-transparent transition-colors shadow-md"
+                        >
+                          {loading ? 'Memproses...' : 'Kirim Pendaftaran'}
+                        </Button>
+                      ) : null
+                    }
+                  />
+                )}
               </div>
             </div>
           )}
