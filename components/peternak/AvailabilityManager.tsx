@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Label } from '@/components/ui/Label';
-import { ToggleLeft, ToggleRight, Store, Package, Clock, Tag } from 'lucide-react';
+import { ToggleLeft, ToggleRight, Store, Package, Clock, Tag, X, AlertCircle } from 'lucide-react';
 
 const sessionBlocks = [
   '00:00 - 03:00',
@@ -22,6 +22,7 @@ interface ListingRecord {
   id?: string;
   price_per_rak: number;
   stock_rak: number;
+  remaining_stock?: number;
   is_listing_active: boolean;
   listing_date: string;
 }
@@ -38,6 +39,14 @@ interface AvailabilityManagerProps {
   initialSlots: DeliverySlotRecord[];
 }
 
+function formatRupiah(value: number) {
+  return new Intl.NumberFormat('id-ID', {
+    style: 'currency',
+    currency: 'IDR',
+    maximumFractionDigits: 0,
+  }).format(value);
+}
+
 export function AvailabilityManager({ initialListing, initialSlots }: AvailabilityManagerProps) {
   const initialActiveSessions = initialSlots
     .filter((slot) => slot.is_active)
@@ -49,42 +58,57 @@ export function AvailabilityManager({ initialListing, initialSlots }: Availabili
 
   const [activeSessions, setActiveSessions] = React.useState<string[]>(initialActiveSessions);
 
-  const [pricePerRak, setPricePerRak] = React.useState(
-    initialListing?.price_per_rak ? initialListing.price_per_rak.toString().replace(/^0+(?!$)/, '') : ''
+  const [currentStock, setCurrentStock] = React.useState<number>(
+    initialListing?.remaining_stock ?? initialListing?.stock_rak ?? 0
   );
-  const [stockRak, setStockRak] = React.useState(
-    initialListing?.stock_rak !== undefined && initialListing?.stock_rak !== null
-      ? initialListing.stock_rak.toString().replace(/^0+(?!$)/, '')
-      : ''
+  const [currentPrice, setCurrentPrice] = React.useState<number>(
+    initialListing?.price_per_rak ?? 0
   );
 
+  const [pricePerRak, setPricePerRak] = React.useState('');
+  const [stockRak, setStockRak] = React.useState('');
+
+  const [isConfirmModalOpen, setIsConfirmModalOpen] = React.useState(false);
   const [isSavingListing, setIsSavingListing] = React.useState(false);
   const [isSyncingSlots, setIsSyncingSlots] = React.useState(false);
   const [message, setMessage] = React.useState('');
   const [activeTab, setActiveTab] = React.useState<'listing' | 'sesi'>('listing');
 
   React.useEffect(() => {
-    setPricePerRak(
-      initialListing?.price_per_rak ? initialListing.price_per_rak.toString().replace(/^0+(?!$)/, '') : ''
-    );
-    setStockRak(
-      initialListing?.stock_rak !== undefined && initialListing?.stock_rak !== null
-        ? initialListing.stock_rak.toString().replace(/^0+(?!$)/, '')
-        : ''
-    );
+    setCurrentStock(initialListing?.remaining_stock ?? initialListing?.stock_rak ?? 0);
+    setCurrentPrice(initialListing?.price_per_rak ?? 0);
   }, [initialListing]);
 
+  const parsedPrice = Number(pricePerRak);
+  const parsedStock = Number(stockRak);
+  const isFormValid =
+    pricePerRak.trim() !== '' &&
+    stockRak.trim() !== '' &&
+    Number.isFinite(parsedPrice) &&
+    parsedPrice > 0 &&
+    Number.isFinite(parsedStock) &&
+    parsedStock > 0;
+
+  const handleOpenConfirmModal = () => {
+    if (!isFormValid) return;
+    setMessage('');
+    setIsConfirmModalOpen(true);
+  };
+
   const handleSaveListing = async () => {
+    if (!isFormValid) return;
     setIsSavingListing(true);
     setMessage('');
+
+    const newStock = currentStock + parsedStock;
 
     try {
       const response = await fetch('/api/listings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          price_per_rak: Number(pricePerRak),
-          stock_rak: Number(stockRak),
+          price_per_rak: parsedPrice,
+          stock_rak: newStock,
           is_listing_active: initialListing?.is_listing_active ?? false,
         }),
       });
@@ -95,6 +119,11 @@ export function AvailabilityManager({ initialListing, initialSlots }: Availabili
         throw new Error(data.error || 'Gagal menyimpan listing');
       }
 
+      setCurrentStock(newStock);
+      setCurrentPrice(parsedPrice);
+      setPricePerRak('');
+      setStockRak('');
+      setIsConfirmModalOpen(false);
       setMessage('Listing harian berhasil disimpan.');
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'Terjadi kesalahan');
@@ -136,57 +165,51 @@ export function AvailabilityManager({ initialListing, initialSlots }: Availabili
 
   return (
     <div className="w-full">
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-4 mb-6">
-        <Card className="p-5">
-          <div className="flex items-center gap-3">
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary-100 text-primary-700">
-              <Store className="h-5 w-5" />
+      <div className="grid grid-cols-2 gap-3 md:gap-4 md:grid-cols-4 mb-6">
+        <Card className="p-3.5 md:p-5">
+          <div className="flex items-center gap-2.5 md:gap-3 min-w-0">
+            <span className="flex h-8 w-8 md:h-10 md:w-10 shrink-0 items-center justify-center rounded-full bg-primary-100 text-primary-700">
+              <Store className="h-4 w-4 md:h-5 md:w-5" />
             </span>
-            <div>
-              <p className="text-caption text-text-desc">Status Toko</p>
-              <p className={`text-h2 ${initialListing?.is_listing_active ? 'text-success-text' : 'text-text-desc'}`}>
+            <div className="min-w-0 flex-1">
+              <p className="text-[10px] md:text-xs font-bold text-text-desc uppercase tracking-wide truncate">Status Toko</p>
+              <p className={`text-base sm:text-lg md:text-2xl font-black truncate ${initialListing?.is_listing_active ? 'text-success-text' : 'text-text-desc'}`}>
                 {initialListing?.is_listing_active ? 'Buka' : 'Tutup'}
               </p>
             </div>
           </div>
         </Card>
-        <Card className="p-5">
-          <div className="flex items-center gap-3">
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary-100 text-primary-700">
-              <Package className="h-5 w-5" />
+        <Card className="p-3.5 md:p-5">
+          <div className="flex items-center gap-2.5 md:gap-3 min-w-0">
+            <span className="flex h-8 w-8 md:h-10 md:w-10 shrink-0 items-center justify-center rounded-full bg-primary-100 text-primary-700">
+              <Package className="h-4 w-4 md:h-5 md:w-5" />
             </span>
-            <div>
-              <p className="text-caption text-text-desc">Stok Rak</p>
-              <p className="text-h2 text-text-main">{stockRak || '0'}</p>
+            <div className="min-w-0 flex-1">
+              <p className="text-[10px] md:text-xs font-bold text-text-desc uppercase tracking-wide truncate">Stok Rak</p>
+              <p className="text-base sm:text-lg md:text-2xl font-black text-text-main truncate">{currentStock}</p>
             </div>
           </div>
         </Card>
-        <Card className="p-5">
-          <div className="flex items-center gap-3">
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary-100 text-primary-700">
-              <Clock className="h-5 w-5" />
+        <Card className="p-3.5 md:p-5">
+          <div className="flex items-center gap-2.5 md:gap-3 min-w-0">
+            <span className="flex h-8 w-8 md:h-10 md:w-10 shrink-0 items-center justify-center rounded-full bg-primary-100 text-primary-700">
+              <Clock className="h-4 w-4 md:h-5 md:w-5" />
             </span>
-            <div>
-              <p className="text-caption text-text-desc">Slot Aktif</p>
-              <p className="text-h2 text-text-main">{activeSessions.length}</p>
+            <div className="min-w-0 flex-1">
+              <p className="text-[10px] md:text-xs font-bold text-text-desc uppercase tracking-wide truncate">Slot Aktif</p>
+              <p className="text-base sm:text-lg md:text-2xl font-black text-text-main truncate">{activeSessions.length}</p>
             </div>
           </div>
         </Card>
-        <Card className="p-5">
-          <div className="flex items-center gap-3">
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary-100 text-primary-700">
-              <Tag className="h-5 w-5" />
+        <Card className="p-3.5 md:p-5">
+          <div className="flex items-center gap-2.5 md:gap-3 min-w-0">
+            <span className="flex h-8 w-8 md:h-10 md:w-10 shrink-0 items-center justify-center rounded-full bg-primary-100 text-primary-700">
+              <Tag className="h-4 w-4 md:h-5 md:w-5" />
             </span>
-            <div>
-              <p className="text-caption text-text-desc">Harga per Rak</p>
-              <p className="text-h2 text-text-main">
-                {pricePerRak
-                  ? new Intl.NumberFormat('id-ID', {
-                      style: 'currency',
-                      currency: 'IDR',
-                      maximumFractionDigits: 0,
-                    }).format(Number(pricePerRak))
-                  : '-'}
+            <div className="min-w-0 flex-1">
+              <p className="text-[10px] md:text-xs font-bold text-text-desc uppercase tracking-wide truncate">Harga per Rak</p>
+              <p className="text-base sm:text-lg md:text-2xl font-black text-text-main truncate">
+                {currentPrice > 0 ? formatRupiah(currentPrice) : '-'}
               </p>
             </div>
           </div>
@@ -194,7 +217,7 @@ export function AvailabilityManager({ initialListing, initialSlots }: Availabili
       </div>
 
       {message ? (
-        <Card className="border-primary-400 bg-primary-50 p-4 text-sm text-text-main mb-6">
+        <Card className="border-primary-400 bg-primary-50 p-3.5 md:p-4 text-xs md:text-sm font-semibold text-text-main mb-6">
           {message}
         </Card>
       ) : null}
@@ -202,7 +225,7 @@ export function AvailabilityManager({ initialListing, initialSlots }: Availabili
       <div className="md:hidden flex border-b border-border mb-6">
         <button
           onClick={() => setActiveTab('listing')}
-          className={`flex-1 py-3 text-sm font-semibold transition-colors border-b-2 ${
+          className={`flex-1 py-2.5 text-xs sm:text-sm font-bold transition-colors border-b-2 ${
             activeTab === 'listing' ? 'border-primary-500 text-primary-950' : 'border-transparent text-text-desc'
           }`}
         >
@@ -210,8 +233,8 @@ export function AvailabilityManager({ initialListing, initialSlots }: Availabili
         </button>
         <button
           onClick={() => setActiveTab('sesi')}
-          className={`flex-1 py-3 text-sm font-semibold transition-colors border-b-2 ${
-            activeTab === 'sesi' ? 'border-transparent text-text-desc' : 'border-primary-500 text-primary-950'
+          className={`flex-1 py-2.5 text-xs sm:text-sm font-bold transition-colors border-b-2 ${
+            activeTab === 'sesi' ? 'border-primary-500 text-primary-950' : 'border-transparent text-text-desc'
           }`}
         >
           Sesi Waktu
@@ -219,16 +242,16 @@ export function AvailabilityManager({ initialListing, initialSlots }: Availabili
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2 items-start">
-        <Card className={`flex flex-col gap-5 p-6 h-fit ${activeTab !== 'listing' ? 'hidden md:flex' : ''}`}>
+        <Card className={`flex flex-col gap-4 md:gap-5 p-4 md:p-6 h-fit ${activeTab !== 'listing' ? 'hidden md:flex' : ''}`}>
           <div>
-            <h2 className="text-h2 text-text-main mb-1">Listing Hari Ini</h2>
-            <p className="text-body text-text-desc">Atur harga dan stok harian.</p>
+            <h2 className="text-lg md:text-xl font-bold text-text-main mb-0.5 md:mb-1">Listing Hari Ini</h2>
+            <p className="text-xs md:text-sm text-text-desc font-medium">Atur harga dan stok harian.</p>
           </div>
 
           <div className="flex flex-col gap-4">
             <div className="space-y-3">
               <div>
-                <Label>Harga per rak</Label>
+                <Label className="font-bold text-xs md:text-sm">Harga per rak</Label>
                 <Input
                   type="text"
                   inputMode="numeric"
@@ -239,11 +262,11 @@ export function AvailabilityManager({ initialListing, initialSlots }: Availabili
                     setPricePerRak(sanitized);
                   }}
                   placeholder="Rp 35.000"
-                  className="mt-1"
+                  className="mt-1 font-semibold text-xs md:text-sm"
                 />
               </div>
               <div>
-                <Label>Stok rak (tersedia)</Label>
+                <Label className="font-bold text-xs md:text-sm">Stok rak (tersedia)</Label>
                 <Input
                   type="text"
                   inputMode="numeric"
@@ -254,25 +277,29 @@ export function AvailabilityManager({ initialListing, initialSlots }: Availabili
                     setStockRak(sanitized);
                   }}
                   placeholder="Contoh: 20"
-                  className="mt-1"
+                  className="mt-1 font-semibold text-xs md:text-sm"
                 />
               </div>
             </div>
           </div>
 
-          <Button onClick={handleSaveListing} disabled={isSavingListing} className="w-full mt-2">
-            {isSavingListing ? 'Menyimpan...' : 'Simpan Listing'}
+          <Button
+            onClick={handleOpenConfirmModal}
+            disabled={!isFormValid || isSavingListing}
+            className="w-full mt-2 font-bold text-xs md:text-sm py-2.5 md:py-3"
+          >
+            Simpan Listing
           </Button>
         </Card>
 
-        <Card className={`flex flex-col gap-5 p-6 ${activeTab !== 'sesi' ? 'hidden md:flex' : ''}`}>
+        <Card className={`flex flex-col gap-4 md:gap-5 p-4 md:p-6 ${activeTab !== 'sesi' ? 'hidden md:flex' : ''}`}>
           <div className="flex justify-between items-start">
             <div>
-              <h2 className="text-h2 text-text-main mb-1">Sesi Ketersediaan</h2>
-              <p className="text-body text-text-desc">Pilih sesi jam operasional Anda.</p>
+              <h2 className="text-lg md:text-xl font-bold text-text-main mb-0.5 md:mb-1">Sesi Ketersediaan</h2>
+              <p className="text-xs md:text-sm text-text-desc font-medium">Pilih sesi jam operasional Anda.</p>
             </div>
             {isSyncingSlots && (
-              <span className="text-xs font-semibold text-primary-700 animate-pulse bg-primary-50 px-2 py-1 rounded">
+              <span className="text-[10px] md:text-xs font-bold text-primary-700 animate-pulse bg-primary-50 px-2 py-1 rounded">
                 Menyimpan...
               </span>
             )}
@@ -284,14 +311,14 @@ export function AvailabilityManager({ initialListing, initialSlots }: Availabili
               return (
                 <div
                   key={session}
-                  className={`flex items-center justify-between rounded-md border px-4 py-3 cursor-pointer transition-colors ${
+                  className={`flex items-center justify-between rounded-md border px-3.5 py-2.5 md:px-4 md:py-3 cursor-pointer transition-colors ${
                     isActive ? 'border-primary-200 bg-primary-50' : 'border-border hover:bg-bg-surface'
                   }`}
                   onClick={() => !isSyncingSlots && handleToggleSession(session)}
                 >
                   <div>
-                    <p className="text-body-medium text-text-main font-semibold">Sesi {session}</p>
-                    <p className={`text-caption ${isActive ? 'text-success-text' : 'text-text-desc'}`}>
+                    <p className="text-xs md:text-sm text-text-main font-bold">Sesi {session}</p>
+                    <p className={`text-[10px] md:text-xs font-semibold ${isActive ? 'text-success-text' : 'text-text-desc'}`}>
                       {isActive ? 'Aktif' : 'Nonaktif'}
                     </p>
                   </div>
@@ -301,9 +328,9 @@ export function AvailabilityManager({ initialListing, initialSlots }: Availabili
                     aria-label={`Toggle sesi ${session}`}
                   >
                     {isActive ? (
-                      <ToggleRight className="h-8 w-8 text-success" />
+                      <ToggleRight className="h-7 w-7 md:h-8 md:w-8 text-success" />
                     ) : (
-                      <ToggleLeft className="h-8 w-8 text-text-desc" />
+                      <ToggleLeft className="h-7 w-7 md:h-8 md:w-8 text-text-desc" />
                     )}
                   </button>
                 </div>
@@ -312,6 +339,53 @@ export function AvailabilityManager({ initialListing, initialSlots }: Availabili
           </div>
         </Card>
       </div>
+
+      {isConfirmModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
+          <div className="bg-white rounded-xl border border-neutral-200 shadow-md w-full max-w-sm md:max-w-md overflow-hidden flex flex-col">
+            <div className="flex justify-between items-center p-3.5 md:p-4 border-b border-neutral-100">
+              <h3 className="font-bold text-base md:text-lg text-text-main">Konfirmasi Simpan Listing</h3>
+              <button
+                onClick={() => setIsConfirmModalOpen(false)}
+                className="p-1 hover:bg-neutral-100 rounded-md transition-colors"
+                disabled={isSavingListing}
+              >
+                <X className="h-5 w-5 text-neutral-500" />
+              </button>
+            </div>
+
+            <div className="p-4 md:p-6 flex flex-col gap-3.5 md:gap-4">
+              <p className="text-xs md:text-sm text-text-main font-medium leading-relaxed">
+                Apakah anda yakin ingin mengatur harga <span className="font-bold text-primary-950">{formatRupiah(parsedPrice)}</span> dan menambah stok <span className="font-bold text-primary-950">{parsedStock} rak</span>?
+              </p>
+              <div className="p-3 bg-neutral-50 border border-neutral-200 rounded-lg flex items-center gap-2.5 md:gap-3">
+                <AlertCircle className="h-5 w-5 text-primary-700 shrink-0" />
+                <p className="text-xs md:text-sm font-semibold text-text-main">
+                  Stok rak anda akan menjadi <span className="font-black text-primary-800 text-sm md:text-base">{currentStock + parsedStock} rak</span>
+                </p>
+              </div>
+            </div>
+
+            <div className="p-3.5 md:p-4 border-t border-neutral-100 bg-neutral-50 flex justify-end gap-2.5 md:gap-3">
+              <Button
+                variant="outline"
+                onClick={() => setIsConfirmModalOpen(false)}
+                disabled={isSavingListing}
+                className="font-semibold text-xs md:text-sm px-3 md:px-4 py-2"
+              >
+                Batal
+              </Button>
+              <Button
+                onClick={handleSaveListing}
+                disabled={isSavingListing}
+                className="font-bold text-xs md:text-sm px-3 md:px-4 py-2"
+              >
+                {isSavingListing ? 'Menyimpan...' : 'Ya, Simpan'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/Button';
 import { Search, CheckCircle, XCircle, FileEdit, LogOut, UploadCloud, X, Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/Input';
+import { showToast } from '@/components/ui/toast';
 
 type Peternak = {
   id: string; // profil id
@@ -113,11 +114,11 @@ export default function AdminDashboard() {
         body: JSON.stringify({ peternakId: activePeternak.peternak_id, ...formData }),
       });
       if (!response.ok) throw new Error('Gagal memperbarui data');
-      alert('Data operasional berhasil disimpan!');
+      showToast('Data operasional berhasil disimpan!', 'success');
       setIsDataModalOpen(false);
       fetchPeternak();
     } catch (err) {
-      alert((err as Error).message);
+      showToast((err as Error).message, 'error');
     } finally {
       setActionLoading(false);
     }
@@ -130,7 +131,8 @@ export default function AdminDashboard() {
     const types = ['kandang_luar', 'kandang_dalam', 'ayam', 'telur'];
     for (const t of types) {
       if (!photos[t]) {
-        return alert(`Mohon unggah foto ${t.replace('_', ' ')}`);
+        showToast(`Mohon unggah foto ${t.replace('_', ' ')}`, 'error');
+        return;
       }
     }
 
@@ -151,11 +153,11 @@ export default function AdminDashboard() {
           if (!res.ok) throw new Error('Gagal mengunggah foto ' + t.replace('_', ' '));
         }
       }
-      alert('Semua foto berhasil diunggah!');
+      showToast('Semua foto berhasil diunggah!', 'success');
       setIsPhotoModalOpen(false);
       fetchPeternak();
     } catch (err) {
-      alert((err as Error).message);
+      showToast((err as Error).message, 'error');
     } finally {
       setActionLoading(false);
     }
@@ -163,7 +165,10 @@ export default function AdminDashboard() {
 
   const handleVerify = async (action: 'approve' | 'reject') => {
     if (!activePeternak) return;
-    if (action === 'reject' && !rejectReason) return alert('Mohon isi alasan penolakan');
+    if (action === 'reject' && !rejectReason) {
+      showToast('Mohon isi alasan penolakan', 'error');
+      return;
+    }
 
     setActionLoading(true);
     try {
@@ -183,14 +188,14 @@ export default function AdminDashboard() {
       if (!response.ok) throw new Error(result.error || 'Gagal memverifikasi');
 
       if (result.warning) {
-        alert(result.warning);
+        showToast(result.warning, 'error');
       } else {
-        alert(`Peternak berhasil di${action === 'approve' ? 'terima' : 'tolak'}!`);
+        showToast(`Peternak berhasil di${action === 'approve' ? 'terima' : 'tolak'}!`, 'success');
       }
       setIsRejectModalOpen(false);
       fetchPeternak();
     } catch (err) {
-      alert((err as Error).message);
+      showToast((err as Error).message, 'error');
     } finally {
       setActionLoading(false);
     }

@@ -109,16 +109,13 @@ export default function Home() {
 
     async function fetchNearest(lat?: number, lng?: number) {
       try {
-        if (lat === undefined || lng === undefined) {
-          setIsLoadingNearest(false);
-          return; // Don't fetch if no coordinates
-        }
         const result = await fetchRecommendations({
           rak_quantity: 1,
           fulfillment_method: 'delivery',
           consumer_lat: lat,
           consumer_lng: lng,
           sort_by: 'distance',
+          ignore_stock: true,
         });
         setNearestPeternak(result.data.slice(0, 10));
       } catch (err) {
@@ -154,7 +151,7 @@ export default function Home() {
             },
             () => {
               fetchTop();
-              setIsLoadingNearest(false);
+              fetchNearest();
             }
           );
           return;

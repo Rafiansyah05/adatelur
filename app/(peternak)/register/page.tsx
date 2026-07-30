@@ -25,22 +25,47 @@ function CustomToast({ message, type, onClose }: ToastProps) {
     return () => clearTimeout(t);
   }, [onClose]);
 
-  const bgColor =
-    type === 'error'
-      ? 'bg-red-50 border-red-200 text-red-800'
-      : type === 'success'
-        ? 'bg-green-50 border-green-200 text-green-800'
-        : 'bg-blue-50 border-blue-200 text-blue-800';
-  const Icon = type === 'error' ? AlertCircle : type === 'success' ? CheckCircle2 : AlertCircle;
+  const isError = type === 'error';
+  const isSuccess = type === 'success';
+
+  const iconBg = isError
+    ? 'bg-red-100 text-red-600 border-4 border-red-50'
+    : isSuccess
+      ? 'bg-green-100 text-green-600 border-4 border-green-50'
+      : 'bg-blue-100 text-blue-600 border-4 border-blue-50';
+
+  const titleText = isError ? 'Pemberitahuan' : isSuccess ? 'Berhasil' : 'Informasi';
+  const Icon = isError ? AlertCircle : isSuccess ? CheckCircle2 : AlertCircle;
 
   return (
-    <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-top-5 fade-in duration-300 w-[90%] max-w-md">
-      <div className={`flex items-start sm:items-center gap-3 px-4 py-3 rounded-sm border shadow-sm ${bgColor}`}>
-        <Icon className="w-5 h-5 shrink-0 mt-0.5 sm:mt-0" />
-        <span className="text-[14px] font-bold flex-1 leading-snug">{message}</span>
-        <button onClick={onClose} className="shrink-0 text-inherit hover:opacity-70 focus:outline-none">
+    <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-neutral-900/40 backdrop-blur-xs">
+      <div className="relative w-full max-w-sm bg-white rounded-2xl p-6 shadow-2xl border border-neutral-100 flex flex-col items-center text-center animate-in zoom-in-95 fade-in-50 duration-200">
+        <button
+          onClick={onClose}
+          className="absolute top-3 right-3 p-1.5 text-neutral-400 hover:text-neutral-600 rounded-full hover:bg-neutral-100 transition-colors"
+        >
           <X className="w-4 h-4" />
         </button>
+
+        <div className={`h-16 w-16 rounded-full flex items-center justify-center mb-4 shrink-0 ${iconBg}`}>
+          <Icon className="w-8 h-8" />
+        </div>
+
+        <h3 className="text-lg font-bold text-neutral-900 mb-2">{titleText}</h3>
+        <p className="text-sm font-medium text-neutral-600 leading-relaxed mb-6">{message}</p>
+
+        <Button
+          onClick={onClose}
+          className={`w-full h-11 font-bold rounded-xl text-white transition-colors ${
+            isError
+              ? 'bg-red-600 hover:bg-red-700'
+              : isSuccess
+                ? 'bg-green-600 hover:bg-green-700'
+                : 'bg-neutral-900 hover:bg-neutral-800'
+          }`}
+        >
+          Mengerti
+        </Button>
       </div>
     </div>
   );
@@ -118,8 +143,16 @@ export default function RegisterPeternakPage() {
     return `${m}:${s < 10 ? '0' : ''}${s}`;
   };
 
+  const formatNumberWithDots = (val: string) => {
+    const clean = val.replace(/\D/g, '');
+    if (!clean) return '';
+    const num = parseInt(clean, 10);
+    return num.toLocaleString('id-ID');
+  };
+
   const [nama, setNama] = React.useState('');
   const [phone, setPhone] = React.useState('');
+  const [farmName, setFarmName] = React.useState('');
   const [email, setEmail] = React.useState('');
   const [password, setPassword] = React.useState('');
   const [showPassword, setShowPassword] = React.useState(false);
@@ -137,7 +170,6 @@ export default function RegisterPeternakPage() {
   const [eggBroken, setEggBroken] = React.useState('');
   const [eggClean, setEggClean] = React.useState('');
   const [feedType, setFeedType] = React.useState('');
-  const [cleanliness, setCleanliness] = React.useState('');
   const [hasVehicle, setHasVehicle] = React.useState(false);
   const [vehicleType, setVehicleType] = React.useState('');
   const [experience, setExperience] = React.useState('');
@@ -152,8 +184,8 @@ export default function RegisterPeternakPage() {
   const [confirmAction, setConfirmAction] = React.useState<(() => void) | null>(null);
 
   const handleNextStep1 = async () => {
-    if (!nama || !phone || !email || !password || !birthDate || !address || lat === null || lng === null) {
-      showToast('Mohon lengkapi semua data Tahap 1 termasuk email, password, dan lokasi.');
+    if (!nama || !phone || !farmName || !email || !password || !birthDate || !address || lat === null || lng === null) {
+      showToast('Mohon lengkapi semua data Tahap 1 termasuk Nama Peternakan, email, password, dan lokasi.');
       return;
     }
 
@@ -181,6 +213,7 @@ export default function RegisterPeternakPage() {
           email,
           password,
           nama,
+          farmName,
           phone: formattedPhone,
           role: 'peternak',
           birthDate,
@@ -256,7 +289,6 @@ export default function RegisterPeternakPage() {
         !eggBroken ||
         !eggClean ||
         !feedType ||
-        !cleanliness ||
         !experience ||
         (hasVehicle && !vehicleType)
       ) {
@@ -276,6 +308,7 @@ export default function RegisterPeternakPage() {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
+            farmName,
             birthDate: new Date().toISOString(),
             address: '-',
             lat: 0,
@@ -326,17 +359,18 @@ export default function RegisterPeternakPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          farmName,
           birthDate,
           address,
           lat,
           lng,
           registrationMethod,
-          chickenCount,
-          eggProd,
-          eggBroken,
-          eggClean,
+          chickenCount: chickenCount.replace(/\D/g, ''),
+          eggProd: eggProd.replace(/\D/g, ''),
+          eggBroken: eggBroken.replace(/\D/g, ''),
+          eggClean: eggClean.replace(/\D/g, ''),
           feedType,
-          experience,
+          experience: experience.replace(/\D/g, ''),
           hasVehicle,
           vehicleType,
         }),
@@ -385,7 +419,7 @@ export default function RegisterPeternakPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-neutral-50 flex flex-col font-sans relative">
+    <div className={`min-h-screen ${step === 4 ? 'bg-black' : 'bg-neutral-50'} flex flex-col font-sans relative transition-colors duration-300`}>
       {toast && <CustomToast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
 
       <ConfirmModal
@@ -422,8 +456,8 @@ export default function RegisterPeternakPage() {
         </div>
       </header>
 
-      <main className="flex-1 w-full max-w-5xl mx-auto p-4 sm:p-8 flex flex-col items-center">
-        <div className="w-full bg-white rounded-sm border border-neutral-200 shadow-sm p-6 sm:p-10 mb-10 relative">
+      <main className={`flex-1 w-full max-w-5xl mx-auto ${step === 4 ? 'p-2 sm:p-4' : 'p-4 sm:p-8'} flex flex-col items-center`}>
+        <div className={`w-full ${step === 4 ? 'bg-black border-transparent text-white p-0 shadow-none' : 'bg-white rounded-sm border border-neutral-200 shadow-sm p-6 sm:p-10'} mb-10 relative`}>
 
           {step === 1 && (
             <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
@@ -438,7 +472,7 @@ export default function RegisterPeternakPage() {
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-12">
                   <div className="lg:col-span-4">
                     <h3 className="text-[16px] font-bold text-neutral-900">Informasi Personal</h3>
-                    <p className="text-[13px] text-neutral-500 mt-1">Masukkan nama sesuai KTP dan nomor telepon aktif Anda.</p>
+                    <p className="text-[13px] text-neutral-500 mt-1">Masukkan nama sesuai KTP, nama peternakan, dan nomor telepon aktif Anda.</p>
                   </div>
                   <div className="lg:col-span-8 grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
@@ -463,6 +497,18 @@ export default function RegisterPeternakPage() {
                           className="min-h-[48px] border-neutral-200 bg-neutral-50 focus:bg-white text-[14px] font-medium rounded-sm pl-12 shadow-none w-full"
                         />
                       </div>
+                    </div>
+                    <div className="md:col-span-2">
+                      <Label className="text-neutral-700 font-bold mb-1.5 block">Nama Peternakan Ayam*</Label>
+                      <Input
+                        value={farmName}
+                        onChange={(e) => setFarmName(e.target.value)}
+                        placeholder="Misal: Peternakan Ayam Berkah Jaya"
+                        className="min-h-[48px] border-neutral-200 bg-neutral-50 focus:bg-white text-[14px] font-medium rounded-sm shadow-none"
+                      />
+                      <p className="text-[12px] text-neutral-500 font-medium mt-1.5">
+                        Nama ini akan dilihat oleh konsumen lain saat membeli produk Anda.
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -699,19 +745,19 @@ export default function RegisterPeternakPage() {
                     <div className="lg:col-span-8 grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
                         <Label className="text-neutral-700 font-bold mb-1.5 block">Jumlah Ayam (ekor)*</Label>
-                        <Input type="number" value={chickenCount} onChange={(e) => setChickenCount(e.target.value)} className="min-h-[48px] rounded-sm bg-neutral-50 border-neutral-200 shadow-none text-[14px]" />
+                        <Input type="text" inputMode="numeric" placeholder="Contoh: 1.000" value={chickenCount} onChange={(e) => setChickenCount(formatNumberWithDots(e.target.value))} className="min-h-[48px] rounded-sm bg-neutral-50 border-neutral-200 shadow-none text-[14px]" />
                       </div>
                       <div>
                         <Label className="text-neutral-700 font-bold mb-1.5 block">Produksi Telur Harian*</Label>
-                        <Input type="number" value={eggProd} onChange={(e) => setEggProd(e.target.value)} className="min-h-[48px] rounded-sm bg-neutral-50 border-neutral-200 shadow-none text-[14px]" />
+                        <Input type="text" inputMode="numeric" placeholder="Contoh: 800" value={eggProd} onChange={(e) => setEggProd(formatNumberWithDots(e.target.value))} className="min-h-[48px] rounded-sm bg-neutral-50 border-neutral-200 shadow-none text-[14px]" />
                       </div>
                       <div>
                         <Label className="text-neutral-700 font-bold mb-1.5 block">Telur Bersih/Hari*</Label>
-                        <Input type="number" value={eggClean} onChange={(e) => setEggClean(e.target.value)} className="min-h-[48px] rounded-sm bg-neutral-50 border-neutral-200 shadow-none text-[14px]" />
+                        <Input type="text" inputMode="numeric" placeholder="Contoh: 750" value={eggClean} onChange={(e) => setEggClean(formatNumberWithDots(e.target.value))} className="min-h-[48px] rounded-sm bg-neutral-50 border-neutral-200 shadow-none text-[14px]" />
                       </div>
                       <div>
                         <Label className="text-neutral-700 font-bold mb-1.5 block">Telur Rusak/Hari*</Label>
-                        <Input type="number" value={eggBroken} onChange={(e) => setEggBroken(e.target.value)} className="min-h-[48px] rounded-sm bg-neutral-50 border-neutral-200 shadow-none text-[14px]" />
+                        <Input type="text" inputMode="numeric" placeholder="Contoh: 50" value={eggBroken} onChange={(e) => setEggBroken(formatNumberWithDots(e.target.value))} className="min-h-[48px] rounded-sm bg-neutral-50 border-neutral-200 shadow-none text-[14px]" />
                       </div>
                     </div>
                   </div>
@@ -734,13 +780,9 @@ export default function RegisterPeternakPage() {
                           Isi dengan nama/merek pakan pabrikan atau komposisi racikan pakan yang diberikan kepada ayam saat ini. Anda bisa menginput lebih dari satu jenis (pisahkan dengan koma).
                         </p>
                       </div>
-                      <div>
-                        <Label className="text-neutral-700 font-bold mb-1.5 block">Kebersihan Kandang*</Label>
-                        <Input value={cleanliness} onChange={(e) => setCleanliness(e.target.value)} placeholder="Contoh: Dibersihkan 2x sehari" className="min-h-[48px] rounded-sm bg-neutral-50 border-neutral-200 shadow-none text-[14px]" />
-                      </div>
-                      <div>
+                      <div className="sm:col-span-2">
                         <Label className="text-neutral-700 font-bold mb-1.5 block">Pengalaman (tahun)*</Label>
-                        <Input type="number" value={experience} onChange={(e) => setExperience(e.target.value)} className="min-h-[48px] rounded-sm bg-neutral-50 border-neutral-200 shadow-none text-[14px]" />
+                        <Input type="text" inputMode="numeric" placeholder="Contoh: 5" value={experience} onChange={(e) => setExperience(formatNumberWithDots(e.target.value))} className="min-h-[48px] rounded-sm bg-neutral-50 border-neutral-200 shadow-none text-[14px]" />
                       </div>
                       <div className="sm:col-span-2 mt-2">
                         <Label className="text-neutral-700 font-bold mb-3 block">Memiliki Kendaraan Operasional?*</Label>
@@ -801,13 +843,13 @@ export default function RegisterPeternakPage() {
           )}
 
           {step === 4 && (
-            <div className="animate-in fade-in slide-in-from-bottom-2 duration-300 max-w-2xl mx-auto">
-              <div className="text-center mb-8">
-                <div className="inline-flex items-center justify-center bg-primary-50 text-primary-700 text-[12px] font-bold px-3 py-1 rounded-sm mb-4">
+            <div className="animate-in fade-in zoom-in-95 duration-300 w-full max-w-lg mx-auto bg-black text-white p-2 sm:p-4">
+              <div className="text-center mb-4">
+                <div className="inline-flex items-center justify-center bg-neutral-900 text-amber-400 border border-neutral-800 text-[11px] font-bold px-3 py-1 rounded-full mb-2">
                   FOTO {photoStep} DARI 4
                 </div>
-                <h1 className="text-[28px] font-extrabold text-neutral-900 tracking-tight">Dokumentasi Peternakan</h1>
-                <p className="text-[14px] text-neutral-500 font-medium mt-1 leading-relaxed">
+                <h2 className="text-base font-bold text-white tracking-tight">Dokumentasi Peternakan</h2>
+                <p className="text-xs text-neutral-400 font-medium mt-1 leading-relaxed">
                   {photoStep === 1
                     ? 'Silakan ambil foto bagian luar kandang secara jelas.'
                     : photoStep === 2

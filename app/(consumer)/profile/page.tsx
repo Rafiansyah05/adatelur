@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/Label';
 import { AddressAutocomplete } from '@/components/ui/AddressAutocomplete';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
+import { showToast } from '@/components/ui/toast';
 
 type Tab = 'data_diri' | 'lokasi' | 'password' | 'logout';
 
@@ -128,7 +129,7 @@ export default function ConsumerProfilePage() {
 
       setAvatarUrl(publicUrl);
     } catch (err: any) {
-      alert('Gagal mengunggah foto: ' + err.message);
+      showToast('Gagal mengunggah foto: ' + err.message, 'error');
     } finally {
       setIsUploadingPhoto(false);
       if (fileInputRef.current) {

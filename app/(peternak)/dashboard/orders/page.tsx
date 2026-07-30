@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { MapPin, Clock, Camera, X, Truck, ShoppingBag, Package, MessageCircle } from 'lucide-react';
+import { showToast } from '@/components/ui/toast';
 
 const historyStatusLabel: Record<string, string> = {
   completed: 'Selesai',
@@ -116,12 +117,12 @@ export default function PeternakOrdersPage() {
       });
       if (!res.ok) {
         const errorData = await res.json();
-        alert(errorData.error || 'Terjadi kesalahan');
+        showToast(errorData.error || 'Terjadi kesalahan', 'error');
         return;
       }
       fetchOrders();
     } catch (err: any) {
-      alert(err.message);
+      showToast(err.message, 'error');
     }
   };
 
@@ -135,19 +136,18 @@ export default function PeternakOrdersPage() {
       
       if (!res.ok) {
         const errorData = await res.json();
-        alert(errorData.error || 'Terjadi kesalahan saat update status');
+        showToast(errorData.error || 'Terjadi kesalahan saat update status', 'error');
         return;
       }
       
       if (status === 'in_delivery') {
         setConfirmDeliveryOrderId(null);
-        setToastMessage('Status berhasil diperbarui');
-        setTimeout(() => setToastMessage(null), 3000);
+        showToast('Status berhasil diperbarui', 'success');
       }
       
       fetchOrders();
     } catch (err: any) {
-      alert('Gagal update status: ' + err.message);
+      showToast('Gagal update status: ' + err.message, 'error');
     }
   };
 
@@ -182,7 +182,7 @@ export default function PeternakOrdersPage() {
         setLocationStatus('denied');
       }
     } catch (err) {
-      alert('Gagal mengakses kamera. Pastikan browser memiliki izin.');
+      showToast('Gagal mengakses kamera. Pastikan browser memiliki izin.', 'error');
     }
   };
 
@@ -237,18 +237,18 @@ export default function PeternakOrdersPage() {
       
       if (!res.ok) {
         const errorData = await res.json();
-        alert(errorData.error || 'Terjadi kesalahan saat mengunggah bukti');
+        showToast(errorData.error || 'Terjadi kesalahan saat mengunggah bukti', 'error');
       } else {
         fetchOrders();
         
         const supabase = supabaseRef.current;
         await supabase.rpc('recalculate_peternak_score', { p_peternak_id: peternakId });
         
-        alert('Pesanan berhasil diselesaikan');
+        showToast('Pesanan berhasil diselesaikan', 'success');
         closeCamera();
       }
     } catch (err: any) {
-      alert(err.message);
+      showToast(err.message, 'error');
     } finally {
       setIsUploading(false);
     }

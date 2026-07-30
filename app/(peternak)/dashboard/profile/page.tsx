@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { Label } from '@/components/ui/Label';
 import { BankAccountForm } from '@/components/peternak/BankAccountForm';
+import { showToast } from '@/components/ui/toast';
 
 type Tab = 'informasi' | 'rekening' | 'password';
 
@@ -27,6 +28,10 @@ export default function PeternakProfilePage() {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [provider, setProvider] = useState('');
+
+  const [farmName, setFarmName] = useState('');
+  const [isSavingFarmName, setIsSavingFarmName] = useState(false);
+  const [farmNameMsg, setFarmNameMsg] = useState({ text: '', isError: false });
 
   const [bankName, setBankName] = useState('');
   const [bankAccountNumber, setBankAccountNumber] = useState('');
@@ -49,7 +54,9 @@ export default function PeternakProfilePage() {
 
   useEffect(() => {
     async function loadData() {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (!user) {
         router.push('/login');
         return;
@@ -73,11 +80,12 @@ export default function PeternakProfilePage() {
 
       const { data: detail } = await supabase
         .from('peternak_details')
-        .select('bank_name, bank_account_number, bank_account_holder')
+        .select('farm_name, bank_name, bank_account_number, bank_account_holder')
         .eq('profile_id', user.id)
         .maybeSingle();
 
       if (detail) {
+        setFarmName(detail.farm_name || 'Peternak Ada Telur');
         setBankName(detail.bank_name || '');
         setBankAccountNumber(detail.bank_account_number || '');
         setBankAccountHolder(detail.bank_account_holder || '');
@@ -87,6 +95,29 @@ export default function PeternakProfilePage() {
     }
     loadData();
   }, [supabase, router]);
+
+  const handleSaveFarmName = async () => {
+    if (!farmName.trim()) {
+      setFarmNameMsg({ text: 'Nama peternakan ayam tidak boleh kosong.', isError: true });
+      return;
+    }
+    setIsSavingFarmName(true);
+    setFarmNameMsg({ text: '', isError: false });
+    try {
+      const { error } = await supabase
+        .from('peternak_details')
+        .update({ farm_name: farmName.trim() })
+        .eq('profile_id', profileId);
+
+      if (error) throw error;
+      setFarmNameMsg({ text: 'Nama peternakan berhasil diperbarui!', isError: false });
+      setTimeout(() => setFarmNameMsg({ text: '', isError: false }), 4000);
+    } catch (err: any) {
+      setFarmNameMsg({ text: err.message || 'Gagal mengubah nama peternakan', isError: true });
+    } finally {
+      setIsSavingFarmName(false);
+    }
+  };
 
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -101,7 +132,9 @@ export default function PeternakProfilePage() {
       const { error: uploadError } = await supabase.storage.from('avatars').upload(filePath, file);
       if (uploadError) throw uploadError;
 
-      const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(filePath);
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from('avatars').getPublicUrl(filePath);
 
       const { error: updateError } = await supabase
         .from('profiles')
@@ -112,7 +145,7 @@ export default function PeternakProfilePage() {
 
       setAvatarUrl(publicUrl);
     } catch (err: any) {
-      alert('Gagal mengunggah foto: ' + err.message);
+      showToast('Gagal mengunggah foto: ' + err.message, 'error');
     } finally {
       setIsUploadingPhoto(false);
       if (fileInputRef.current) {
@@ -228,8 +261,8 @@ export default function PeternakProfilePage() {
               />
             </div>
 
-            <h2 className="text-lg font-bold text-neutral-900 text-center">{profileName || 'Peternak'}</h2>
-            <p className="text-sm text-neutral-500 font-medium mt-1">Peternak</p>
+            <h2 className="text-lg font-bold text-neutral-900 text-center">{farmName || profileName || 'Peternak'}</h2>
+            <p className="text-sm text-neutral-500 font-medium mt-1">{profileName}</p>
           </Card>
 
           <Card className="flex-col bg-white border border-neutral-100 shadow-sm rounded-xl overflow-hidden p-2 gap-1 hidden md:flex md:border-none md:shadow-none md:bg-transparent md:p-0">
@@ -306,7 +339,7 @@ export default function PeternakProfilePage() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="flex flex-col gap-2">
-                    <Label className="text-sm font-medium text-neutral-500">Nama Lengkap</Label>
+                    <Label className="text-sm font-medium text-neutral-500">Nama Lengkap Pemilik</Label>
                     <Input
                       value={profileName}
                       disabled
@@ -321,13 +354,38 @@ export default function PeternakProfilePage() {
                       className="h-12 bg-neutral-100 border-transparent text-neutral-500 cursor-not-allowed font-medium"
                     />
                   </div>
-                  <div className="flex flex-col gap-2">
+                  <div className="flex flex-col gap-2 md:col-span-2">
                     <Label className="text-sm font-medium text-neutral-500">Nomor WA</Label>
                     <Input
                       value={phoneNumber}
                       disabled
                       className="h-12 bg-neutral-100 border-transparent text-neutral-500 cursor-not-allowed font-medium"
                     />
+                  </div>
+
+                  <div className="flex flex-col gap-2 md:col-span-2 mt-2 pt-4 border-t border-neutral-100">
+                    <Label className="text-sm font-bold text-neutral-900">Nama Peternakan Ayam</Label>
+                    <p className="text-xs text-neutral-500">Nama ini akan dilihat oleh konsumen lain saat membeli produk Anda.</p>
+                    <div className="flex flex-col sm:flex-row gap-3 mt-1">
+                      <Input
+                        value={farmName}
+                        onChange={(e) => setFarmName(e.target.value)}
+                        placeholder="Misal: Peternakan Ayam Berkah Jaya"
+                        className="h-12 bg-white border-neutral-200 text-neutral-900 font-medium flex-1 focus:bg-white"
+                      />
+                      <Button
+                        onClick={handleSaveFarmName}
+                        disabled={isSavingFarmName || !farmName.trim()}
+                        className="h-12 px-6 font-bold bg-primary-400 hover:bg-primary-500 text-neutral-900 shrink-0"
+                      >
+                        {isSavingFarmName ? 'Menyimpan...' : 'Simpan Nama Peternakan'}
+                      </Button>
+                    </div>
+                    {farmNameMsg.text && (
+                      <p className={`text-xs font-semibold mt-1 ${farmNameMsg.isError ? 'text-red-500' : 'text-green-600'}`}>
+                        {farmNameMsg.text}
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>
@@ -357,7 +415,6 @@ export default function PeternakProfilePage() {
                 {provider === 'google' ? (
                   <div className="flex flex-col items-center justify-center p-8 text-center bg-neutral-50 rounded-xl border border-neutral-100">
                     <div className="h-16 w-16 bg-white rounded-full flex items-center justify-center shadow-sm border border-neutral-100 mb-4">
-                      {/* Google G Logo SVG */}
                       <svg width="24" height="24" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">
                         <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"></path>
                         <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"></path>
@@ -384,7 +441,7 @@ export default function PeternakProfilePage() {
                         <Input
                           type={showCurrentPassword ? 'text' : 'password'}
                           value={currentPassword}
-                          onChange={e => setCurrentPassword(e.target.value)}
+                          onChange={(e) => setCurrentPassword(e.target.value)}
                           placeholder="Masukkan password Anda saat ini"
                           required
                           className="h-12 bg-neutral-50 border-transparent focus:bg-white transition-colors pr-12"
@@ -422,7 +479,7 @@ export default function PeternakProfilePage() {
                         <Input
                           type={showNewPassword ? 'text' : 'password'}
                           value={newPassword}
-                          onChange={e => setNewPassword(e.target.value)}
+                          onChange={(e) => setNewPassword(e.target.value)}
                           placeholder="Minimal 6 karakter"
                           required
                           className="h-12 bg-neutral-50 border-transparent focus:bg-white transition-colors pr-12"
@@ -442,7 +499,7 @@ export default function PeternakProfilePage() {
                         <Input
                           type={showConfirmPassword ? 'text' : 'password'}
                           value={confirmPassword}
-                          onChange={e => setConfirmPassword(e.target.value)}
+                          onChange={(e) => setConfirmPassword(e.target.value)}
                           placeholder="Ulangi password baru"
                           required
                           className="h-12 bg-neutral-50 border-transparent focus:bg-white transition-colors pr-12"
@@ -481,7 +538,9 @@ export default function PeternakProfilePage() {
         </div>
       </div>
 
-      <style dangerouslySetInnerHTML={{__html: `
+      <style
+        dangerouslySetInnerHTML={{
+          __html: `
         .hide-scrollbar::-webkit-scrollbar {
           display: none;
         }
@@ -489,7 +548,9 @@ export default function PeternakProfilePage() {
           -ms-overflow-style: none;
           scrollbar-width: none;
         }
-      `}} />
+      `,
+        }}
+      />
     </div>
   );
 }

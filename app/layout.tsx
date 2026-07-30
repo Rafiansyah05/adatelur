@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import { Plus_Jakarta_Sans } from 'next/font/google';
 import './globals.css';
 import { PwaInstallPrompt } from '@/components/pwa/PwaInstallPrompt';
+import { GlobalToast } from '@/components/ui/toast';
 
 const plusJakartaSans = Plus_Jakarta_Sans({
   subsets: ['latin'],
@@ -41,6 +42,7 @@ export default function RootLayout({
         <Providers>
           {children}
           <PwaInstallPrompt />
+          <GlobalToast />
         </Providers>
       </body>
     </html>

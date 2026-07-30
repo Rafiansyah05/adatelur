@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { X, MapPin } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { showToast } from '@/components/ui/toast';
 
 interface OrderModalProps {
   isOpen: boolean;
@@ -103,10 +104,10 @@ export function OrderModal({
   // Real-time subscription handled by GlobalWaitingModal now
 
   const handleLanjut = async () => {
-    if (!localRak || localRak < 1) return alert('Silakan masukkan jumlah rak yang valid!');
-    if (availableStock !== null && localRak > availableStock) return alert('Sisa stok hari ini tidak mencukupi!');
-    if (!selectedSlot) return alert('Silakan pilih slot waktu!');
-    if (localMethod === 'delivery' && !addressId) return alert('Silakan pilih alamat pengiriman!');
+    if (!localRak || localRak < 1) return showToast('Silakan masukkan jumlah rak yang valid!', 'error');
+    if (availableStock !== null && localRak > availableStock) return showToast('Sisa stok hari ini tidak mencukupi!', 'error');
+    if (!selectedSlot) return showToast('Silakan pilih slot waktu!', 'error');
+    if (localMethod === 'delivery' && !addressId) return showToast('Silakan pilih alamat pengiriman!', 'error');
 
     setIsSubmitting(true);
     try {
@@ -129,7 +130,7 @@ export function OrderModal({
       window.dispatchEvent(new CustomEvent('new-order-created', { detail: data.data.id }));
       onClose(); // Close this modal, let global modal take over
     } catch (err: any) {
-      alert(err.message);
+      showToast(err.message, 'error');
     } finally {
       setIsSubmitting(false);
     }

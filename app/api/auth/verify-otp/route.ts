@@ -12,7 +12,6 @@ export async function POST(request: Request) {
 
     const adminClient = createAdminClient();
 
-    // 1. Cari OTP yang valid
     const { data: otpRecord, error: otpError } = await adminClient
       .from('otps')
       .select('*')
@@ -33,10 +32,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Kode OTP tidak valid atau sudah kedaluwarsa.' }, { status: 400 });
     }
 
-    // 2. Tandai OTP sebagai digunakan
-    await adminClient.from('otps').update({ is_used: true }).eq('id', otpRecord.id);
-
-    // 3. Buat User di auth.users
     const metadata = otpRecord.metadata;
     const password = metadata.password;
     const role = metadata.role || 'consumer';
@@ -44,6 +39,37 @@ export async function POST(request: Request) {
     if (!password) {
       return NextResponse.json({ error: 'Data registrasi tidak lengkap.' }, { status: 400 });
     }
+
+    if (role === 'peternak' && metadata.phone) {
+      const digits = metadata.phone.replace(/\D/g, '');
+      const baseDigits = digits.startsWith('62')
+        ? digits.slice(2)
+        : digits.startsWith('0')
+          ? digits.slice(1)
+          : digits;
+      const phoneVariations = [
+        baseDigits,
+        `0${baseDigits}`,
+        `62${baseDigits}`,
+        `+62${baseDigits}`,
+      ];
+
+      const { data: existingPeternak } = await adminClient
+        .from('profiles')
+        .select('id')
+        .eq('role', 'peternak')
+        .in('phone_number', phoneVariations)
+        .maybeSingle();
+
+      if (existingPeternak) {
+        return NextResponse.json(
+          { error: 'Nomor telepon ini sudah terdaftar untuk peternak lain. Silakan gunakan nomor telepon lain.' },
+          { status: 400 }
+        );
+      }
+    }
+
+    await adminClient.from('otps').update({ is_used: true }).eq('id', otpRecord.id);
 
     let userId;
     const { data: authData, error: authError } = await adminClient.auth.admin.createUser({
@@ -53,18 +79,18 @@ export async function POST(request: Request) {
       user_metadata: {
         full_name: metadata.fullName || metadata.nama,
         phone_number: metadata.phone,
-      }
+      },
     });
 
     if (authError) {
       if (authError.message.includes('already registered')) {
         const { data: searchData } = await adminClient.auth.admin.listUsers();
-        const existingUser = searchData.users.find(u => u.email === email);
+        const existingUser = searchData.users.find((u) => u.email === email);
         if (existingUser) {
-           userId = existingUser.id;
-           await adminClient.auth.admin.updateUserById(userId, { password, email_confirm: true });
+          userId = existingUser.id;
+          await adminClient.auth.admin.updateUserById(userId, { password, email_confirm: true });
         } else {
-           return NextResponse.json({ error: 'Gagal membuat user: ' + authError.message }, { status: 500 });
+          return NextResponse.json({ error: 'Gagal membuat user: ' + authError.message }, { status: 500 });
         }
       } else {
         return NextResponse.json({ error: 'Gagal membuat user: ' + authError.message }, { status: 500 });
@@ -73,7 +99,6 @@ export async function POST(request: Request) {
       userId = authData.user.id;
     }
 
-    // 4. Masukkan ke tabel profiles
     const fullName = metadata.fullName || metadata.nama;
     const phoneNumber = metadata.phone;
 
@@ -82,20 +107,20 @@ export async function POST(request: Request) {
       role: role,
       full_name: fullName,
       phone_number: phoneNumber,
-      email: email
+      email: email,
     });
 
     if (profileError) {
       return NextResponse.json({ error: 'Gagal membuat profil: ' + profileError.message }, { status: 500 });
     }
 
-    // 5. Masukkan ke peternak_details jika role === peternak
     let peternakId = null;
     if (role === 'peternak') {
       const { data: pData, error: pError } = await adminClient
         .from('peternak_details')
         .insert({
           profile_id: userId,
+          farm_name: metadata.farmName || 'Peternak Ada Telur',
           birth_date: metadata.birthDate || new Date().toISOString(),
           farm_address: metadata.address || '-',
           farm_latitude: metadata.lat || 0,
@@ -117,22 +142,20 @@ export async function POST(request: Request) {
         console.warn('Gagal buat peternak details', pError);
       } else {
         peternakId = pData.id;
-        
-        // Simpan kendaraan (opsional)
+
         if (metadata.hasVehicle && metadata.vehicleType) {
-          await adminClient.from('vehicles').insert({ 
-            peternak_id: peternakId, 
-            vehicle_type: metadata.vehicleType 
+          await adminClient.from('vehicles').insert({
+            peternak_id: peternakId,
+            vehicle_type: metadata.vehicleType,
           });
         }
       }
     }
 
-    // 6. Sign In otomatis
     const supabase = createClient();
     const { error: signInError } = await supabase.auth.signInWithPassword({
       email,
-      password
+      password,
     });
 
     if (signInError) {

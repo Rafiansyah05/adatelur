@@ -4,11 +4,25 @@ import { createAdminClient } from '@/lib/supabase/admin';
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { 
-      email, password, otpToken, nama, phone,
-      birthDate, address, lat, lng,
-      registrationMethod, chickenCount, eggProd, eggBroken, eggClean, feedType, experience,
-      hasVehicle, vehicleType
+    const {
+      email,
+      password,
+      otpToken,
+      nama,
+      phone,
+      birthDate,
+      address,
+      lat,
+      lng,
+      registrationMethod,
+      chickenCount,
+      eggProd,
+      eggBroken,
+      eggClean,
+      feedType,
+      experience,
+      hasVehicle,
+      vehicleType,
     } = body;
 
     if (!email || !password || !otpToken) {
@@ -17,20 +31,47 @@ export async function POST(request: Request) {
 
     const adminClient = createAdminClient();
 
-    // 1. Verifikasi OTP dari database otps
     const { data: otpRecord, error: otpError } = await adminClient
       .from('otps')
       .select('id')
       .eq('email', email)
       .eq('otp_code', otpToken)
-      .eq('is_used', true) // Harus sudah ditandai true saat tahap 2
+      .eq('is_used', true)
       .maybeSingle();
 
     if (otpError || !otpRecord) {
       return NextResponse.json({ error: 'Kode OTP tidak valid atau sesi kadaluarsa.' }, { status: 400 });
     }
 
-    // 2. Buat User di auth.users
+    if (phone) {
+      const digits = phone.replace(/\D/g, '');
+      const baseDigits = digits.startsWith('62')
+        ? digits.slice(2)
+        : digits.startsWith('0')
+          ? digits.slice(1)
+          : digits;
+      const phoneVariations = [
+        baseDigits,
+        `0${baseDigits}`,
+        `62${baseDigits}`,
+        `+62${baseDigits}`,
+      ];
+
+      const { data: existingPeternak } = await adminClient
+        .from('profiles')
+        .select('id')
+        .eq('role', 'peternak')
+        .in('phone_number', phoneVariations)
+        .maybeSingle();
+
+      if (existingPeternak) {
+        return NextResponse.json(
+          { error: 'Nomor telepon ini sudah terdaftar untuk peternak lain. Silakan gunakan nomor telepon lain.' },
+          { status: 400 }
+        );
+      }
+    }
+
     let userId;
     const { data: authData, error: authError } = await adminClient.auth.admin.createUser({
       email,
@@ -39,18 +80,18 @@ export async function POST(request: Request) {
       user_metadata: {
         full_name: nama,
         phone_number: phone,
-      }
+      },
     });
 
     if (authError) {
       if (authError.message.includes('already registered')) {
         const { data: searchData } = await adminClient.auth.admin.listUsers();
-        const existingUser = searchData.users.find(u => u.email === email);
+        const existingUser = searchData.users.find((u) => u.email === email);
         if (existingUser) {
-           userId = existingUser.id;
-           await adminClient.auth.admin.updateUserById(userId, { password, email_confirm: true });
+          userId = existingUser.id;
+          await adminClient.auth.admin.updateUserById(userId, { password, email_confirm: true });
         } else {
-           return NextResponse.json({ error: 'Gagal membuat user: ' + authError.message }, { status: 500 });
+          return NextResponse.json({ error: 'Gagal membuat user: ' + authError.message }, { status: 500 });
         }
       } else {
         return NextResponse.json({ error: 'Gagal membuat user: ' + authError.message }, { status: 500 });
@@ -59,20 +100,18 @@ export async function POST(request: Request) {
       userId = authData.user.id;
     }
 
-    // 3. Masukkan ke tabel profiles
     const { error: profileError } = await adminClient.from('profiles').upsert({
       id: userId,
       role: 'peternak',
       full_name: nama,
       phone_number: phone,
-      email: email
+      email: email,
     });
 
     if (profileError) {
       return NextResponse.json({ error: 'Gagal membuat profil: ' + profileError.message }, { status: 500 });
     }
 
-    // 4. Masukkan data ke peternak_details
     const { data: pData, error: pError } = await adminClient
       .from('peternak_details')
       .insert({
@@ -100,11 +139,10 @@ export async function POST(request: Request) {
 
     const peternakId = pData.id;
 
-    // 5. Masukkan kendaraan
     if (hasVehicle && vehicleType) {
-      await adminClient.from('vehicles').insert({ 
-        peternak_id: peternakId, 
-        vehicle_type: vehicleType 
+      await adminClient.from('vehicles').insert({
+        peternak_id: peternakId,
+        vehicle_type: vehicleType,
       });
     }
 

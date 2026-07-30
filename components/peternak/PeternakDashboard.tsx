@@ -6,6 +6,7 @@ import { AnalyticsSection } from '@/components/peternak/AnalyticsSection';
 import { WalletCard } from '@/components/peternak/WalletCard';
 import { ToggleRight, ToggleLeft, TrendingUp, Settings, Store } from 'lucide-react';
 import Link from 'next/link';
+import { showToast } from '@/components/ui/toast';
 
 interface ListingRecord {
   id?: string;
@@ -35,7 +36,7 @@ export function PeternakDashboard({ initialListing, peternakName }: PeternakDash
 
   const handleToggle = async () => {
     if (!initialListing) {
-      alert("Silakan atur harga dan stok di menu Atur Ketersediaan terlebih dahulu.");
+      showToast("Silakan atur harga dan stok di menu Atur Ketersediaan terlebih dahulu.", 'error');
       return;
     }
 
@@ -61,7 +62,7 @@ export function PeternakDashboard({ initialListing, peternakName }: PeternakDash
 
       router.refresh();
     } catch (error) {
-      alert("Terjadi kesalahan saat merubah status toko.");
+      showToast("Terjadi kesalahan saat merubah status toko.", 'error');
       // Revert status on error
       setIsListingActive(!newStatus);
     } finally {

@@ -235,7 +235,7 @@ export function AnalyticsSection() {
             <SummaryTile
               icon={<Package className={iconClass} />}
               label="Sisa Stok Rak"
-              value={`${data.summary.remainingStock ?? Math.max(0, data.summary.stockRak - (data.summary.soldSinceUpdate ?? 0))}/${data.summary.stockRak}`}
+              value={`${data.summary.remainingStock ?? Math.max(0, data.summary.stockRak - (data.summary.soldSinceUpdate ?? 0))}`}
               description="Sisa stok dari batch update terbaru"
             />
             <SummaryTile

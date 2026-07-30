@@ -3,9 +3,9 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/Button';
-import { Card } from '@/components/ui/Card';
 import { haversineDistance, calculateOngkir } from '@/lib/haversine';
 import { createClient } from '@/lib/supabase/client';
+import { showToast } from '@/components/ui/toast';
 
 interface DeliverySlot {
   id: string;
@@ -16,6 +16,7 @@ interface DeliverySlot {
 
 interface PeternakData {
   full_name?: string;
+  farm_name?: string;
   rating?: string;
   score?: number;
   price_per_rak?: number;
@@ -70,6 +71,8 @@ export default function PeternakDetail({ params }: { params: { id: string } }) {
   const parsedQuantity = typeof quantity === 'number' ? quantity : 0;
   const isOverStock = parsedQuantity > availableStock;
 
+  const displayName = data.farm_name || data.full_name || 'Peternak Ada Telur';
+
   const computeOngkir = () => {
     if (method === 'pickup' || !consumerAddress || !data.farm_latitude || !data.farm_longitude)
       return 0;
@@ -84,12 +87,12 @@ export default function PeternakDetail({ params }: { params: { id: string } }) {
 
   const handlePesan = async () => {
     if (!selectedSlot) {
-      alert('Pilih slot waktu terlebih dahulu');
+      showToast('Pilih slot waktu terlebih dahulu', 'error');
       return;
     }
-    
+
     if (method === 'delivery' && !consumerAddress) {
-      alert('Anda belum mengatur alamat pengiriman. Anda akan dialihkan ke halaman profil.');
+      showToast('Anda belum mengatur alamat pengiriman. Anda akan dialihkan ke halaman profil.', 'error');
       router.push('/profile');
       return;
     }
@@ -102,7 +105,7 @@ export default function PeternakDetail({ params }: { params: { id: string } }) {
 
   const handleConfirmOrder = async () => {
     if (!data.listing_id) {
-      alert('Listing tidak ditemukan');
+      showToast('Listing tidak ditemukan', 'error');
       return;
     }
     const payload: any = {
@@ -120,7 +123,7 @@ export default function PeternakDetail({ params }: { params: { id: string } }) {
     });
     const json = await res.json();
     if (!res.ok) {
-      alert(json.error || 'Gagal membuat pesanan');
+      showToast(json.error || 'Gagal membuat pesanan', 'error');
       return;
     }
     setShowSummary(false);
@@ -133,10 +136,10 @@ export default function PeternakDetail({ params }: { params: { id: string } }) {
         <div className="bg-primary-50 px-6 py-8">
           <div className="flex items-center gap-4">
             <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary-100 text-[24px] font-bold text-primary-950">
-              {data.full_name ? data.full_name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() : 'PT'}
+              {displayName.split(' ').map((n) => n[0]).join('').substring(0, 2).toUpperCase()}
             </div>
             <div>
-              <h1 className="text-h1 text-text-main mb-1">{data.full_name || 'Peternak'}</h1>
+              <h1 className="text-h1 text-text-main mb-1">{displayName}</h1>
               <div className="flex items-center gap-3">
                 <span className="flex items-center gap-1 text-body-medium text-text-main">
                   ⭐ {data.rating || '4.8'}
@@ -161,13 +164,13 @@ export default function PeternakDetail({ params }: { params: { id: string } }) {
                     Rp {data.price_per_rak ? Number(data.price_per_rak).toLocaleString('id-ID') : '0'}
                   </span>
                 </div>
-                
+
                 <div className="mb-4 h-[1px] w-full bg-border" />
-                
+
                 <div className="mb-4">
                   <label className="text-body-medium text-text-main block mb-2">Jumlah rak</label>
                   <div className="flex items-center gap-3">
-                    <button 
+                    <button
                       onClick={() => setQuantity(Math.max(1, parsedQuantity - 1))}
                       className="flex h-10 w-10 items-center justify-center rounded-md border border-border bg-white text-text-main hover:bg-bg-surface disabled:opacity-50"
                       disabled={parsedQuantity <= 1}
@@ -190,7 +193,7 @@ export default function PeternakDetail({ params }: { params: { id: string } }) {
                       }}
                       className={`w-20 h-10 text-center text-h3 rounded-md border ${isOverStock ? 'border-danger text-danger bg-red-50 focus:ring-danger' : 'border-border'} focus:outline-none focus:ring-2 focus:ring-primary-500`}
                     />
-                    <button 
+                    <button
                       onClick={() => setQuantity(parsedQuantity + 1)}
                       className="flex h-10 w-10 items-center justify-center rounded-md border border-border bg-white text-text-main hover:bg-bg-surface"
                     >
@@ -227,7 +230,7 @@ export default function PeternakDetail({ params }: { params: { id: string } }) {
                     const startTimeStr = slot.start_time.substring(0, 5);
                     const endTimeStr = slot.end_time.substring(0, 5);
                     const isSelected = selectedSlot === slot.id;
-                    
+
                     return (
                       <label
                         key={slot.id}
@@ -274,14 +277,12 @@ export default function PeternakDetail({ params }: { params: { id: string } }) {
         </div>
       </div>
 
-
-
       {showSummary && (
         <div className="fixed inset-0 z-50 flex items-end justify-center p-4 sm:items-center">
           <div className="absolute inset-0 bg-text-main/40 backdrop-blur-sm transition-opacity" onClick={() => setShowSummary(false)} />
           <div className="relative w-full max-w-md animate-in slide-in-from-bottom-4 sm:slide-in-from-bottom-0 sm:zoom-in-95 rounded-2xl bg-white p-6 shadow-xl">
             <h3 className="text-h2 text-text-main mb-6 text-center">Ringkasan Pesanan</h3>
-            
+
             <div className="space-y-4 mb-6">
               <div className="flex justify-between items-center text-body">
                 <span className="text-text-desc">Harga per rak</span>
@@ -302,16 +303,16 @@ export default function PeternakDetail({ params }: { params: { id: string } }) {
                 </div>
               )}
             </div>
-            
+
             <div className="h-[1px] w-full bg-border mb-4" />
-            
+
             <div className="flex justify-between items-center mb-8">
               <span className="text-body-medium text-text-main">Total Tagihan</span>
               <span className="text-h2 text-primary-700">
                 Rp {((Number(data.price_per_rak || 0) * parsedQuantity) + computeOngkir()).toLocaleString('id-ID')}
               </span>
             </div>
-            
+
             <div className="flex flex-col-reverse sm:flex-row gap-3">
               <Button variant="secondary" onClick={() => setShowSummary(false)} className="w-full h-[48px]">
                 Kembali

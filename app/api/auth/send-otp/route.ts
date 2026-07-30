@@ -106,7 +106,6 @@ export async function POST(request: Request) {
 
     const adminClient = createAdminClient();
 
-    // 1. Cek apakah email sudah dipakai di profiles
     const { data: existingProfile } = await adminClient
       .from('profiles')
       .select('id')
@@ -118,7 +117,6 @@ export async function POST(request: Request) {
     }
 
     let meta = body;
-    // Jika body tidak lengkap (resend), ambil dari OTP sebelumnya
     if (!body.password) {
       const { data: previousOtp } = await adminClient
         .from('otps')
@@ -127,24 +125,54 @@ export async function POST(request: Request) {
         .order('created_at', { ascending: false })
         .limit(1)
         .maybeSingle();
-        
+
       if (!previousOtp || !previousOtp.metadata) {
-         return NextResponse.json({ error: 'Data registrasi tidak ditemukan, silakan daftar ulang.' }, { status: 400 });
+        return NextResponse.json({ error: 'Data registrasi tidak ditemukan, silakan daftar ulang.' }, { status: 400 });
       }
       meta = previousOtp.metadata;
     }
 
-    // 2. Generate OTP 6 digit
+    const targetRole = body.role || meta?.role;
+    const targetPhone = body.phone || meta?.phone;
+
+    if (targetPhone && (targetRole === 'peternak' || body.farmName || meta?.farmName)) {
+      const digits = targetPhone.replace(/\D/g, '');
+      const baseDigits = digits.startsWith('62')
+        ? digits.slice(2)
+        : digits.startsWith('0')
+          ? digits.slice(1)
+          : digits;
+      const phoneVariations = [
+        baseDigits,
+        `0${baseDigits}`,
+        `62${baseDigits}`,
+        `+62${baseDigits}`,
+      ];
+
+      const { data: existingPeternak } = await adminClient
+        .from('profiles')
+        .select('id')
+        .eq('role', 'peternak')
+        .in('phone_number', phoneVariations)
+        .maybeSingle();
+
+      if (existingPeternak) {
+        return NextResponse.json(
+          { error: 'Nomor telepon ini sudah terdaftar untuk peternak lain. Silakan gunakan nomor telepon lain.' },
+          { status: 400 }
+        );
+      }
+    }
+
     const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
     const expiresAt = new Date();
-    expiresAt.setMinutes(expiresAt.getMinutes() + 5); // 5 menit
+    expiresAt.setMinutes(expiresAt.getMinutes() + 5);
 
-    // 3. Simpan ke tabel otps
     const { error: insertError } = await adminClient.from('otps').insert({
       email,
       otp_code: otpCode,
       expires_at: expiresAt.toISOString(),
-      metadata: meta, // Simpan payload form sementara
+      metadata: meta,
     });
 
     if (insertError) {
@@ -152,8 +180,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Terjadi kesalahan sistem saat membuat kode.' }, { status: 500 });
     }
 
-    // 4. Kirim Email pakai Resend
-    const { data: emailData, error: emailError } = await resend.emails.send({
+    const { error: emailError } = await resend.emails.send({
       from: 'Adatelur <noreply@pradatelyu.online>',
       to: email,
       subject: 'Kode Verifikasi Pendaftaran Adatelur',
@@ -162,8 +189,6 @@ export async function POST(request: Request) {
 
     if (emailError) {
       console.error('Gagal mengirim email lewat Resend:', emailError);
-      // Meskipun email gagal, jika OTP tersimpan, di dev mode kita bisa lihat kodenya
-      // Tapi untuk production, ini harus dilempar sebagai error
       return NextResponse.json({ error: 'Gagal mengirim email. Pastikan alamat email valid.' }, { status: 500 });
     }
 

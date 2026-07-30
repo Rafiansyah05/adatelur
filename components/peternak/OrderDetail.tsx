@@ -6,6 +6,7 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { CameraCapture } from '@/components/CameraCapture';
 import { MapPin, MessageCircle, Package, Truck, ShoppingBag, Clock, User, ArrowLeft } from 'lucide-react';
+import { showToast } from '@/components/ui/toast';
 
 export interface OrderDetailData {
   id: string;
@@ -103,7 +104,7 @@ export function OrderDetail({ order }: { order: OrderDetailData }) {
       }
       router.refresh();
     } catch (error) {
-      alert(error instanceof Error ? error.message : 'Terjadi kesalahan');
+      showToast(error instanceof Error ? error.message : 'Terjadi kesalahan', 'error');
     } finally {
       setIsUpdating(false);
     }
@@ -130,7 +131,7 @@ export function OrderDetail({ order }: { order: OrderDetailData }) {
       setPhoto(null);
       router.refresh();
     } catch (error) {
-      alert(error instanceof Error ? error.message : 'Terjadi kesalahan');
+      showToast(error instanceof Error ? error.message : 'Terjadi kesalahan', 'error');
     } finally {
       setIsUploading(false);
     }

@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Input } from './Input';
 import { Button } from './Button';
 import { MapPin, Navigation, Loader2 } from 'lucide-react';
+import { showToast } from '@/components/ui/toast';
 
 interface AddressAutocompleteProps {
   onLocationSelect: (address: string, lat: number, lon: number) => void;
@@ -114,20 +115,20 @@ export function AddressAutocomplete({ onLocationSelect, defaultValue = '' }: Add
               setQuery(address);
               onLocationSelect(address, latitude, longitude);
             } else {
-              alert('Gagal menemukan alamat untuk koordinat Anda.');
+              showToast('Gagal menemukan alamat untuk koordinat Anda.', 'error');
             }
           } catch {
-            alert('Gagal mengambil nama lokasi dari koordinat Anda.');
+            showToast('Gagal mengambil nama lokasi dari koordinat Anda.', 'error');
           }
           setIsLoading(false);
         },
         () => {
-          alert('Akses lokasi ditolak atau gagal. Mohon izinkan akses lokasi.');
+          showToast('Akses lokasi ditolak atau gagal. Mohon izinkan akses lokasi.', 'error');
           setIsLoading(false);
         }
       );
     } else {
-      alert('Geolocation tidak didukung di browser ini.');
+      showToast('Geolocation tidak didukung di browser ini.', 'error');
     }
   };
 

@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { CheckCircle2, Circle, Clock, XCircle, AlertCircle } from 'lucide-react';
+import { showToast } from '@/components/ui/toast';
 
 export default function OrderTrackingPage({ params }: { params: { id: string } }) {
   const router = useRouter();
@@ -22,10 +23,10 @@ export default function OrderTrackingPage({ params }: { params: { id: string } }
     try {
       const { data: orderData, error: orderError } = await supabase
         .from('orders')
-        .select('*, peternak:peternak_details(profile:profiles(full_name))')
+        .select('*, peternak:peternak_details(farm_name, profile:profiles(full_name))')
         .eq('id', params.id)
         .single();
-        
+
       if (orderError) throw orderError;
       setOrder(orderData);
 
@@ -34,7 +35,7 @@ export default function OrderTrackingPage({ params }: { params: { id: string } }
         .select('*')
         .eq('order_id', params.id)
         .order('created_at', { ascending: true });
-        
+
       if (historyError) throw historyError;
       setHistory(historyData || []);
 
@@ -60,7 +61,6 @@ export default function OrderTrackingPage({ params }: { params: { id: string } }
   useEffect(() => {
     fetchOrder();
 
-    // Subscribe to order changes
     const orderSubscription = supabase
       .channel(`order_${params.id}`)
       .on(
@@ -68,7 +68,6 @@ export default function OrderTrackingPage({ params }: { params: { id: string } }
         { event: 'UPDATE', schema: 'public', table: 'orders', filter: `id=eq.${params.id}` },
         (payload) => {
           setOrder((prev: any) => ({ ...prev, ...payload.new }));
-          // Refresh history when order updates
           fetchOrder();
         }
       )
@@ -81,22 +80,25 @@ export default function OrderTrackingPage({ params }: { params: { id: string } }
 
   const handleSubmitRating = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (rating === 0) return alert('Silakan pilih bintang');
+    if (rating === 0) {
+      showToast('Silakan pilih bintang', 'error');
+      return;
+    }
     setIsRatingSubmitting(true);
     try {
       const res = await fetch(`/api/orders/${params.id}/rate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ rating_value: rating, review_text: review })
+        body: JSON.stringify({ rating_value: rating, review_text: review }),
       });
       if (!res.ok) {
         const errorData = await res.json();
         throw new Error(errorData.error || 'Terjadi kesalahan');
       }
-      alert('Terima kasih atas ulasan Anda!');
-      fetchOrder(); // refresh rating state
+      showToast('Terima kasih atas ulasan Anda!', 'success');
+      fetchOrder();
     } catch (err: any) {
-      alert(err.message);
+      showToast(err.message, 'error');
     } finally {
       setIsRatingSubmitting(false);
     }
@@ -136,10 +138,12 @@ export default function OrderTrackingPage({ params }: { params: { id: string } }
     { key: 'waiting', label: 'Menunggu Konfirmasi' },
     { key: 'accepted', label: 'Pesanan Diterima' },
     { key: order.fulfillment_method === 'delivery' ? 'delivering' : 'ready_for_pickup', label: order.fulfillment_method === 'delivery' ? 'Sedang Diantar' : 'Siap Diambil' },
-    { key: 'completed', label: 'Selesai' }
+    { key: 'completed', label: 'Selesai' },
   ];
 
-  const currentStepIndex = steps.findIndex(s => s.key === order.order_status);
+  const currentStepIndex = steps.findIndex((s) => s.key === order.order_status);
+
+  const peternakDisplayName = order.peternak?.farm_name || order.peternak?.profile?.full_name || 'Peternak Ada Telur';
 
   return (
     <div className="mx-auto w-full max-w-2xl">
@@ -148,7 +152,7 @@ export default function OrderTrackingPage({ params }: { params: { id: string } }
           <p className="text-body text-text-desc mb-1">ID Pesanan: {order.id.split('-')[0].toUpperCase()}</p>
           <h1 className="text-display text-text-main">Status Pesanan</h1>
         </div>
-        
+
         {isFailed ? (
           <div className="inline-flex items-center gap-2 rounded-full border border-danger bg-danger-light px-4 py-2 text-sm font-semibold text-danger-text">
             <XCircle className="h-4 w-4" />
@@ -157,14 +161,14 @@ export default function OrderTrackingPage({ params }: { params: { id: string } }
         ) : (
           <div className="inline-flex items-center gap-2 rounded-full border border-primary-200 bg-primary-50 px-4 py-2 text-sm font-semibold text-primary-950">
             <Clock className="h-4 w-4 text-primary-600" />
-            {steps.find(s => s.key === order.order_status)?.label || 'Memproses...'}
+            {steps.find((s) => s.key === order.order_status)?.label || 'Memproses...'}
           </div>
         )}
       </div>
 
       <Card className="p-6 mb-6">
         <h2 className="text-h3 text-text-main mb-6">Lacak Pesanan</h2>
-        
+
         {isFailed ? (
           <div className="flex flex-col items-center gap-4 py-8 text-center">
             <XCircle className="h-16 w-16 text-danger" />
@@ -173,7 +177,7 @@ export default function OrderTrackingPage({ params }: { params: { id: string } }
                 {isRejected ? 'Pesanan Ditolak' : 'Pesanan Kadaluarsa'}
               </h3>
               <p className="text-body text-text-desc max-w-md mx-auto">
-                {isRejected 
+                {isRejected
                   ? 'Maaf, peternak tidak dapat memproses pesanan Anda saat ini. Silakan cari peternak lain.'
                   : 'Pesanan Anda dibatalkan otomatis karena peternak tidak merespon dalam batas waktu (3 menit).'}
               </p>
@@ -184,17 +188,15 @@ export default function OrderTrackingPage({ params }: { params: { id: string } }
           </div>
         ) : (
           <div className="relative pl-6">
-            {/* Connecting line */}
             <div className="absolute left-[15px] top-4 bottom-4 w-0.5 bg-border" />
-            
+
             <div className="flex flex-col gap-8">
               {steps.map((step, index) => {
                 const isCompleted = currentStepIndex >= index;
                 const isCurrent = currentStepIndex === index;
-                
+
                 return (
                   <div key={step.key} className="relative flex items-start gap-4">
-                    {/* Icon indicator */}
                     <div className="absolute -left-6 z-10 flex h-6 w-6 items-center justify-center bg-white">
                       {isCompleted ? (
                         <CheckCircle2 className="h-6 w-6 text-success" />
@@ -202,7 +204,7 @@ export default function OrderTrackingPage({ params }: { params: { id: string } }
                         <Circle className="h-6 w-6 text-border" />
                       )}
                     </div>
-                    
+
                     <div className="pt-0.5">
                       <p className={`text-h3 ${isCompleted ? 'text-text-main' : 'text-text-muted'}`}>
                         {step.label}
@@ -234,7 +236,7 @@ export default function OrderTrackingPage({ params }: { params: { id: string } }
                   ))}
                 </div>
                 {existingRating.review_text && (
-                  <p className="text-text-desc text-sm italic">"{existingRating.review_text}"</p>
+                  <p className="text-text-desc text-sm italic">&quot;{existingRating.review_text}&quot;</p>
                 )}
               </div>
             ) : (
@@ -248,8 +250,8 @@ export default function OrderTrackingPage({ params }: { params: { id: string } }
                     </button>
                   ))}
                 </div>
-                <textarea 
-                  placeholder="Tulis ulasan (opsional)" 
+                <textarea
+                  placeholder="Tulis ulasan (opsional)"
                   value={review}
                   onChange={(e) => setReview(e.target.value)}
                   className="w-full rounded-md border border-border p-3 text-sm focus:border-primary-500 focus:outline-none"
@@ -266,11 +268,11 @@ export default function OrderTrackingPage({ params }: { params: { id: string } }
 
       <Card className="p-6">
         <h2 className="text-h3 text-text-main mb-4">Rincian Pembayaran</h2>
-        
+
         <div className="space-y-3">
           <div className="flex justify-between items-center text-body">
             <span className="text-text-desc">Peternak</span>
-            <span className="font-medium">{order.peternak?.profile?.full_name || 'Peternak'}</span>
+            <span className="font-medium">{peternakDisplayName}</span>
           </div>
           <div className="flex justify-between items-center text-body">
             <span className="text-text-desc">Jumlah Pesanan</span>
@@ -289,9 +291,9 @@ export default function OrderTrackingPage({ params }: { params: { id: string } }
             <span className="font-medium">Rp {Number(order.ongkir_amount).toLocaleString('id-ID')}</span>
           </div>
         </div>
-        
+
         <div className="my-4 h-[1px] w-full bg-border" />
-        
+
         <div className="flex justify-between items-center">
           <span className="text-body-medium text-text-main">Total Dibayar</span>
           <span className="text-h2 text-text-main">

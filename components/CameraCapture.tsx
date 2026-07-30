@@ -39,8 +39,8 @@ export function CameraCapture({ onCapture, label, nextButton }: CameraCapturePro
   if (!isClient) return null;
 
   return (
-    <div className="w-full flex flex-col border border-neutral-800 rounded-xl overflow-hidden bg-neutral-900 shadow-xl">
-      <div className="bg-neutral-900 px-5 py-4 flex items-center justify-between border-b border-neutral-800">
+    <div className="w-full flex flex-col border border-neutral-800 rounded-xl overflow-hidden bg-black shadow-xl mb-[140px]">
+      <div className="bg-black px-5 py-4 flex items-center justify-between border-b border-neutral-800">
         <h3 className="text-base sm:text-lg text-white font-bold tracking-wide">{label}</h3>
         <span className="text-xs font-semibold text-neutral-400 bg-neutral-800 px-2.5 py-1 rounded-full">
           {image ? 'Foto Diambil' : 'Kamera Aktif'}
@@ -61,34 +61,36 @@ export function CameraCapture({ onCapture, label, nextButton }: CameraCapturePro
         )}
 
         {!image && (
-          <div className="absolute inset-0 border-2 border-white/20 m-4 sm:m-6 rounded-lg pointer-events-none" />
+          <div className="absolute inset-0 border-[1px] border-white/20 m-4 sm:m-6 pointer-events-none" />
         )}
       </div>
 
-      <div className="bg-neutral-900 p-6 flex flex-col items-center justify-center min-h-[120px] border-t border-neutral-800">
+      <div className="fixed bottom-0 left-0 right-0 z-50 bg-black p-4 pb-8 sm:p-6 flex flex-col items-center justify-center min-h-[140px] border-t border-neutral-800 shadow-[0_-20px_50px_rgba(0,0,0,0.8)]">
         {!image ? (
-          <div className="flex flex-col items-center gap-2">
+          <div className="flex flex-col items-center gap-3">
             <button
               type="button"
               onClick={capture}
-              className="w-16 h-16 rounded-full bg-white flex items-center justify-center border-4 border-neutral-400 hover:scale-105 active:scale-95 transition-transform shadow-lg cursor-pointer"
+              className="w-[72px] h-[72px] rounded-full bg-transparent flex items-center justify-center border-[4px] border-white hover:scale-105 active:scale-95 transition-transform shadow-xl cursor-pointer"
               aria-label="Ambil Gambar"
             >
-              <CameraIcon className="w-6 h-6 text-black" />
+              <div className="w-[56px] h-[56px] rounded-full bg-white flex items-center justify-center">
+                <CameraIcon className="w-7 h-7 text-black" />
+              </div>
             </button>
-            <span className="text-xs text-neutral-400 font-medium">Ketuk tombol untuk memotret</span>
+            <span className="text-xs text-neutral-400 font-medium">Ketuk untuk memotret</span>
           </div>
         ) : (
-          <div className="flex w-full gap-4">
+          <div className="flex w-full gap-4 max-w-sm mx-auto">
             <Button
               type="button"
               onClick={retake}
-              className="flex-1 min-h-[52px] bg-neutral-800 hover:bg-neutral-700 text-white font-bold rounded-lg border-transparent flex items-center justify-center gap-2 transition-colors"
+              className="flex-1 min-h-[52px] bg-neutral-800 hover:bg-neutral-700 text-white font-bold rounded-lg flex items-center justify-center gap-2 transition-colors"
             >
               <RefreshCw className="w-5 h-5" />
-              Ulangi Foto
+              Ulangi
             </Button>
-            {nextButton && <div className="flex-1">{nextButton}</div>}
+            {nextButton && <div className="flex-1 flex">{nextButton}</div>}
           </div>
         )}
       </div>

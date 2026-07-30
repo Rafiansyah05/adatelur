@@ -21,6 +21,7 @@ export async function GET(request: Request, { params }: { params: { id: string }
         avatar_url,
         peternak_details (
           id,
+          farm_name,
           farm_address,
           farm_latitude,
           farm_longitude,
@@ -43,7 +44,6 @@ export async function GET(request: Request, { params }: { params: { id: string }
     profile = profileData;
 
     if (!profile) {
-      // Maybe the id is peternak_details id?
       const { data: pdFallback } = await adminClient
         .from('peternak_details')
         .select('profile_id')
@@ -59,6 +59,7 @@ export async function GET(request: Request, { params }: { params: { id: string }
             avatar_url,
             peternak_details (
               id,
+              farm_name,
               farm_address,
               farm_latitude,
               farm_longitude,
@@ -104,8 +105,6 @@ export async function GET(request: Request, { params }: { params: { id: string }
       return NextResponse.json({ error: 'Failed to fetch delivery slots' }, { status: 500 });
     }
 
-    // Cutoff time: Max between start of today (00:00:00) and the last listing stock update (listing.updated_at)
-    // Orders created before this cutoff MUST NOT reduce the new batch of stock.
     const startOfTodayMs = new Date(new Date().setHours(0, 0, 0, 0)).getTime();
     const listingUpdatedMs = listing?.updated_at ? new Date(listing.updated_at).getTime() : 0;
     const cutoffTime = new Date(Math.max(startOfTodayMs, listingUpdatedMs)).toISOString();
@@ -124,6 +123,7 @@ export async function GET(request: Request, { params }: { params: { id: string }
     const responseData = {
       id: actualPeternakId,
       full_name: p?.full_name,
+      farm_name: pd?.farm_name || 'Peternak Ada Telur',
       avatar_url: p?.avatar_url,
       farm_address: pd?.farm_address || 'Alamat tidak tersedia',
       rating: 4.8,

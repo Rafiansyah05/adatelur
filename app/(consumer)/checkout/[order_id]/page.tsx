@@ -3,12 +3,13 @@
 import { useEffect, useState, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
-import { ChevronLeft, QrCode, Download, ShieldCheck, Clock, MapPin, Copy } from 'lucide-react';
+import { ChevronLeft, QrCode, Download, ShieldCheck, Clock, MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
+import { showToast } from '@/components/ui/toast';
 
 export default function CheckoutQrisPage() {
   const params = useParams();
-  const orderId = Array.isArray(params.order_id) ? params.order_id[0] : params.order_id as string;
+  const orderId = Array.isArray(params.order_id) ? params.order_id[0] : (params.order_id as string);
   const router = useRouter();
   const supabaseRef = useRef(createClient());
 
@@ -43,7 +44,7 @@ export default function CheckoutQrisPage() {
 
         supabase
           .from('orders')
-          .select('*, peternak:peternak_details(farm_latitude, farm_longitude, profile:profiles(full_name))')
+          .select('*, peternak:peternak_details(farm_name, farm_latitude, farm_longitude, profile:profiles(full_name))')
           .eq('id', orderId)
           .single()
           .then(({ data }) => {
@@ -60,7 +61,7 @@ export default function CheckoutQrisPage() {
 
     supabase
       .from('orders')
-      .select('*, peternak:peternak_details(farm_latitude, farm_longitude, profile:profiles(full_name))')
+      .select('*, peternak:peternak_details(farm_name, farm_latitude, farm_longitude, profile:profiles(full_name))')
       .eq('id', orderId)
       .single()
       .then(async ({ data: orderData, error }) => {
@@ -86,7 +87,7 @@ export default function CheckoutQrisPage() {
         const res = await fetch('/api/payment/qris', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ order_id: orderId })
+          body: JSON.stringify({ order_id: orderId }),
         });
         const qrisData = await res.json();
 
@@ -102,17 +103,20 @@ export default function CheckoutQrisPage() {
         setIsPublicUrl(!!qrisData.is_public_url);
         setTimeLeft(900);
 
-        localStorage.setItem(`qris_data_${orderId}`, JSON.stringify({
-          qrisUrl: qrisData.qris_url,
-          qrString: qrisData.qr_string,
-          deeplinkUrl: qrisData.deeplink_url,
-          isPublicUrl: !!qrisData.is_public_url,
-          expiry: Date.now() + 15 * 60 * 1000
-        }));
+        localStorage.setItem(
+          `qris_data_${orderId}`,
+          JSON.stringify({
+            qrisUrl: qrisData.qris_url,
+            qrString: qrisData.qr_string,
+            deeplinkUrl: qrisData.deeplink_url,
+            isPublicUrl: !!qrisData.is_public_url,
+            expiry: Date.now() + 15 * 60 * 1000,
+          })
+        );
 
         setLoading(false);
       });
-  }, [orderId]);
+  }, [orderId, router]);
 
   useEffect(() => {
     if (!orderId) return;
@@ -131,7 +135,9 @@ export default function CheckoutQrisPage() {
       )
       .subscribe();
 
-    return () => { supabase.removeChannel(channel); };
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [orderId]);
 
   useEffect(() => {
@@ -156,7 +162,7 @@ export default function CheckoutQrisPage() {
         const res = await fetch('/api/payment/status', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ order_id: orderId })
+          body: JSON.stringify({ order_id: orderId }),
         });
         const data = await res.json();
         if (data.status === 'paid') {
@@ -167,9 +173,7 @@ export default function CheckoutQrisPage() {
           localStorage.removeItem(`qris_data_${orderId}`);
           router.push('/');
         }
-      } catch {
-        /* silent */
-      }
+      } catch {}
     }, 3000);
 
     return () => clearInterval(poll);
@@ -192,13 +196,13 @@ export default function CheckoutQrisPage() {
       fetch('/api/payment/expire', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ order_id: orderId })
+        body: JSON.stringify({ order_id: orderId }),
       }).finally(() => router.push('/'));
       return;
     }
     const timer = setTimeout(() => setTimeLeft((prev) => prev - 1), 1000);
     return () => clearTimeout(timer);
-  }, [timeLeft, qrisUrl, isSuccess]);
+  }, [timeLeft, qrisUrl, isSuccess, orderId, router]);
 
   const handleDownloadQris = () => {
     if (!qrisUrl) return;
@@ -212,7 +216,7 @@ export default function CheckoutQrisPage() {
       link.click();
       link.parentNode?.removeChild(link);
     } catch {
-      alert('Gagal mengunduh QRIS. Silakan screenshot layar ini.');
+      showToast('Gagal mengunduh QRIS. Silakan screenshot layar ini.', 'error');
     }
   };
 
@@ -234,10 +238,14 @@ export default function CheckoutQrisPage() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-neutral-50 px-4">
         <div className="bg-white p-8 rounded-lg border border-neutral-100 text-center max-w-sm">
-          <div className="text-red-500 mb-4 flex justify-center"><ShieldCheck className="h-12 w-12" /></div>
+          <div className="text-red-500 mb-4 flex justify-center">
+            <ShieldCheck className="h-12 w-12" />
+          </div>
           <h2 className="text-xl font-bold mb-2 text-text-main">Terjadi Kesalahan</h2>
           <p className="text-neutral-500 mb-6">{errorMsg}</p>
-          <Button onClick={() => router.push('/')} variant="primary" className="w-full">Kembali ke Beranda</Button>
+          <Button onClick={() => router.push('/')} variant="primary" className="w-full">
+            Kembali ke Beranda
+          </Button>
         </div>
       </div>
     );
@@ -256,7 +264,9 @@ export default function CheckoutQrisPage() {
             Anda akan diarahkan ke Riwayat Pesanan dalam <br />
             <span className="text-primary-600 font-bold text-xl">{successCountdown}</span> detik
           </p>
-          <Button onClick={() => router.replace('/orders')} variant="primary" className="w-full">Lihat Sekarang</Button>
+          <Button onClick={() => router.replace('/orders')} variant="primary" className="w-full">
+            Lihat Sekarang
+          </Button>
         </div>
       </div>
     );
@@ -268,33 +278,42 @@ export default function CheckoutQrisPage() {
   const biayaLayanan = Math.round(totalBarang * 0.015);
   const totalAkhir = totalBarang + biayaLayanan;
 
+  const peternakDisplayName = order?.peternak?.farm_name || order?.peternak?.profile?.full_name || 'Peternak Ada Telur';
+
   const handleOpenMap = () => {
     if (order?.peternak?.farm_latitude && order?.peternak?.farm_longitude) {
-      window.open(`https://www.google.com/maps/search/?api=1&query=${order.peternak.farm_latitude},${order.peternak.farm_longitude}`, '_blank');
+      window.open(
+        `https://www.google.com/maps/search/?api=1&query=${order.peternak.farm_latitude},${order.peternak.farm_longitude}`,
+        '_blank'
+      );
     }
   };
 
   return (
     <div className="min-h-screen bg-neutral-50/50 pb-20">
       <header className="sticky top-0 z-50 bg-white border-b border-neutral-100 px-4 h-16 flex items-center shadow-sm">
-        <button onClick={() => router.back()} className="p-2 hover:bg-neutral-100 rounded-lg text-neutral-600 transition-colors mr-2">
+        <button
+          onClick={() => router.back()}
+          className="p-2 hover:bg-neutral-100 rounded-lg text-neutral-600 transition-colors mr-2"
+        >
           <ChevronLeft className="h-6 w-6" />
         </button>
         <h1 className="text-lg font-bold text-neutral-900">Detail Pembayaran</h1>
       </header>
 
       <main className="max-w-5xl mx-auto px-4 py-8 grid grid-cols-1 lg:grid-cols-2 gap-8">
-
         <div className="flex flex-col gap-6">
           <div className="bg-white rounded-lg border border-neutral-100 p-6">
             <h2 className="text-lg font-bold text-text-main mb-4">Informasi Pesanan</h2>
             <div className="flex items-center gap-4 mb-6">
               <div className="h-12 w-12 rounded-lg bg-primary-50 flex items-center justify-center text-primary-700 font-bold text-lg">
-                {order?.peternak?.profile?.full_name?.charAt(0).toUpperCase() || 'P'}
+                {peternakDisplayName.charAt(0).toUpperCase()}
               </div>
               <div>
-                <p className="font-bold text-text-main">{order?.peternak?.profile?.full_name || 'Peternak'}</p>
-                <p className="text-sm text-neutral-500">Metode: <span className="font-semibold uppercase">{order?.fulfillment_method}</span></p>
+                <p className="font-bold text-text-main">{peternakDisplayName}</p>
+                <p className="text-sm text-neutral-500">
+                  Metode: <span className="font-semibold uppercase">{order?.fulfillment_method}</span>
+                </p>
               </div>
             </div>
 
@@ -360,16 +379,23 @@ export default function CheckoutQrisPage() {
             <div className="flex items-start gap-3 p-4 bg-blue-50 rounded-lg border border-blue-100 text-left w-full mt-4">
               <div className="text-xs text-blue-800 leading-relaxed">
                 <p className="font-semibold mb-1">Simulasi Pembayaran (Sandbox)</p>
-                <p>Platform ini menggunakan Midtrans Sandbox untuk keperluan pengujian. Silakan gunakan link di bawah ini untuk mensimulasikan keberhasilan pembayaran:</p>
+                <p>
+                  Platform ini menggunakan Midtrans Sandbox untuk keperluan pengujian. Silakan gunakan link di bawah ini untuk mensimulasikan keberhasilan pembayaran:
+                </p>
                 <div className="flex flex-col gap-2 mt-3">
-                  <a href="https://simulator.sandbox.midtrans.com/qris/index" target="_blank" rel="noreferrer" className="inline-block font-bold underline hover:text-blue-900">
+                  <a
+                    href="https://simulator.sandbox.midtrans.com/qris/index"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-block font-bold underline hover:text-blue-900"
+                  >
                     Buka QRIS Simulator
                   </a>
                   {qrString && (
                     <button
                       onClick={() => {
                         navigator.clipboard.writeText(qrString);
-                        alert('Teks QR berhasil disalin! Silakan paste (tempel) di Midtrans Simulator.');
+                        showToast('Teks QR berhasil disalin! Silakan paste (tempel) di Midtrans Simulator.', 'success');
                       }}
                       className="inline-block text-left text-sm font-medium text-blue-600 hover:text-blue-800"
                     >
@@ -377,17 +403,20 @@ export default function CheckoutQrisPage() {
                     </button>
                   )}
                   {deeplinkUrl && (
-                    <a href={deeplinkUrl} target="_blank" rel="noreferrer" className="inline-block text-left text-sm font-bold text-blue-600 hover:text-blue-800 mt-2">
+                    <a
+                      href={deeplinkUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-block text-left text-sm font-bold text-blue-600 hover:text-blue-800 mt-2"
+                    >
                       Buka GoPay Simulator Langsung (Otomatis)
                     </a>
                   )}
-
                 </div>
               </div>
             </div>
           </div>
         </div>
-
       </main>
     </div>
   );

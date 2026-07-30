@@ -5,11 +5,12 @@ import { X, MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { haversineDistance, calculateOngkir } from '@/lib/haversine';
 import { createClient } from '@/lib/supabase/client';
+import { showToast } from '@/components/ui/toast';
 
 interface PeternakDetailModalProps {
   isOpen: boolean;
   onClose: () => void;
-  peternak: any; // { id, full_name, peternak_name, avatar_url, address }
+  peternak: any;
   initialStep?: 1 | 2;
   fixedQuantity?: number;
   fixedMethod?: 'pickup' | 'delivery';
@@ -63,7 +64,6 @@ export function PeternakDetailModal({
             setMethod('pickup');
           }
 
-          // Populate slots 100% from peternak's active delivery slots
           if (detail?.delivery_slots && Array.isArray(detail.delivery_slots) && detail.delivery_slots.length > 0) {
             const formattedSlots = detail.delivery_slots.map((slot: any) => ({
               id: slot.id,
@@ -102,7 +102,7 @@ export function PeternakDetailModal({
   if (!isOpen) return null;
 
   const displayName =
-    peternakDetail?.full_name || peternak?.full_name || peternak?.peternak_name || peternak?.name || 'Peternak';
+    peternakDetail?.farm_name || peternak?.farm_name || peternakDetail?.full_name || peternak?.full_name || peternak?.peternak_name || peternak?.name || 'Peternak Ada Telur';
   const displayAddress =
     peternak?.address || peternak?.farm_address || peternakDetail?.farm_address || 'Alamat tidak tersedia';
   const avatarSrc = peternak?.avatar_url || peternakDetail?.avatar_url || peternakDetail?.profiles?.avatar_url;
@@ -147,10 +147,10 @@ export function PeternakDetailModal({
   const isOverStock = availableStock !== null && parsedQuantity > availableStock;
 
   const handleLanjut = async () => {
-    if (!quantity || quantity < 1) return alert('Silakan masukkan jumlah rak yang valid!');
-    if (availableStock !== null && quantity > availableStock) return alert(`Stok tidak mencukupi. Sisa stok hari ini: ${availableStock} rak.`);
-    if (!selectedSlot) return alert('Silakan pilih slot waktu!');
-    if (method === 'delivery' && !addressId) return alert('Silakan pilih alamat pengiriman!');
+    if (!quantity || quantity < 1) return showToast('Silakan masukkan jumlah rak yang valid!', 'error');
+    if (availableStock !== null && quantity > availableStock) return showToast(`Stok tidak mencukupi. Sisa stok hari ini: ${availableStock} rak.`, 'error');
+    if (!selectedSlot) return showToast('Silakan pilih slot waktu!', 'error');
+    if (method === 'delivery' && !addressId) return showToast('Silakan pilih alamat pengiriman!', 'error');
 
     setIsSubmitting(true);
     try {
@@ -172,7 +172,7 @@ export function PeternakDetailModal({
       window.dispatchEvent(new CustomEvent('new-order-created', { detail: data.data.id }));
       onClose();
     } catch (err: any) {
-      alert(err.message);
+      showToast(err.message, 'error');
     } finally {
       setIsSubmitting(false);
     }
@@ -195,7 +195,6 @@ export function PeternakDetailModal({
           <X className="h-5 w-5" />
         </button>
 
-        {/* HEADER MODAL */}
         <div className="flex items-center gap-4 mb-6 pb-6 border-b border-border">
           <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-primary-100 text-primary-950 font-bold text-xl overflow-hidden">
             {avatarSrc ? (
@@ -251,7 +250,6 @@ export function PeternakDetailModal({
             ) : (
               <div className="flex-1 overflow-y-auto pr-2 min-h-0 flex flex-col">
                 <div className="flex-1 overflow-y-auto pr-2 mb-4">
-                  {/* JUMLAH RAK */}
                   <div className="mb-4">
                     <div className="flex items-center justify-between mb-2">
                       <label className="text-body-medium font-bold text-text-main">Jumlah Rak</label>
@@ -305,7 +303,6 @@ export function PeternakDetailModal({
                     )}
                   </div>
 
-                  {/* METODE PENGIRIMAN */}
                   <div className="mb-6">
                     <div className="flex items-center justify-between mb-2">
                       <label className="text-body-medium font-bold text-text-main">
@@ -354,7 +351,6 @@ export function PeternakDetailModal({
                     </div>
                   </div>
 
-                  {/* SLOT WAKTU HARI INI */}
                   <div className="mb-6">
                     <label className="text-body-medium font-bold text-text-main block mb-2">
                       Slot Waktu Hari Ini
@@ -380,7 +376,6 @@ export function PeternakDetailModal({
                     </select>
                   </div>
 
-                  {/* ALAMAT PENGIRIMAN */}
                   {method === 'delivery' && (
                     <div className="mb-6">
                       <label className="text-body-medium font-bold text-text-main block mb-2">
@@ -421,7 +416,6 @@ export function PeternakDetailModal({
                   )}
                 </div>
 
-                {/* FOOTER BUTTONS */}
                 <div className="flex gap-3 pt-4 border-t border-neutral-100 shrink-0 mt-auto">
                   <Button
                     variant="secondary"

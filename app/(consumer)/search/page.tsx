@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, Suspense } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { Card } from '@/components/ui/Card';
 import { MapPin, Search as SearchIcon, ArrowRight, X } from 'lucide-react';
@@ -12,18 +12,17 @@ import { Button } from '@/components/ui/Button';
 function SearchResults() {
   const searchParams = useSearchParams();
   const initialQ = searchParams.get('q') || '';
-  
+
   const [q, setQ] = useState(initialQ);
-  
+
   useEffect(() => {
     setQ(searchParams.get('q') || '');
   }, [searchParams]);
-  
+
   const [results, setResults] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const supabase = createClient();
 
-  // Popup states
   const [selectedPeternak, setSelectedPeternak] = useState<any>(null);
   const [showPopup, setShowPopup] = useState(false);
   const [popupStep, setPopupStep] = useState<1 | 2>(1);
@@ -40,25 +39,35 @@ function SearchResults() {
         setResults([]);
         return;
       }
-      
+
       setLoading(true);
       try {
         const { data, error } = await supabase
           .from('profiles')
-          .select('id, full_name, avatar_url, peternak_details(farm_address)')
+          .select('id, full_name, avatar_url, peternak_details(farm_name, farm_address)')
           .eq('role', 'peternak')
-          .ilike('full_name', `%${q}%`)
-          .limit(20);
-          
+          .limit(30);
+
         if (error) throw error;
-        
-        const formattedData = (data || []).map((p: any) => ({
-          id: p.id,
-          full_name: p.full_name,
-          avatar_url: p.avatar_url,
-          address: Array.isArray(p.peternak_details) ? (p.peternak_details[0] as any)?.farm_address : (p.peternak_details as any)?.farm_address
-        }));
-        
+
+        const lowerQ = q.toLowerCase();
+        const formattedData = (data || [])
+          .map((p: any) => {
+            const pd = Array.isArray(p.peternak_details) ? p.peternak_details[0] : p.peternak_details;
+            const farmName = pd?.farm_name || p.full_name || 'Peternak Ada Telur';
+            return {
+              id: p.id,
+              full_name: farmName,
+              avatar_url: p.avatar_url,
+              address: pd?.farm_address || 'Alamat belum tersedia',
+            };
+          })
+          .filter(
+            (item: any) =>
+              item.full_name.toLowerCase().includes(lowerQ) ||
+              item.address.toLowerCase().includes(lowerQ)
+          );
+
         setResults(formattedData);
       } catch (err) {
         console.error(err);
@@ -66,12 +75,18 @@ function SearchResults() {
         setLoading(false);
       }
     }
-    
+
     fetchResults();
-  }, [q]);
+  }, [q, supabase]);
 
   const getInitials = (name: string) => {
-    return name.split(' ').map((n) => n[0]).join('').substring(0, 2).toUpperCase();
+    if (!name) return 'P';
+    return name
+      .split(' ')
+      .map((n) => n[0])
+      .join('')
+      .substring(0, 2)
+      .toUpperCase();
   };
 
   const handleCardClick = async (peternak: any) => {
@@ -81,11 +96,13 @@ function SearchResults() {
     setLoadingDetail(true);
     setQuantity(1);
     setMethod('pickup');
-    
+
     try {
       const [petRes, addrRes] = await Promise.all([
         fetch(`/api/peternak/${peternak.id}`).then((r) => r.json()),
-        fetch('/api/consumer/address').then((r) => r.json()).catch(() => null),
+        fetch('/api/consumer/address')
+          .then((r) => r.json())
+          .catch(() => null),
       ]);
       setPeternakDetail(petRes.data || null);
       setConsumerAddress(addrRes?.address || null);
@@ -120,7 +137,9 @@ function SearchResults() {
   };
 
   const parsedQuantity = typeof quantity === 'number' ? quantity : 0;
-  const availableStock = peternakDetail ? Math.max(0, (peternakDetail.stock_rak || 0) - (peternakDetail.sold_rak_today || 0)) : 0;
+  const availableStock = peternakDetail
+    ? Math.max(0, (peternakDetail.stock_rak || 0) - (peternakDetail.sold_rak_today || 0))
+    : 0;
   const isOverStock = parsedQuantity > availableStock;
 
   const handleLanjut = () => {
@@ -143,7 +162,7 @@ function SearchResults() {
           />
           <SearchIcon className="absolute left-4 top-1/2 -translate-y-1/2 h-6 w-6 text-neutral-400" />
         </div>
-        
+
         {q && (
           <p className="text-body-medium text-text-desc mt-4">
             Menampilkan hasil untuk: <span className="font-bold text-text-main">&quot;{q}&quot;</span>
@@ -158,8 +177,8 @@ function SearchResults() {
       ) : results.length > 0 ? (
         <div className="grid gap-4 md:grid-cols-2">
           {results.map((peternak) => (
-            <div 
-              key={peternak.id} 
+            <div
+              key={peternak.id}
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
@@ -170,11 +189,7 @@ function SearchResults() {
               <Card className="p-4 flex items-start gap-4 transition-all hover:border-primary-400 hover:shadow-md h-full">
                 <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-lg bg-primary-50 border border-primary-100 text-primary-900 font-bold text-lg overflow-hidden">
                   {peternak.avatar_url ? (
-                    <img 
-                      src={peternak.avatar_url} 
-                      alt={peternak.full_name} 
-                      className="h-full w-full object-cover"
-                    />
+                    <img src={peternak.avatar_url} alt={peternak.full_name} className="h-full w-full object-cover" />
                   ) : (
                     <span>{getInitials(peternak.full_name)}</span>
                   )}
@@ -210,17 +225,16 @@ function SearchResults() {
         </div>
       )}
 
-      {/* Peternak Detail & Order Input Popup */}
       {showPopup && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
           <div className="w-full max-w-md bg-white rounded-xl p-6 relative animate-in zoom-in-95" onClick={(e) => e.stopPropagation()}>
-            <button 
+            <button
               onClick={() => setShowPopup(false)}
               className="absolute top-4 right-4 p-2 text-neutral-400 hover:text-neutral-600 rounded-lg hover:bg-neutral-100 transition-colors"
             >
               <X className="h-5 w-5" />
             </button>
-            
+
             {loadingDetail ? (
               <div className="py-12 flex justify-center">
                 <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary-200 border-t-primary-600"></div>
@@ -231,18 +245,18 @@ function SearchResults() {
               <>
                 <div className="flex items-center gap-4 mb-6 pb-6 border-b border-border">
                   <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-primary-100 text-primary-950 font-bold text-xl overflow-hidden">
-                    {selectedPeternak?.avatar_url || peternakDetail.profiles?.avatar_url ? (
-                      <img 
-                        src={selectedPeternak?.avatar_url || peternakDetail.profiles?.avatar_url} 
-                        alt={peternakDetail.full_name} 
+                    {selectedPeternak?.avatar_url || peternakDetail.avatar_url ? (
+                      <img
+                        src={selectedPeternak?.avatar_url || peternakDetail.avatar_url}
+                        alt={peternakDetail.farm_name || peternakDetail.full_name}
                         className="h-full w-full object-cover"
                       />
                     ) : (
-                      <span>{getInitials(peternakDetail.full_name || '')}</span>
+                      <span>{getInitials(peternakDetail.farm_name || peternakDetail.full_name || '')}</span>
                     )}
                   </div>
                   <div>
-                    <h2 className="text-h3 text-text-main mb-1">{peternakDetail.full_name}</h2>
+                    <h2 className="text-h3 text-text-main mb-1">{peternakDetail.farm_name || peternakDetail.full_name}</h2>
                     <div className="flex items-center gap-2 text-xs text-text-desc mb-1">
                       <MapPin className="h-3 w-3" />
                       <span className="line-clamp-1">{selectedPeternak?.address || 'Alamat tidak tersedia'}</span>
@@ -278,7 +292,7 @@ function SearchResults() {
                     <div className="mb-4">
                       <label className="text-body-medium font-bold text-text-main block mb-2">Jumlah Rak</label>
                       <div className="flex items-center gap-3">
-                        <button 
+                        <button
                           onClick={() => setQuantity(Math.max(1, (typeof quantity === 'number' ? quantity : 0) - 1))}
                           className="flex h-10 w-10 items-center justify-center rounded-md border border-border bg-white text-text-main hover:bg-bg-surface disabled:opacity-50"
                           disabled={typeof quantity === 'number' && quantity <= 1}
@@ -301,7 +315,7 @@ function SearchResults() {
                           }}
                           className={`w-20 h-10 text-center text-h3 rounded-md border ${isOverStock ? 'border-danger text-danger bg-red-50 focus:ring-danger' : 'border-border focus:ring-primary-500'} focus:outline-none focus:ring-2`}
                         />
-                        <button 
+                        <button
                           onClick={() => setQuantity((typeof quantity === 'number' ? quantity : 0) + 1)}
                           className="flex h-10 w-10 items-center justify-center rounded-md border border-border bg-white text-text-main hover:bg-bg-surface"
                         >
@@ -331,9 +345,9 @@ function SearchResults() {
                       <Button variant="secondary" onClick={() => setPopupStep(1)} className="w-1/3">
                         Kembali
                       </Button>
-                      <Button 
-                        variant="primary" 
-                        onClick={handleLanjut} 
+                      <Button
+                        variant="primary"
+                        onClick={handleLanjut}
                         className="flex-1"
                         disabled={isOverStock || !quantity}
                       >
@@ -348,13 +362,12 @@ function SearchResults() {
         </div>
       )}
 
-      {/* Order Modal (Pilih Slot & Alamat) */}
       {showOrderModal && peternakDetail && (
         <OrderModal
           isOpen={showOrderModal}
           onClose={() => setShowOrderModal(false)}
           peternakId={peternakDetail.id}
-          peternakName={peternakDetail.full_name}
+          peternakName={peternakDetail.farm_name || peternakDetail.full_name}
           rakQuantity={parsedQuantity}
           method={method}
           pricePerRak={peternakDetail.price_per_rak}
