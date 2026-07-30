@@ -13,22 +13,24 @@ export const updateSession = async (request: NextRequest) => {
           return request.cookies.getAll()
         },
         setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
+          cookiesToSet.forEach(({ name, value }) =>
+            request.cookies.set(name, value)
+          )
           supabaseResponse = NextResponse.next({ request })
-          cookiesToSet.forEach(({ name, value, options }) => request.cookies.set(name, value))
-          supabaseResponse = NextResponse.next({
-            request: {
-              headers: request.headers,
-            },
-          })
           cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options)
+            supabaseResponse.cookies.set(name, value, {
+              ...options,
+              maxAge: 60 * 60 * 24 * 365,
+              path: '/',
+              sameSite: 'lax',
+            })
           )
         },
       },
       cookieOptions: {
-        maxAge: 60 * 60 * 24 * 365, // 1 year
+        maxAge: 60 * 60 * 24 * 365,
         path: '/',
+        sameSite: 'lax',
       },
     }
   )
@@ -53,13 +55,21 @@ export const updateSession = async (request: NextRequest) => {
   if (!user && !isPublicRoute) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
-    return NextResponse.redirect(url)
+    const redirectResponse = NextResponse.redirect(url)
+    supabaseResponse.cookies.getAll().forEach((cookie) => {
+      redirectResponse.cookies.set(cookie)
+    })
+    return redirectResponse
   }
 
   if (user && isPublicRoute && !pathname.startsWith('/register')) {
     const url = request.nextUrl.clone()
     url.pathname = '/'
-    return NextResponse.redirect(url)
+    const redirectResponse = NextResponse.redirect(url)
+    supabaseResponse.cookies.getAll().forEach((cookie) => {
+      redirectResponse.cookies.set(cookie)
+    })
+    return redirectResponse
   }
 
   return supabaseResponse

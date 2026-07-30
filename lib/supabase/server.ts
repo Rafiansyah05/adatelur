@@ -15,7 +15,12 @@ export function createClient() {
         setAll(cookiesToSet) {
           try {
             cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, options)
+              cookieStore.set(name, value, {
+                ...options,
+                maxAge: 60 * 60 * 24 * 365,
+                path: '/',
+                sameSite: 'lax',
+              })
             );
           } catch {}
         },
@@ -25,8 +30,9 @@ export function createClient() {
           fetch(input, { ...init, cache: 'no-store' }),
       },
       cookieOptions: {
-        maxAge: 60 * 60 * 24 * 365, // 1 year
+        maxAge: 60 * 60 * 24 * 365,
         path: '/',
+        sameSite: 'lax',
       },
     }
   );

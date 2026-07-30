@@ -34,7 +34,7 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'bantuan' | 'verifikasi' | 'aktif' | 'ditolak'>('bantuan');
   const [search, setSearch] = useState('');
-  
+
   // Modals state
   const [activePeternak, setActivePeternak] = useState<Peternak | null>(null);
   const [isDataModalOpen, setIsDataModalOpen] = useState(false);
@@ -82,10 +82,10 @@ export default function AdminDashboard() {
   };
 
   const filteredPeternak = peternaks.filter((p) => {
-    const matchSearch = p.full_name.toLowerCase().includes(search.toLowerCase()) || 
-                        p.email.toLowerCase().includes(search.toLowerCase()) || 
-                        p.phone_number.includes(search);
-    
+    const matchSearch = p.full_name.toLowerCase().includes(search.toLowerCase()) ||
+      p.email.toLowerCase().includes(search.toLowerCase()) ||
+      p.phone_number.includes(search);
+
     const hasAllPhotos = p.photos && p.photos.length >= 4;
     const isDataIncomplete = p.chicken_count === 0 || p.feed_type === '-' || p.registration_method === 'video_call_cs' || !hasAllPhotos;
 
@@ -126,7 +126,7 @@ export default function AdminDashboard() {
   const handleUploadPhotos = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!activePeternak) return;
-    
+
     const types = ['kandang_luar', 'kandang_dalam', 'ayam', 'telur'];
     for (const t of types) {
       if (!photos[t]) {
@@ -181,7 +181,7 @@ export default function AdminDashboard() {
       });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || 'Gagal memverifikasi');
-      
+
       if (result.warning) {
         alert(result.warning);
       } else {
@@ -202,7 +202,6 @@ export default function AdminDashboard() {
       <header className="bg-white border-b border-neutral-200 sticky top-0 z-30">
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-primary-500 rounded flex items-center justify-center text-white font-bold text-xl">A</div>
             <span className="font-bold text-neutral-900 text-lg">Admin Panel</span>
           </div>
           <Button onClick={handleLogout} variant="secondary" className="h-9 gap-2 text-neutral-600">
@@ -219,8 +218,8 @@ export default function AdminDashboard() {
           </div>
           <div className="relative w-full md:w-72">
             <Search className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" />
-            <Input 
-              placeholder="Cari nama, email, hp..." 
+            <Input
+              placeholder="Cari nama, email, hp..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="pl-10 h-11"
@@ -229,25 +228,25 @@ export default function AdminDashboard() {
         </div>
 
         <div className="flex gap-4 border-b border-neutral-200 mb-6 overflow-x-auto whitespace-nowrap scrollbar-hide">
-          <button 
+          <button
             onClick={() => setActiveTab('bantuan')}
             className={`pb-3 px-1 text-[15px] font-semibold border-b-2 transition-colors ${activeTab === 'bantuan' ? 'border-primary-500 text-primary-600' : 'border-transparent text-neutral-500 hover:text-neutral-700'}`}
           >
             Menunggu Bantuan CS / Lengkapi Data
           </button>
-          <button 
+          <button
             onClick={() => setActiveTab('verifikasi')}
             className={`pb-3 px-1 text-[15px] font-semibold border-b-2 transition-colors ${activeTab === 'verifikasi' ? 'border-primary-500 text-primary-600' : 'border-transparent text-neutral-500 hover:text-neutral-700'}`}
           >
             Menunggu Verifikasi Akhir
           </button>
-          <button 
+          <button
             onClick={() => setActiveTab('aktif')}
             className={`pb-3 px-1 text-[15px] font-semibold border-b-2 transition-colors ${activeTab === 'aktif' ? 'border-primary-500 text-primary-600' : 'border-transparent text-neutral-500 hover:text-neutral-700'}`}
           >
             Peternak Aktif
           </button>
-          <button 
+          <button
             onClick={() => setActiveTab('ditolak')}
             className={`pb-3 px-1 text-[15px] font-semibold border-b-2 transition-colors ${activeTab === 'ditolak' ? 'border-primary-500 text-primary-600' : 'border-transparent text-neutral-500 hover:text-neutral-700'}`}
           >
@@ -312,7 +311,7 @@ export default function AdminDashboard() {
                           <Button variant="outline" onClick={() => { setActivePeternak(p); setIsDetailModalOpen(true); }} className="h-8 px-3 text-xs gap-1.5 border-neutral-300 text-neutral-700 hover:bg-neutral-100">
                             Lihat Detail
                           </Button>
-                          
+
                           {activeTab === 'bantuan' && (
                             <>
                               <Button variant="outline" className="h-8 px-3 text-xs gap-1.5" onClick={() => { setActivePeternak(p); setIsDataModalOpen(true); }}>
@@ -323,7 +322,7 @@ export default function AdminDashboard() {
                               </Button>
                             </>
                           )}
-                          
+
                           {activeTab === 'verifikasi' && (
                             <>
                               <Button onClick={() => { setActivePeternak(p); handleVerify('approve'); }} className="h-8 px-3 text-xs bg-green-600 hover:bg-green-700 text-white border-transparent gap-1.5" disabled={actionLoading}>
@@ -356,38 +355,38 @@ export default function AdminDashboard() {
             <form onSubmit={handleUpdateData} className="space-y-4">
               <div>
                 <label className="text-sm font-medium text-neutral-700 block mb-1">Jumlah Ayam</label>
-                <Input type="number" required value={formData.chickenCount} onChange={e => setFormData({...formData, chickenCount: e.target.value})} placeholder="Contoh: 1000" />
+                <Input type="number" required value={formData.chickenCount} onChange={e => setFormData({ ...formData, chickenCount: e.target.value })} placeholder="Contoh: 1000" />
               </div>
               <div className="grid grid-cols-3 gap-3">
                 <div>
                   <label className="text-sm font-medium text-neutral-700 block mb-1">Produksi/Hari</label>
-                  <Input type="number" required value={formData.eggProd} onChange={e => setFormData({...formData, eggProd: e.target.value})} placeholder="Butir" />
+                  <Input type="number" required value={formData.eggProd} onChange={e => setFormData({ ...formData, eggProd: e.target.value })} placeholder="Butir" />
                 </div>
                 <div>
                   <label className="text-sm font-medium text-neutral-700 block mb-1">Rusak/Hari</label>
-                  <Input type="number" required value={formData.eggBroken} onChange={e => setFormData({...formData, eggBroken: e.target.value})} placeholder="Butir" />
+                  <Input type="number" required value={formData.eggBroken} onChange={e => setFormData({ ...formData, eggBroken: e.target.value })} placeholder="Butir" />
                 </div>
                 <div>
                   <label className="text-sm font-medium text-neutral-700 block mb-1">Bersih/Hari</label>
-                  <Input type="number" required value={formData.eggClean} onChange={e => setFormData({...formData, eggClean: e.target.value})} placeholder="Butir" />
+                  <Input type="number" required value={formData.eggClean} onChange={e => setFormData({ ...formData, eggClean: e.target.value })} placeholder="Butir" />
                 </div>
               </div>
               <div>
                 <label className="text-sm font-medium text-neutral-700 block mb-1">Jenis Pakan</label>
-                <Input required value={formData.feedType} onChange={e => setFormData({...formData, feedType: e.target.value})} placeholder="Contoh: Konsentrat PAR-L" />
+                <Input required value={formData.feedType} onChange={e => setFormData({ ...formData, feedType: e.target.value })} placeholder="Contoh: Konsentrat PAR-L" />
               </div>
               <div>
                 <label className="text-sm font-medium text-neutral-700 block mb-1">Pengalaman (Tahun)</label>
-                <Input type="number" step="0.1" required value={formData.experience} onChange={e => setFormData({...formData, experience: e.target.value})} placeholder="Contoh: 2.5" />
+                <Input type="number" step="0.1" required value={formData.experience} onChange={e => setFormData({ ...formData, experience: e.target.value })} placeholder="Contoh: 2.5" />
               </div>
               <div className="flex items-center gap-2 mt-2">
-                <input type="checkbox" id="hasV" checked={formData.hasVehicle} onChange={e => setFormData({...formData, hasVehicle: e.target.checked})} className="w-4 h-4" />
+                <input type="checkbox" id="hasV" checked={formData.hasVehicle} onChange={e => setFormData({ ...formData, hasVehicle: e.target.checked })} className="w-4 h-4" />
                 <label htmlFor="hasV" className="text-sm font-medium text-neutral-700">Punya Kendaraan Distribusi?</label>
               </div>
               {formData.hasVehicle && (
                 <div>
                   <label className="text-sm font-medium text-neutral-700 block mb-1">Jenis Kendaraan</label>
-                  <Input required value={formData.vehicleType} onChange={e => setFormData({...formData, vehicleType: e.target.value})} placeholder="Contoh: Mobil Grandmax" />
+                  <Input required value={formData.vehicleType} onChange={e => setFormData({ ...formData, vehicleType: e.target.value })} placeholder="Contoh: Mobil Grandmax" />
                 </div>
               )}
               <div className="flex justify-end gap-3 pt-4 border-t border-neutral-100">
@@ -413,7 +412,7 @@ export default function AdminDashboard() {
               {['kandang_luar', 'kandang_dalam', 'ayam', 'telur'].map((type) => (
                 <div key={type} className="border border-neutral-200 rounded p-3 bg-neutral-50">
                   <label className="text-sm font-bold text-neutral-700 block mb-2 capitalize">{type.replace('_', ' ')}</label>
-                  <input type="file" accept="image/*" onChange={(e) => setPhotos({...photos, [type]: e.target.files?.[0] || null})} className="text-sm w-full" />
+                  <input type="file" accept="image/*" onChange={(e) => setPhotos({ ...photos, [type]: e.target.files?.[0] || null })} className="text-sm w-full" />
                 </div>
               ))}
               <div className="flex justify-end gap-3 pt-4 border-t border-neutral-100">
@@ -433,7 +432,7 @@ export default function AdminDashboard() {
           <div className="bg-white rounded-lg p-6 w-full max-w-sm shadow-xl">
             <h3 className="text-lg font-bold text-neutral-900 mb-2">Tolak Peternak</h3>
             <p className="text-sm text-neutral-500 mb-4">Akun akan dihapus dari sistem dan email penolakan akan dikirimkan.</p>
-            <textarea 
+            <textarea
               className="w-full border border-neutral-300 rounded p-3 text-sm focus:outline-none focus:border-primary-500 mb-4 h-24 resize-none"
               placeholder="Alasan penolakan..."
               value={rejectReason}
@@ -457,7 +456,7 @@ export default function AdminDashboard() {
               <h3 className="text-xl font-bold text-neutral-900">Detail Pendaftar: {activePeternak.full_name}</h3>
               <button onClick={() => setIsDetailModalOpen(false)}><X className="w-6 h-6 text-neutral-500 hover:text-neutral-900" /></button>
             </div>
-            
+
             <div className="space-y-6">
               <div className="grid grid-cols-2 gap-4 bg-neutral-50 p-4 rounded-lg border border-neutral-200">
                 <div>
@@ -506,7 +505,7 @@ export default function AdminDashboard() {
                   <p className="text-xs text-neutral-500 font-bold uppercase mb-1">Logistik & Kendaraan</p>
                   <p className="text-sm text-neutral-900">Pengalaman: {activePeternak.farming_experience_years || 0} Tahun</p>
                   <p className="text-sm text-neutral-900 mt-1">
-                    Kendaraan: {activePeternak.has_vehicle 
+                    Kendaraan: {activePeternak.has_vehicle
                       ? (activePeternak.vehicles && activePeternak.vehicles.length > 0 ? activePeternak.vehicles[0].vehicle_type : 'Ya')
                       : 'Tidak Punya'}
                   </p>
