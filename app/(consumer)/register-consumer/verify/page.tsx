@@ -153,7 +153,7 @@ function VerifyForm() {
 
         <div className="flex items-center justify-between px-1">
           <div className="text-[13px] font-medium text-neutral-500">
-            Waktu tersisa: <span className="font-bold text-neutral-800 font-mono">{formatTime(timeLeft)}</span>
+            Waktu tersisa: <span className="font-bold text-neutral-800">{formatTime(timeLeft)}</span>
           </div>
           {errorMessage && <p className="text-[13px] text-red-500 font-medium">{errorMessage}</p>}
           {infoMessage && <p className="text-[13px] text-green-600 font-medium">{infoMessage}</p>}

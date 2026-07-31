@@ -25,36 +25,42 @@ export function ForPeternak() {
         </Reveal>
 
         <div className="order-2">
-          <p className="text-[13px] font-extrabold uppercase tracking-[0.15em] text-landing-300">Untuk Peternak</p>
-          <h2 className="mt-4 text-[27px] font-bold leading-tight tracking-tight text-white md:text-[36px]">
-            Jual telurmu langsung ke pembeli
-          </h2>
-          <p className="mt-4 max-w-[480px] text-[16px] leading-relaxed text-landing-200 md:text-[17px]">
-            Tanpa tengkulak, tanpa harga ditekan. Kelola pesanan, stok, dan pemasukan dari satu dashboard
-            yang gampang dipakai.
-          </p>
+          <Reveal>
+            <p className="text-[13px] font-extrabold uppercase tracking-[0.15em] text-landing-300">Untuk Peternak</p>
+            <h2 className="mt-4 text-[27px] font-bold leading-tight tracking-tight text-white md:text-[36px]">
+              Jual telurmu langsung ke pembeli
+            </h2>
+            <p className="mt-4 max-w-[480px] text-[16px] leading-relaxed text-landing-200 md:text-[17px]">
+              Tanpa tengkulak, tanpa harga ditekan. Kelola pesanan, stok, dan pemasukan dari satu dashboard
+              yang gampang dipakai.
+            </p>
+          </Reveal>
 
           <div className="mt-8 grid gap-6 sm:grid-cols-2">
-            {features.map((feature) => (
-              <div key={feature.title} className="flex gap-3.5">
-                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md bg-landing-800 text-landing-300">
-                  <feature.icon className="h-[22px] w-[22px]" />
-                </span>
-                <div>
-                  <h3 className="text-[16px] font-extrabold text-white">{feature.title}</h3>
-                  <p className="mt-1 text-[14px] leading-relaxed text-landing-200">{feature.description}</p>
+            {features.map((feature, index) => (
+              <Reveal key={feature.title} delay={index * 100}>
+                <div className="flex gap-3.5">
+                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md bg-landing-800 text-landing-300">
+                    <feature.icon className="h-[22px] w-[22px]" />
+                  </span>
+                  <div>
+                    <h3 className="text-[16px] font-extrabold text-white">{feature.title}</h3>
+                    <p className="mt-1 text-[14px] leading-relaxed text-landing-200">{feature.description}</p>
+                  </div>
                 </div>
-              </div>
+              </Reveal>
             ))}
           </div>
 
-          <Link
-            href="/register"
-            className="mt-9 inline-flex items-center justify-center gap-2 rounded-md bg-landing-400 px-6 py-4 text-[15px] font-bold text-landing-950 transition-all hover:-translate-y-0.5 hover:bg-landing-300 active:scale-[.98]"
-          >
-            Gabung Jadi Peternak
-            <ArrowRight className="h-[18px] w-[18px]" />
-          </Link>
+          <Reveal className="mt-9" delay={200}>
+            <Link
+              href="/register"
+              className="inline-flex items-center justify-center gap-2 rounded-md bg-landing-400 px-6 py-4 text-[15px] font-bold text-landing-950 transition-all hover:-translate-y-0.5 hover:bg-landing-300 active:scale-[.98]"
+            >
+              Gabung Jadi Peternak
+              <ArrowRight className="h-[18px] w-[18px]" />
+            </Link>
+          </Reveal>
         </div>
       </div>
     </section>

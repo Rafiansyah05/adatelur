@@ -635,7 +635,7 @@ export default function RegisterPeternakPage() {
               </div>
 
               <div className="flex items-center justify-center mb-8 text-[13px] font-medium text-neutral-500">
-                Waktu tersisa:&nbsp;<span className="font-bold text-neutral-800 font-mono">{formatTime(timeLeft)}</span>
+                Waktu tersisa:&nbsp;<span className="font-bold text-neutral-800">{formatTime(timeLeft)}</span>
               </div>
 
               <Button onClick={handleVerifyOtp} disabled={loading || otpToken.length !== 6} className="w-full min-h-[52px] bg-primary-400 hover:bg-primary-500 text-neutral-900 font-bold rounded-sm transition-none">
