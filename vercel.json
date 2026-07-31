@@ -6,7 +6,7 @@
     },
     {
       "path": "/api/cron/daily-stock",
-      "schedule": "0 17 * * *"
+      "schedule": "0 * * * *"
     },
     {
       "path": "/api/cron/expire-orders",

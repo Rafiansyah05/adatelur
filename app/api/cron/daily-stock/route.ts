@@ -18,16 +18,10 @@ export async function GET(request: Request) {
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || '';
 
     const now = new Date();
-    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
-    const yesterdayStart = new Date(
-      now.getFullYear(),
-      now.getMonth(),
-      now.getDate() - 1
-    ).toISOString();
 
     const { data: peternaks, error: peternakError } = await supabase
       .from('peternak_details')
-      .select('id, profile_id, daily_clean_eggs, daily_egg_production, daily_damaged_eggs')
+      .select('id, profile_id, daily_clean_eggs, daily_egg_production, daily_damaged_eggs, farm_longitude')
       .eq('verification_status', 'approved')
       .eq('is_active', true);
 
@@ -56,12 +50,13 @@ export async function GET(request: Request) {
 
     const stockMap = new Map((listings ?? []).map((l) => [l.peternak_id, l.stock_rak]));
 
+    const checkWindowStart = new Date(now.getTime() - 48 * 3600 * 1000).toISOString();
+
     const { data: completedHistory } = await supabase
       .from('order_status_history')
       .select('order_id')
       .eq('status', 'completed')
-      .gte('created_at', yesterdayStart)
-      .lt('created_at', todayStart);
+      .gte('created_at', checkWindowStart);
 
     const soldMap = new Map<string, number>();
     const completedIds = (completedHistory ?? []).map((h) => h.order_id);
@@ -79,18 +74,40 @@ export async function GET(request: Request) {
       }
     }
 
-    const { data: sentToday } = await supabase
+    const { data: sentLogs } = await supabase
       .from('notifications_log')
-      .select('recipient_id')
+      .select('recipient_id, sent_at')
       .eq('notif_type', 'daily_stock')
-      .gte('sent_at', todayStart);
-
-    const alreadySent = new Set((sentToday ?? []).map((n) => n.recipient_id));
+      .gte('sent_at', checkWindowStart);
 
     let sent = 0;
 
     for (const peternak of peternaks) {
-      if (alreadySent.has(peternak.profile_id)) {
+      const offset = peternak.farm_longitude
+        ? peternak.farm_longitude >= 125
+          ? 9
+          : peternak.farm_longitude >= 110
+            ? 8
+            : 7
+        : 7;
+
+      const localDate = new Date(now.getTime() + offset * 3600 * 1000);
+      const localHour = localDate.getUTCHours();
+
+      if (localHour !== 6) {
+        continue;
+      }
+
+      const localStartIso = new Date(
+        Date.UTC(localDate.getUTCFullYear(), localDate.getUTCMonth(), localDate.getUTCDate()) -
+          offset * 3600 * 1000
+      ).toISOString();
+
+      const alreadySent = (sentLogs ?? []).some(
+        (log) => log.recipient_id === peternak.profile_id && log.sent_at >= localStartIso
+      );
+
+      if (alreadySent) {
         continue;
       }
 
@@ -118,7 +135,7 @@ export async function GET(request: Request) {
 
       const message =
         `*Konfirmasi Stok Harian - adatelur.*\n\n` +
-        `Halo! Stok harian Anda telah direset menjadi 0 pada jam 00:00.\n\n` +
+        `Halo! Selamat pagi, mohon konfirmasi stok harian Anda untuk hari ini.\n\n` +
         `Apakah stok hari ini sama dengan stok kemarin (*${stockYesterday} rak*)?\n\n` +
         `✅ *Iya, Sama:* Klik link berikut untuk mengirim pesan konfirmasi otomatis:\n` +
         `${confirmLink}\n\n` +
