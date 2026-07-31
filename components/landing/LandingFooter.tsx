@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import Image from 'next/image';
+import { Reveal } from '@/components/landing/Reveal';
 
 const footerColumns = [
   {
@@ -20,7 +21,7 @@ export function LandingFooter() {
   return (
     <footer className="border-t border-landing-border bg-landing-cream pt-14 pb-8">
       <div className="mx-auto max-w-[1160px] px-5 md:px-6">
-        <div className="grid gap-10 md:grid-cols-[1.7fr_1fr_1fr_1fr]">
+        <Reveal className="grid gap-10 md:grid-cols-[1.7fr_1fr_1fr_1fr]">
           <div>
             <Link href="/" className="flex items-center gap-2.5">
               <Image
@@ -54,7 +55,7 @@ export function LandingFooter() {
               </ul>
             </div>
           ))}
-        </div>
+        </Reveal>
 
         <div className="mt-12 flex flex-col gap-3 border-t border-landing-border pt-6 text-[13px] text-landing-desc md:flex-row md:items-center md:justify-between">
           <span>© 2026 adatelur. Seluruh hak cipta dilindungi.</span>
