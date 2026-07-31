@@ -15,19 +15,12 @@ export async function POST(req: Request) {
 
   try {
     const admin = createAdminClient();
-
-    // Delete application rows that reference this user
     await Promise.all([
       admin.from('peternak_details').delete().eq('profile_id', userId),
       admin.from('listings').delete().eq('peternak_id', userId),
       admin.from('delivery_slots').delete().eq('peternak_id', userId),
       admin.from('profiles').delete().eq('id', userId),
     ]);
-
-    // Delete the auth user (revokes sessions)
-    // supabase-js admin API: auth.admin.deleteUser(userId)
-    // If this method signature changes, adjust accordingly.
-    // @ts-ignore
     const { error: deleteError } = await admin.auth.admin.deleteUser(userId);
 
     if (deleteError) {

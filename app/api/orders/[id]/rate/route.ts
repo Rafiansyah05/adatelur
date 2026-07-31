@@ -19,7 +19,6 @@ export async function POST(request: Request, { params }: { params: { id: string 
 
     const orderId = params.id;
 
-    // Check order
     const { data: order, error: orderError } = await supabase
       .from('orders')
       .select('*')
@@ -35,7 +34,6 @@ export async function POST(request: Request, { params }: { params: { id: string 
       return NextResponse.json({ error: 'Pesanan belum selesai' }, { status: 400 });
     }
 
-    // Insert rating
     const { error: ratingError } = await supabase.from('ratings').insert({
       order_id: orderId,
       consumer_id: user.id,
@@ -45,11 +43,9 @@ export async function POST(request: Request, { params }: { params: { id: string 
     });
 
     if (ratingError) {
-      // Might be constraint violation if already rated
       return NextResponse.json({ error: 'Gagal menyimpan ulasan. Mungkin Anda sudah memberikan ulasan.' }, { status: 400 });
     }
 
-    // Recalculate score asynchronously using admin client
     try {
       fetch(`${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/api/peternak/${order.peternak_id}/recalculate-score`, { method: 'POST' });
     } catch (e) {

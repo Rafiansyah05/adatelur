@@ -342,7 +342,7 @@ function SearchResults() {
                     </div>
 
                     <div className="flex gap-3">
-                      <Button variant="secondary" onClick={() => setPopupStep(1)} className="w-1/3">
+                      <Button variant="secondary" onClick={() => setPopupStep(1)} className="flex-1">
                         Kembali
                       </Button>
                       <Button

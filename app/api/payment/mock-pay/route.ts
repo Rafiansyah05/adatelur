@@ -4,7 +4,6 @@ import { sendOrderPaidNotif } from '@/lib/orderNotif';
 
 export async function POST(req: Request) {
   try {
-    // Hanya untuk testing di environment non-production!
     if (process.env.NODE_ENV === 'production') {
       return NextResponse.json({ error: 'Not allowed in production' }, { status: 403 });
     }
@@ -20,8 +19,7 @@ export async function POST(req: Request) {
       .single();
 
     if (!order) return NextResponse.json({ error: 'Order not found' }, { status: 404 });
-    
-    // Simulate successful payment
+
     await supabase.from('orders').update({
       payment_status: 'paid',
       order_status: 'diproses',

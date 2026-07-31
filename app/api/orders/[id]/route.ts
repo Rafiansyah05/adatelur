@@ -21,7 +21,6 @@ export async function GET(request: Request, { params }: { params: { id: string }
     if (orderErr) return NextResponse.json({ error: orderErr.message }, { status: 500 });
     if (!order) return NextResponse.json({ error: 'Order not found' }, { status: 404 });
 
-    // authorize: consumer (owner) or peternak owner
     if (order.consumer_id !== user.id) {
       const { data: peternakDetail, error: pdErr } = await supabase
         .from('peternak_details')

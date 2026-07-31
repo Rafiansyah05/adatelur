@@ -30,7 +30,7 @@ export async function GET() {
       .maybeSingle();
 
     if (detailError) {
-       console.error(detailError);
+      console.error(detailError);
     }
 
     if (!peternakDetail) {
@@ -74,13 +74,12 @@ export async function GET() {
 
     const bankFilled = Boolean(
       peternakDetail.bank_name &&
-        peternakDetail.bank_account_number &&
-        peternakDetail.bank_account_holder
+      peternakDetail.bank_account_number &&
+      peternakDetail.bank_account_holder
     );
 
     let fullName = 'Peternak';
     if (peternakDetail.profiles) {
-      // In case it returns an array
       if (Array.isArray(peternakDetail.profiles)) {
         fullName = peternakDetail.profiles[0]?.full_name || 'Peternak';
       } else {

@@ -116,10 +116,8 @@ export function AnalyticsSection() {
   const [isLoading, setIsLoading] = React.useState(true);
   const [error, setError] = React.useState('');
 
-  // timeframe filter: semua vs hariIni
   const [timeframe, setTimeframe] = React.useState<'semua' | 'hariIni'>('semua');
 
-  // chart filter: hari vs minggu vs bulan
   const [chartFilter, setChartFilter] = React.useState<'hari' | 'minggu' | 'bulan'>('minggu');
 
   React.useEffect(() => {
@@ -188,7 +186,6 @@ export function AnalyticsSection() {
 
   return (
     <div className="w-full">
-      {/* Timeframe selector header */}
       <div className="flex justify-between items-start sm:items-center gap-4 mb-6">
         <div className="flex-1 min-w-0">
           <h2 className="text-xl font-bold text-neutral-800 truncate sm:whitespace-normal">Ringkasan Statistik</h2>
@@ -216,7 +213,6 @@ export function AnalyticsSection() {
         </div>
       </div>
 
-      {/* Summary grid */}
       <div className="mb-6 grid grid-cols-2 gap-4">
         <SummaryTile
           icon={<Wallet className={iconClass} />}
@@ -283,10 +279,8 @@ export function AnalyticsSection() {
         />
       </div>
 
-      {/* Charts section */}
       <div className="grid gap-6">
         <Card className="p-6 border-neutral-100 bg-white shadow-xs">
-          {/* Revenue Chart header with dynamic filter */}
           <div className="flex justify-between items-center mb-4">
             <h3 className="text-sm font-bold text-neutral-800 uppercase tracking-wider">
               {chartFilter === 'hari'

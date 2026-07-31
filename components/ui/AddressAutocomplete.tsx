@@ -89,7 +89,7 @@ export function AddressAutocomplete({ onLocationSelect, defaultValue = '' }: Add
     if (isOpen || document.activeElement?.tagName === 'INPUT') {
       fetchAddresses();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+
   }, [debouncedQuery]);
 
   const handleSelect = (item: AutocompleteResult) => {

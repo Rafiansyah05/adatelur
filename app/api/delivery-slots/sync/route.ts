@@ -29,11 +29,11 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const activeSlots: string[] = body.activeSlots || []; // e.g. ["09:00 - 12:00", "12:00 - 15:00"]
+    const activeSlots: string[] = body.activeSlots || [];
 
     const adminClient = createAdminClient();
 
-    // 1. Fetch all existing slots for this peternak
+
     const { data: existingSlots, error: fetchSlotsError } = await adminClient
       .from('delivery_slots')
       .select('id, start_time, end_time, is_active')
@@ -43,7 +43,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: fetchSlotsError.message }, { status: 500 });
     }
 
-    // 2. Fetch all delivery_slot_ids currently referenced in orders
+
     const { data: referencedOrders, error: referencedOrdersError } = await adminClient
       .from('orders')
       .select('delivery_slot_id')
@@ -56,7 +56,7 @@ export async function POST(request: Request) {
 
     const referencedSlotIds = new Set((referencedOrders ?? []).map((o) => o.delivery_slot_id));
 
-    // Parse active slots from body input
+
     const activeParsed = activeSlots.map((slotStr) => {
       const [start, end] = slotStr.split(' - ');
       return {
@@ -70,7 +70,7 @@ export async function POST(request: Request) {
     const slotsToDeactivate = [];
     const slotsToDelete = [];
 
-    // Check existing slots to see if they should be deactivated or deleted
+
     for (const existing of existingSlots ?? []) {
       const formattedStartTime = existing.start_time.substring(0, 5);
       const formattedEndTime = existing.end_time.substring(0, 5);
@@ -86,7 +86,7 @@ export async function POST(request: Request) {
           slotsToActivate.push(existing.id);
         }
       } else {
-        // Deselected slot: soft delete if referenced by orders, hard delete if not
+
         if (referencedSlotIds.has(existing.id)) {
           if (existing.is_active) {
             slotsToDeactivate.push(existing.id);
@@ -97,7 +97,6 @@ export async function POST(request: Request) {
       }
     }
 
-    // Check input slots to see if they should be inserted
     for (const active of activeParsed) {
       const alreadyExists = (existingSlots ?? []).some(
         (e) =>
@@ -115,7 +114,6 @@ export async function POST(request: Request) {
       }
     }
 
-    // Perform database operations
     if (slotsToDelete.length > 0) {
       const { error: delErr } = await adminClient
         .from('delivery_slots')

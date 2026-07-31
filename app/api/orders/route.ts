@@ -31,7 +31,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'rak_quantity must be >= 1' }, { status: 400 });
     }
 
-    // fetch listing and peternak info
     const { data: listing, error: listingError } = await supabase
       .from('listings')
       .select('id, peternak_id, price_per_rak, is_listing_active, stock_rak')
@@ -43,7 +42,6 @@ export async function POST(request: Request) {
     if (!listing.is_listing_active)
       return NextResponse.json({ error: 'Listing is not active' }, { status: 400 });
 
-    // snapshot price
     const pricePerRak = Number(listing.price_per_rak);
     const subtotal = Number((pricePerRak * rakQuantity).toFixed(2));
 
@@ -186,11 +184,11 @@ export async function POST(request: Request) {
 
           const replyInstruction = device
             ? `Tap untuk membalas (dalam 3 menit):\n` +
-              `*Terima:* https://wa.me/${device}?text=${encodeURIComponent(`TERIMA ${shortId}`)}\n` +
-              `*Tolak:* https://wa.me/${device}?text=${encodeURIComponent(`TOLAK ${shortId}`)}`
+            `*Terima:* https://wa.me/${device}?text=${encodeURIComponent(`TERIMA ${shortId}`)}\n` +
+            `*Tolak:* https://wa.me/${device}?text=${encodeURIComponent(`TOLAK ${shortId}`)}`
             : `Balas dalam 3 menit:\n` +
-              `TERIMA ${shortId} (untuk menerima)\n` +
-              `TOLAK ${shortId} (untuk menolak)`;
+            `TERIMA ${shortId} (untuk menerima)\n` +
+            `TOLAK ${shortId} (untuk menolak)`;
 
           const message =
             `*Pesanan baru di adatelur!*\n\n` +

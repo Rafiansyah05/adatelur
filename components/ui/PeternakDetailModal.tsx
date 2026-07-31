@@ -384,32 +384,16 @@ export function PeternakDetailModal({
                       {addresses.length === 0 ? (
                         <p className="text-sm text-danger">Belum ada alamat tersimpan.</p>
                       ) : (
-                        <div className="space-y-2">
-                          {addresses.map((addr) => (
-                            <label
-                              key={addr.id}
-                              className="flex items-start gap-3 p-3 rounded-lg border border-neutral-200 cursor-pointer hover:border-primary-300"
-                            >
-                              <input
-                                type="radio"
-                                name="address"
-                                className="mt-1 shrink-0"
-                                checked={addressId === addr.id}
-                                onChange={() => {
-                                  setAddressId(addr.id);
-                                  setConsumerAddress(addr);
-                                }}
-                              />
-                              <div>
-                                <p className="font-semibold text-text-main text-sm">
-                                  {addr.label || 'Rumah'}
-                                </p>
-                                <p className="text-xs text-neutral-500 leading-relaxed line-clamp-2">
-                                  {addr.address}
-                                </p>
-                              </div>
-                            </label>
-                          ))}
+                        <div className="rounded-lg border border-neutral-200 bg-neutral-50 p-3.5 flex items-start gap-3">
+                          <MapPin className="h-5 w-5 text-primary-600 shrink-0 mt-0.5" />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-medium text-neutral-500 mb-1">
+                              Pesanan akan diantar ke:
+                            </p>
+                            <p className="text-sm font-semibold text-text-main leading-relaxed">
+                              {consumerAddress?.full_address || consumerAddress?.address || addresses[0]?.full_address || addresses[0]?.address}
+                            </p>
+                          </div>
                         </div>
                       )}
                     </div>
@@ -420,7 +404,7 @@ export function PeternakDetailModal({
                   <Button
                     variant="secondary"
                     onClick={onClose}
-                    className="w-1/3"
+                    className="flex-1"
                     disabled={isSubmitting}
                   >
                     Kembali

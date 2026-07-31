@@ -325,7 +325,7 @@ export async function POST(request: Request) {
                 if (text) {
                   controller.enqueue(encoder.encode(text));
                 }
-              } catch {}
+              } catch { }
             }
           }
         } finally {

@@ -31,12 +31,12 @@ export function GlobalWaitingModal() {
         if (deadline > now) {
           setWaitingOrder(data);
         } else {
-          // If already expired but still 'waiting' in DB, cancel it to prevent showing again
+
           fetch(`/api/orders/${data.id}/respond`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ action: 'cancel' })
-          }).catch(() => {});
+          }).catch(() => { });
         }
       }
     };
@@ -57,7 +57,6 @@ export function GlobalWaitingModal() {
       setTimeLeft(diff);
 
       if (diff === 0) {
-        // Automatically mark as cancelled locally, the server handles actual DB update if needed
         setWaitingOrder(null);
       }
     }, 1000);
@@ -70,9 +69,9 @@ export function GlobalWaitingModal() {
 
     const channel = supabase
       .channel(`global_order_status_${waitingOrder.id}`)
-      .on('postgres_changes', { 
-        event: 'UPDATE', 
-        schema: 'public', 
+      .on('postgres_changes', {
+        event: 'UPDATE',
+        schema: 'public',
         table: 'orders',
         filter: `id=eq.${waitingOrder.id}`
       }, (payload) => {
@@ -115,15 +114,15 @@ export function GlobalWaitingModal() {
     <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
       <div className="w-full max-w-md bg-white rounded-lg p-6 relative text-center">
         {waitingOrder.order_status === 'cancelled' ? (
-           <div className="py-8">
-             <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-red-50 text-red-500 mb-4">
-               <X className="w-8 h-8" />
-             </div>
-             <h2 className="text-xl font-bold text-text-main mb-2">Pesanan Dibatalkan</h2>
-             <p className="text-sm text-neutral-500">
-               Pesanan telah dibatalkan atau ditolak.
-             </p>
-           </div>
+          <div className="py-8">
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-red-50 text-red-500 mb-4">
+              <X className="w-8 h-8" />
+            </div>
+            <h2 className="text-xl font-bold text-text-main mb-2">Pesanan Dibatalkan</h2>
+            <p className="text-sm text-neutral-500">
+              Pesanan telah dibatalkan atau ditolak.
+            </p>
+          </div>
         ) : (
           <div className="py-6">
             <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary-50 text-primary-600 mb-4 animate-pulse">
@@ -133,7 +132,7 @@ export function GlobalWaitingModal() {
             <p className="text-sm text-neutral-500 px-4 mb-6 leading-relaxed">
               Mohon tunggu sebentar, kami sedang meneruskan pesanan Anda ke {waitingOrder.peternak?.profile?.full_name || 'Peternak'}. Jika dalam 3 menit tidak ada konfirmasi, pesanan akan dibatalkan otomatis.
             </p>
-            <button 
+            <button
               onClick={handleCancel}
               className="py-2.5 px-6 text-sm font-semibold text-danger bg-danger/10 hover:bg-danger/20 rounded-lg transition-colors"
             >

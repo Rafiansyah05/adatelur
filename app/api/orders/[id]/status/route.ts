@@ -12,7 +12,6 @@ export async function POST(request: Request, { params }: { params: { id: string 
     const supabase = createAdminClient();
     const orderId = params.id;
 
-    // Pastikan order exist
     const { data: order, error: orderError } = await supabase
       .from('orders')
       .select('id, order_status')
@@ -23,7 +22,6 @@ export async function POST(request: Request, { params }: { params: { id: string 
       return NextResponse.json({ error: 'Pesanan tidak ditemukan' }, { status: 404 });
     }
 
-    // Update order status
     const { error: updateError } = await supabase
       .from('orders')
       .update({ order_status: status })
@@ -31,7 +29,6 @@ export async function POST(request: Request, { params }: { params: { id: string 
 
     if (updateError) throw updateError;
 
-    // Add history
     await supabase.from('order_status_history').insert({
       order_id: orderId,
       status: status,

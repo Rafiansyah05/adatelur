@@ -3,18 +3,18 @@ import { createAdminClient } from '@/lib/supabase/admin';
 
 export async function POST(request: Request) {
   try {
-    const { 
-      peternakId, 
-      chickenCount, 
-      eggProd, 
-      eggBroken, 
-      eggClean, 
-      feedType, 
-      experience, 
-      hasVehicle, 
-      vehicleType 
+    const {
+      peternakId,
+      chickenCount,
+      eggProd,
+      eggBroken,
+      eggClean,
+      feedType,
+      experience,
+      hasVehicle,
+      vehicleType
     } = await request.json();
-    
+
     if (!peternakId) {
       return NextResponse.json({ error: 'Peternak ID tidak valid.' }, { status: 400 });
     }
@@ -37,11 +37,11 @@ export async function POST(request: Request) {
     if (pError) throw pError;
 
     if (hasVehicle && vehicleType) {
-      // Upsert vehicle (first delete existing, then insert)
+
       await adminClient.from('vehicles').delete().eq('peternak_id', peternakId);
-      await adminClient.from('vehicles').insert({ 
-        peternak_id: peternakId, 
-        vehicle_type: vehicleType 
+      await adminClient.from('vehicles').insert({
+        peternak_id: peternakId,
+        vehicle_type: vehicleType
       });
     }
 

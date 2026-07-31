@@ -7,8 +7,6 @@ export const revalidate = 0;
 export async function GET() {
   try {
     const adminClient = createAdminClient();
-
-    // Fetch all peternak profiles with their peternak_details
     const { data, error } = await adminClient
       .from('profiles')
       .select(`
@@ -48,7 +46,6 @@ export async function GET() {
 
     console.log("Admin peternak data:", data);
 
-    // Flatten data for frontend
     const flattenedData = data.map((p: any) => {
       const pd = Array.isArray(p.peternak_details) ? p.peternak_details[0] : p.peternak_details;
       return {

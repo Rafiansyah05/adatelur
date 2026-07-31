@@ -12,7 +12,7 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { peternakId, photos } = body; // photos = { type: string, src: string }[]
+    const { peternakId, photos } = body;
 
     if (!peternakId || !photos || !Array.isArray(photos)) {
       return NextResponse.json({ error: 'Data tidak lengkap.' }, { status: 400 });
@@ -24,12 +24,12 @@ export async function POST(request: Request) {
       if (!p.src) continue;
 
       try {
-        // Convert base64 to buffer
+
         const base64Data = p.src.split(',')[1];
         const buffer = Buffer.from(base64Data, 'base64');
         const filePath = `${peternakId}/${p.type}_${Date.now()}.jpg`;
 
-        // Upload using admin client to bypass RLS
+
         const { error: uploadError } = await adminClient.storage
           .from('verification-photos')
           .upload(filePath, buffer, {
@@ -46,7 +46,6 @@ export async function POST(request: Request) {
           .from('verification-photos')
           .getPublicUrl(filePath);
 
-        // Insert into DB
         const { error: insertError } = await adminClient
           .from('peternak_verification_photos')
           .insert({

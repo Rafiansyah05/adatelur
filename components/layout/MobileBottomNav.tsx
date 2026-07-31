@@ -7,10 +7,9 @@ import { IncomingOrderBadge } from '@/components/peternak/IncomingOrderBadge';
 
 export function MobileBottomNav({ items }: { items: NavItem[] }) {
   const pathname = usePathname();
-  
-  // Hide on certain pages
+
   const isOrderDetail = pathname.startsWith('/dashboard/orders/') && pathname !== '/dashboard/orders';
-  
+
   if (pathname.startsWith('/recommendations') || isOrderDetail) {
     return null;
   }
@@ -25,9 +24,8 @@ export function MobileBottomNav({ items }: { items: NavItem[] }) {
           <Link
             key={item.href}
             href={item.href}
-            className={`flex flex-1 flex-col items-center justify-center gap-1 transition-colors ${
-              isActive ? 'text-primary-400' : 'text-text-desc'
-            }`}
+            className={`flex flex-1 flex-col items-center justify-center gap-1 transition-colors ${isActive ? 'text-primary-400' : 'text-text-desc'
+              }`}
           >
             <span className={isActive ? 'text-primary-400 relative' : 'text-text-desc relative'}>
               {item.icon}

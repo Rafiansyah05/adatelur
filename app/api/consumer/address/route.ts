@@ -35,7 +35,7 @@ export async function POST(request: Request) {
       data: { user },
       error: authError,
     } = await supabase.auth.getUser();
-    
+
     if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -49,7 +49,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Data alamat tidak valid (butuh full_address, latitude, longitude)' }, { status: 400 });
     }
 
-    // Set all other addresses to not default if this one will be default
     await supabase
       .from('consumer_addresses')
       .update({ is_default: false })

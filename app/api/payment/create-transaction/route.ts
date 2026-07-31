@@ -27,7 +27,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    // Server key from Midtrans
     const serverKey = process.env.MIDTRANS_SERVER_KEY || 'SB-Mid-server-placeholder';
     const authString = Buffer.from(`${serverKey}:`).toString('base64');
 
@@ -56,18 +55,17 @@ export async function POST(request: Request) {
     const data = await response.json();
 
     if (!response.ok) {
-      // In case Midtrans fails, for MVP we can simulate success to not block testing if no real key is set
       console.warn('Midtrans Error:', data);
       if (!process.env.MIDTRANS_SERVER_KEY) {
-        return NextResponse.json({ 
+        return NextResponse.json({
           token: 'dummy-token-for-testing',
-          redirect_url: 'https://app.sandbox.midtrans.com/snap/v2/vtweb/dummy' 
+          redirect_url: 'https://app.sandbox.midtrans.com/snap/v2/vtweb/dummy'
         });
       }
       throw new Error(data.error_messages ? data.error_messages[0] : 'Gagal membuat transaksi Midtrans');
     }
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       token: data.token,
       redirect_url: data.redirect_url
     });

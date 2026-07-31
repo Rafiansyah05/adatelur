@@ -90,7 +90,7 @@ export default function LoginPage() {
 
   return (
     <div className="relative flex min-h-screen overflow-hidden bg-neutral-900">
-      {/* Background Slideshow */}
+
       {BACKGROUND_IMAGES.map((src, idx) => (
         <div
           key={src}
@@ -108,21 +108,19 @@ export default function LoginPage() {
       ))}
       <div className="absolute inset-0 z-0 bg-black/40" /> {/* Dark Overlay */}
 
-      {/* Content Container */}
       <div className="relative z-10 flex w-full h-screen">
-        {/* Left Panel - Branding */}
         <div className="hidden lg:flex w-[55%] flex-col justify-between p-16 xl:p-24">
           <div className="flex items-center gap-3">
-            <Image 
-              src="/icons/icon-512x512.png" 
-              alt="adatelur Logo" 
-              width={48} 
-              height={48} 
+            <Image
+              src="/icons/icon-512x512.png"
+              alt="adatelur Logo"
+              width={48}
+              height={48}
               className="rounded-sm object-contain"
             />
             <span className="text-[28px] font-extrabold text-white tracking-tight">adatelur.</span>
           </div>
-          
+
           <div>
             <h1 className="text-[52px] font-extrabold text-white mb-4 leading-[1.1] tracking-tight">
               Satu Langkah<br />Menuju Kemudahan.
@@ -133,16 +131,14 @@ export default function LoginPage() {
           </div>
         </div>
 
-        {/* Right Panel - Authentication */}
         <div className="flex w-full lg:w-[45%] flex-col justify-center items-center p-6">
           <div className="w-full max-w-[420px]">
-            {/* Logo on mobile only */}
             <div className="flex lg:hidden items-center justify-center gap-3 mb-8">
-              <Image 
-                src="/icons/icon-512x512.png" 
-                alt="adatelur Logo" 
-                width={48} 
-                height={48} 
+              <Image
+                src="/icons/icon-512x512.png"
+                alt="adatelur Logo"
+                width={48}
+                height={48}
                 className="rounded-sm object-contain"
               />
               <span className="text-[28px] font-extrabold text-white tracking-tight">adatelur.</span>

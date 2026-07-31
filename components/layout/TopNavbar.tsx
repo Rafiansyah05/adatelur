@@ -49,12 +49,10 @@ export function TopNavbar({ items }: { items: NavItem[] }) {
 
         if (error) throw error;
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const formattedData = (data || []).map((p: any) => ({
           id: p.id,
           full_name: p.full_name,
           avatar_url: p.avatar_url,
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           address: Array.isArray(p.peternak_details) ? (p.peternak_details[0] as any)?.farm_address : (p.peternak_details as any)?.farm_address
         }));
 
@@ -71,7 +69,7 @@ export function TopNavbar({ items }: { items: NavItem[] }) {
     }, 300);
 
     return () => clearTimeout(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+
   }, [searchQuery]);
 
   return (
@@ -201,9 +199,9 @@ export function TopNavbar({ items }: { items: NavItem[] }) {
                         >
                           <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-primary-50 border border-primary-100 text-primary-900 font-bold text-sm overflow-hidden">
                             {peternak.avatar_url ? (
-                              <img 
-                                src={peternak.avatar_url} 
-                                alt={peternak.full_name} 
+                              <img
+                                src={peternak.avatar_url}
+                                alt={peternak.full_name}
                                 className="h-full w-full object-cover"
                               />
                             ) : (
@@ -240,7 +238,7 @@ export function TopNavbar({ items }: { items: NavItem[] }) {
           </div>
 
 
-          
+
           <PeternakDetailModal
             isOpen={!!selectedPeternakForModal}
             onClose={() => setSelectedPeternakForModal(null)}

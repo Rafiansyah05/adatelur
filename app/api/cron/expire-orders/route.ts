@@ -2,10 +2,8 @@ import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { sendOrderExpiredNotif } from '@/lib/orderNotif';
 
-// Vercel Cron Endpoint (or callable by any scheduler)
 export async function GET(request: Request) {
   try {
-    // Optionally: verify authorization header for Vercel Cron if in production
     if (
       process.env.NODE_ENV === 'production' &&
       request.headers.get('Authorization') !== `Bearer ${process.env.CRON_SECRET}`
@@ -16,7 +14,6 @@ export async function GET(request: Request) {
     const supabase = createAdminClient();
     const now = new Date().toISOString();
 
-    // 1. Find orders that are 'waiting' and past their response_deadline
     const { data: expiredOrders, error: findError } = await supabase
       .from('orders')
       .select('id')
@@ -29,16 +26,12 @@ export async function GET(request: Request) {
 
     if (expiredOrders && expiredOrders.length > 0) {
       const orderIds = expiredOrders.map(o => o.id);
-
-      // 2. Update status to 'expired'
       const { error: updateError } = await supabase
         .from('orders')
         .update({ order_status: 'expired', updated_at: now })
         .in('id', orderIds);
 
       if (updateError) throw updateError;
-
-      // 3. Insert into order_status_history
       const historyInserts = orderIds.map(id => ({
         order_id: id,
         status: 'expired',

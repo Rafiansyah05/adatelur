@@ -19,9 +19,9 @@ export default async function WalletPage() {
 
   return (
     <div className="w-full max-w-6xl mx-auto pb-20 relative">
-      {/* Header / Navbar */}
+
       <div className="sticky top-0 z-50 bg-white/95 backdrop-blur-md flex items-center gap-4 py-4 mb-6 border-b border-neutral-100 -mt-6 -mx-4 px-4 md:-mt-8 md:-mx-8 md:px-8">
-        <Link 
+        <Link
           href="/dashboard"
           className="flex shrink-0 items-center justify-center rounded-full p-2 hover:bg-neutral-100 transition-colors"
         >

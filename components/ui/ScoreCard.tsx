@@ -73,7 +73,7 @@ const ScoreCard = React.forwardRef<HTMLDivElement, ScoreCardProps>(
           className
         )}
       >
-        {/* Background Watermark */}
+
         <div className="pointer-events-none absolute -bottom-6 -right-6 z-0 opacity-10">
           <Image
             src="/icons/icon-512x512.png"
@@ -84,7 +84,6 @@ const ScoreCard = React.forwardRef<HTMLDivElement, ScoreCardProps>(
           />
         </div>
 
-        {/* Top Badges Area */}
         <div className="relative z-10 flex items-start justify-between">
           <div className="flex flex-col gap-2">
             {isTopPick && (
@@ -92,7 +91,7 @@ const ScoreCard = React.forwardRef<HTMLDivElement, ScoreCardProps>(
                 <Sparkles className="h-3.5 w-3.5" /> Paling Efisien
               </div>
             )}
-            
+
             <div className="flex items-center gap-3">
               <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary-50 text-sm font-bold text-primary-900 shadow-sm border border-primary-100 overflow-hidden">
                 {avatarUrl ? (
@@ -113,7 +112,6 @@ const ScoreCard = React.forwardRef<HTMLDivElement, ScoreCardProps>(
             </div>
           </div>
 
-          {/* Medal Badge */}
           {rank && rank <= 3 && (
             <div
               className={cn(
@@ -127,7 +125,6 @@ const ScoreCard = React.forwardRef<HTMLDivElement, ScoreCardProps>(
           )}
         </div>
 
-        {/* Stats Row */}
         <div className="relative z-10 mt-2 flex items-center justify-between rounded-lg bg-neutral-50 p-3 border border-neutral-100">
           <div className="flex flex-col">
             <span className="text-xs text-neutral-500 font-medium">Rating</span>
@@ -136,7 +133,7 @@ const ScoreCard = React.forwardRef<HTMLDivElement, ScoreCardProps>(
               <span>
                 {(() => {
                   const displayRating = averageRating ?? rating;
-                  // "Baru" only if no completed orders AND no rating score yet
+
                   if ((totalOrders === undefined || totalOrders === 0) && displayRating === 0) {
                     return 'Baru';
                   }
@@ -163,7 +160,6 @@ const ScoreCard = React.forwardRef<HTMLDivElement, ScoreCardProps>(
           </div>
         </div>
 
-        {/* Pricing Info */}
         {!hideOngkir && (
           <div className="relative z-10 flex flex-col gap-1.5 text-sm text-neutral-600">
             <div className="flex justify-between">
@@ -179,7 +175,6 @@ const ScoreCard = React.forwardRef<HTMLDivElement, ScoreCardProps>(
 
         {!hideOngkir && <div className="relative z-10 my-1 h-px w-full bg-neutral-100" />}
 
-        {/* Total & Action */}
         <div className="relative z-10 flex items-center justify-between">
           {!hideOngkir ? (
             <div className="flex flex-col">
@@ -197,9 +192,9 @@ const ScoreCard = React.forwardRef<HTMLDivElement, ScoreCardProps>(
             </div>
           )}
           {!hidePesanButton && (
-            <Button 
-              variant="primary" 
-              onClick={onPesanClick} 
+            <Button
+              variant="primary"
+              onClick={onPesanClick}
               className="rounded-lg px-6 py-2.5 transition-all font-semibold text-sm"
             >
               Pesan <ChevronRight className="ml-1 h-4 w-4" />

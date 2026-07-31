@@ -14,16 +14,15 @@ export function LogoutButton({ isMobile = false }: { isMobile?: boolean }) {
     const supabase = createClient();
     await supabase.auth.signOut();
     setLoading(false);
-    
-    // Refresh the router to trigger middleware redirects, or push directly to login
+
     router.push('/login');
     router.refresh();
   };
 
   if (isMobile) {
     return (
-      <button 
-        onClick={handleLogout} 
+      <button
+        onClick={handleLogout}
         disabled={loading}
         className="flex items-center justify-center p-2 text-text-desc hover:text-text-main transition-colors"
         aria-label="Logout"

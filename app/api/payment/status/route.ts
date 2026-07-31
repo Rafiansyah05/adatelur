@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
-// @ts-ignore
 import midtransClient from 'midtrans-client';
 import { sendOrderPaidNotif } from '@/lib/orderNotif';
 
@@ -18,11 +17,11 @@ export async function POST(req: Request) {
 
     const isMidtransId = order_id.startsWith('ADT-');
     const supabase = createAdminClient();
-    
+
     let query = supabase
       .from('orders')
       .select('id, payment_reference, payment_status, order_status, peternak_id');
-      
+
     if (isMidtransId) {
       query = query.eq('payment_reference', order_id);
     } else {

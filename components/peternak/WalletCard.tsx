@@ -37,12 +37,11 @@ export function WalletCard({ hideCairkanDana }: WalletCardProps = {}) {
 
   return (
     <div className="relative overflow-hidden rounded-2xl bg-[#FFD500] p-6 shadow-md transition-all hover:shadow-lg h-full min-h-[220px]">
-      {/* Decorative Circles Background */}
+
       <div className="pointer-events-none absolute -bottom-16 -right-16 h-64 w-64 rounded-full border-[24px] border-white/20 opacity-50"></div>
       <div className="pointer-events-none absolute -bottom-32 -right-32 h-96 w-96 rounded-full border-[32px] border-white/10 opacity-50"></div>
 
       <div className="relative z-10 flex flex-col h-full justify-between gap-8">
-        {/* Top Section */}
         <div className="flex justify-between items-start">
           <div className="flex flex-col gap-1">
             <p className="text-sm font-medium text-primary-950/80">Saldo Bisnis</p>
@@ -60,7 +59,6 @@ export function WalletCard({ hideCairkanDana }: WalletCardProps = {}) {
                 {isVisible ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
               </button>
             </div>
-            {/* Action text */}
             {!hideCairkanDana && (
               <Link href="/dashboard/wallet" className="text-xs font-bold text-primary-800 hover:text-primary-950 transition-colors mt-2 underline underline-offset-4 decoration-primary-800/30 hover:decoration-primary-950">
                 Cairkan Dana &rarr;
@@ -68,8 +66,6 @@ export function WalletCard({ hideCairkanDana }: WalletCardProps = {}) {
             )}
           </div>
         </div>
-
-        {/* Bottom Section */}
         <div className="flex justify-between items-end mt-6">
           <div className="flex flex-col">
             <p className="text-xs font-medium text-primary-950/80 mb-0.5">Sejak</p>

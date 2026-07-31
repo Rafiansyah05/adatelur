@@ -78,7 +78,6 @@ export default function Home() {
     }
   };
 
-  // Listen to custom event for peternak removal if timeout
   useEffect(() => {
     const handleRemove = (e: any) => {
       setTopPeternak(prev => prev.filter(p => p.peternak_id !== e.detail));
@@ -87,7 +86,6 @@ export default function Home() {
     return () => window.removeEventListener('remove-peternak-recommendation', handleRemove);
   }, []);
 
-  // Fetch Peternak Terbaik and Peternak Terdekat on mount
   useEffect(() => {
     async function fetchTop(lat?: number, lng?: number) {
       try {
@@ -182,11 +180,8 @@ export default function Home() {
 
   return (
     <div className="w-full flex flex-col pb-4 -mt-6 md:-mt-8">
-      {/* HERO SECTION */}
       <section className="sticky top-0 z-0 relative w-screen ml-[calc(-50vw+50%)] overflow-hidden bg-primary-950 min-h-[400px] md:min-h-[600px] flex items-center">
-        {/* Banner Background */}
         <div className="absolute inset-0 z-0 bg-neutral-900">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src="/icons/banner1.jpg"
             alt="Banner Telur Segar"
@@ -195,7 +190,6 @@ export default function Home() {
         </div>
 
         <div className="relative z-10 w-full max-w-[1200px] mx-auto grid grid-cols-1 lg:grid-cols-2 gap-10 p-6 md:p-8 items-center">
-          {/* Left Grid: Branding (Hidden on mobile) */}
           <div className="hidden lg:flex flex-col gap-4 relative">
             <div className="relative z-10 flex h-16 w-16 items-center justify-center rounded-lg bg-white shadow-lg">
               <Image src="/icons/icon-512x512.png" alt="Logo" width={48} height={48} className="object-contain" />
@@ -210,8 +204,6 @@ export default function Home() {
               </p>
             </div>
           </div>
-
-          {/* Right Grid: Input Form Container */}
           <div className="w-full max-w-lg mx-auto lg:ml-auto lg:mr-0 bg-white rounded-lg p-6 border border-neutral-100">
             <h3 className="text-xl font-bold text-neutral-900 mb-5">Cari Peternak</h3>
             <form onSubmit={handleSearch} className="flex flex-col gap-5">
@@ -270,154 +262,148 @@ export default function Home() {
         </div>
       </section>
 
-      {/* CONTENT WRAPPER FOR PARALLAX EFFECT */}
       <div className="relative z-10 w-screen ml-[calc(-50vw+50%)] bg-white pt-10 md:pt-24 pb-2 shadow-[0_-10px_30px_rgba(0,0,0,0.08)] rounded-t-[32px] mt-[-32px]">
         <div className="w-full max-w-[1200px] mx-auto px-4 md:px-8 flex flex-col gap-10 md:gap-24">
-          
-          {/* PETERNAK TERDEKAT SECTION */}
+
           <section className="w-full flex flex-col gap-6">
-        <div className="flex items-center justify-between px-2 gap-2">
-          <div className="flex flex-col gap-1">
-            <h2 className="text-xl md:text-3xl font-black text-neutral-900 tracking-tight">Peternak Terdekat</h2>
-            <p className="text-xs md:text-base text-neutral-500 font-medium">Berdasarkan lokasi Anda (Stok Tersedia).</p>
-          </div>
-          <div className="flex items-center gap-2">
-            <button onClick={() => scrollLeft(nearestRef)} className="flex h-8 w-8 md:h-10 md:w-10 items-center justify-center rounded-full bg-white border border-neutral-200 text-neutral-600 hover:bg-neutral-50 transition-colors shadow-sm">
-              <ChevronLeft className="h-4 w-4 md:h-5 md:w-5" />
-            </button>
-            <button onClick={() => scrollRight(nearestRef)} className="flex h-8 w-8 md:h-10 md:w-10 items-center justify-center rounded-full bg-white border border-neutral-200 text-neutral-600 hover:bg-neutral-50 transition-colors shadow-sm">
-              <ChevronRight className="h-4 w-4 md:h-5 md:w-5" />
-            </button>
-          </div>
-        </div>
-
-        <div ref={nearestRef} className="w-full overflow-x-auto pb-4 -mx-6 px-6 md:mx-0 md:px-0 hide-scrollbar scroll-smooth">
-          {isLoadingNearest ? (
-            <div className="flex gap-6 min-w-max">
-              {[1, 2, 3, 4].map(i => (
-                <div key={i} className="w-[320px] md:w-[380px] h-[280px] bg-neutral-100 animate-pulse rounded-2xl shrink-0"></div>
-              ))}
+            <div className="flex items-center justify-between px-2 gap-2">
+              <div className="flex flex-col gap-1">
+                <h2 className="text-xl md:text-3xl font-black text-neutral-900 tracking-tight">Peternak Terdekat</h2>
+                <p className="text-xs md:text-base text-neutral-500 font-medium">Berdasarkan lokasi Anda (Stok Tersedia).</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <button onClick={() => scrollLeft(nearestRef)} className="flex h-8 w-8 md:h-10 md:w-10 items-center justify-center rounded-full bg-white border border-neutral-200 text-neutral-600 hover:bg-neutral-50 transition-colors shadow-sm">
+                  <ChevronLeft className="h-4 w-4 md:h-5 md:w-5" />
+                </button>
+                <button onClick={() => scrollRight(nearestRef)} className="flex h-8 w-8 md:h-10 md:w-10 items-center justify-center rounded-full bg-white border border-neutral-200 text-neutral-600 hover:bg-neutral-50 transition-colors shadow-sm">
+                  <ChevronRight className="h-4 w-4 md:h-5 md:w-5" />
+                </button>
+              </div>
             </div>
-          ) : nearestPeternak.length > 0 ? (
-            <div className="flex gap-6 min-w-max">
-              {nearestPeternak.map((item, index) => (
-                <div key={item.listing_id} className="w-[320px] md:w-[380px] shrink-0">
-                  <ScoreCard
-                    className="bg-white border-neutral-200 hover:bg-neutral-50"
-                    peternakName={item.peternak_name}
-                    avatarUrl={item.avatar_url}
-                    avatarInitials={getInitials(item.peternak_name)}
-                    location={item.farm_address}
-                    rating={item.average_rating || 0}
-                    averageRating={item.average_rating}
-                    totalOrders={item.total_completed_orders}
-                    score={item.final_score}
-                    pricePerRak={item.price_per_rak}
-                    estimatedOngkir={item.ongkir_amount}
-                    distanceKm={item.distance_km}
-                    isTopPick={false}
-                    rank={undefined}
-                    hidePesanButton={false}
-                    hideOngkir={false}
-                    onPesanClick={() => {
-                      setSelectedPeternak(item);
-                      setIsModalOpen(true);
-                    }}
-                  />
+
+            <div ref={nearestRef} className="w-full overflow-x-auto pb-4 -mx-6 px-6 md:mx-0 md:px-0 hide-scrollbar scroll-smooth">
+              {isLoadingNearest ? (
+                <div className="flex gap-6 min-w-max">
+                  {[1, 2, 3, 4].map(i => (
+                    <div key={i} className="w-[320px] md:w-[380px] h-[280px] bg-neutral-100 animate-pulse rounded-2xl shrink-0"></div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          ) : (
-            <div className="w-full p-12 text-center bg-neutral-50 rounded-2xl text-neutral-500 text-sm">
-              Belum ada peternak terdekat dengan stok tersedia saat ini.
-            </div>
-          )}
-        </div>
-      </section>
-
-      {/* PETERNAK TERBAIK SECTION */}
-      <section className="w-full flex flex-col gap-6">
-        <div className="flex items-center justify-between px-2 gap-2">
-          <div className="flex flex-col gap-1">
-            <h2 className="text-xl md:text-3xl font-black text-neutral-900 tracking-tight">Peternak Terbaik</h2>
-            <p className="text-xs md:text-base text-neutral-500 font-medium">Berdasarkan skor dan kualitas sistem kami.</p>
-          </div>
-          <div className="flex items-center gap-2">
-            <button onClick={() => scrollLeft(topRef)} className="flex h-8 w-8 md:h-10 md:w-10 items-center justify-center rounded-full bg-white border border-neutral-200 text-neutral-600 hover:bg-neutral-50 transition-colors shadow-sm">
-              <ChevronLeft className="h-4 w-4 md:h-5 md:w-5" />
-            </button>
-            <button onClick={() => scrollRight(topRef)} className="flex h-8 w-8 md:h-10 md:w-10 items-center justify-center rounded-full bg-white border border-neutral-200 text-neutral-600 hover:bg-neutral-50 transition-colors shadow-sm">
-              <ChevronRight className="h-4 w-4 md:h-5 md:w-5" />
-            </button>
-          </div>
-        </div>
-
-        <div ref={topRef} className="w-full overflow-x-auto pb-4 -mx-6 px-6 md:mx-0 md:px-0 hide-scrollbar scroll-smooth">
-          {isLoadingTop ? (
-            <div className="flex gap-6 min-w-max">
-              {[1, 2, 3, 4].map(i => (
-                <div key={i} className="w-[320px] md:w-[380px] h-[280px] bg-neutral-100 animate-pulse rounded-2xl shrink-0"></div>
-              ))}
-            </div>
-          ) : topPeternak.length > 0 ? (
-            <div className="flex gap-6 min-w-max">
-              {topPeternak.map((item, index) => (
-                <div key={item.listing_id} className="w-[320px] md:w-[380px] shrink-0">
-                  <TopPeternakCard
-                    className=""
-                    peternakName={item.peternak_name}
-                    avatarUrl={item.avatar_url}
-                    avatarInitials={getInitials(item.peternak_name)}
-                    location={item.farm_address}
-                    rating={item.average_rating || 0}
-                    averageRating={item.average_rating}
-                    score={item.final_score}
-                    rank={index + 1}
-                  />
+              ) : nearestPeternak.length > 0 ? (
+                <div className="flex gap-6 min-w-max">
+                  {nearestPeternak.map((item, index) => (
+                    <div key={item.listing_id} className="w-[320px] md:w-[380px] shrink-0">
+                      <ScoreCard
+                        className="bg-white border-neutral-200 hover:bg-neutral-50"
+                        peternakName={item.peternak_name}
+                        avatarUrl={item.avatar_url}
+                        avatarInitials={getInitials(item.peternak_name)}
+                        location={item.farm_address}
+                        rating={item.average_rating || 0}
+                        averageRating={item.average_rating}
+                        totalOrders={item.total_completed_orders}
+                        score={item.final_score}
+                        pricePerRak={item.price_per_rak}
+                        estimatedOngkir={item.ongkir_amount}
+                        distanceKm={item.distance_km}
+                        isTopPick={false}
+                        rank={undefined}
+                        hidePesanButton={false}
+                        hideOngkir={false}
+                        onPesanClick={() => {
+                          setSelectedPeternak(item);
+                          setIsModalOpen(true);
+                        }}
+                      />
+                    </div>
+                  ))}
                 </div>
-              ))}
+              ) : (
+                <div className="w-full p-12 text-center bg-neutral-50 rounded-2xl text-neutral-500 text-sm">
+                  Belum ada peternak terdekat dengan stok tersedia saat ini.
+                </div>
+              )}
             </div>
-          ) : (
-            <div className="w-full p-12 text-center bg-neutral-50 rounded-2xl text-neutral-500">
-              Belum ada data peternak terbaik saat ini.
+          </section>
+
+          <section className="w-full flex flex-col gap-6">
+            <div className="flex items-center justify-between px-2 gap-2">
+              <div className="flex flex-col gap-1">
+                <h2 className="text-xl md:text-3xl font-black text-neutral-900 tracking-tight">Peternak Terbaik</h2>
+                <p className="text-xs md:text-base text-neutral-500 font-medium">Berdasarkan skor dan kualitas sistem kami.</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <button onClick={() => scrollLeft(topRef)} className="flex h-8 w-8 md:h-10 md:w-10 items-center justify-center rounded-full bg-white border border-neutral-200 text-neutral-600 hover:bg-neutral-50 transition-colors shadow-sm">
+                  <ChevronLeft className="h-4 w-4 md:h-5 md:w-5" />
+                </button>
+                <button onClick={() => scrollRight(topRef)} className="flex h-8 w-8 md:h-10 md:w-10 items-center justify-center rounded-full bg-white border border-neutral-200 text-neutral-600 hover:bg-neutral-50 transition-colors shadow-sm">
+                  <ChevronRight className="h-4 w-4 md:h-5 md:w-5" />
+                </button>
+              </div>
             </div>
-          )}
-        </div>
-      </section>
 
-      {/* BANNER MITRA PETERNAK */}
-      <section className="relative w-full rounded-lg overflow-hidden bg-neutral-900 flex flex-col md:flex-row items-center justify-between p-8 md:p-12 gap-8 border border-neutral-100">
-        <div className="absolute inset-0 z-0">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="/icons/banner2.jpg"
-            alt="Peternakan Ayam"
-            className="h-full w-full object-cover opacity-50"
-          />
-        </div>
+            <div ref={topRef} className="w-full overflow-x-auto pb-4 -mx-6 px-6 md:mx-0 md:px-0 hide-scrollbar scroll-smooth">
+              {isLoadingTop ? (
+                <div className="flex gap-6 min-w-max">
+                  {[1, 2, 3, 4].map(i => (
+                    <div key={i} className="w-[320px] md:w-[380px] h-[280px] bg-neutral-100 animate-pulse rounded-2xl shrink-0"></div>
+                  ))}
+                </div>
+              ) : topPeternak.length > 0 ? (
+                <div className="flex gap-6 min-w-max">
+                  {topPeternak.map((item, index) => (
+                    <div key={item.listing_id} className="w-[320px] md:w-[380px] shrink-0">
+                      <TopPeternakCard
+                        className=""
+                        peternakName={item.peternak_name}
+                        avatarUrl={item.avatar_url}
+                        avatarInitials={getInitials(item.peternak_name)}
+                        location={item.farm_address}
+                        rating={item.average_rating || 0}
+                        averageRating={item.average_rating}
+                        score={item.final_score}
+                        rank={index + 1}
+                      />
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="w-full p-12 text-center bg-neutral-50 rounded-2xl text-neutral-500">
+                  Belum ada data peternak terbaik saat ini.
+                </div>
+              )}
+            </div>
+          </section>
 
-        <div className="relative z-10 flex flex-col gap-3 max-w-2xl text-center md:text-left">
-          <h2 className="text-2xl md:text-3xl font-semibold text-white leading-tight">
-            Punya Peternakan Ayam Petelur?
-          </h2>
-          <p className="text-neutral-200 text-base leading-relaxed">
-            Bergabunglah menjadi Mitra Adatelur. Perluas jangkauan pasar Anda, kelola pesanan dengan mudah, dan tingkatkan penjualan tanpa perantara.
-          </p>
-        </div>
+          <section className="relative w-full rounded-lg overflow-hidden bg-neutral-900 flex flex-col md:flex-row items-center justify-between p-8 md:p-12 gap-8 border border-neutral-100">
+            <div className="absolute inset-0 z-0">
+              <img
+                src="/icons/banner2.jpg"
+                alt="Peternakan Ayam"
+                className="h-full w-full object-cover opacity-50"
+              />
+            </div>
 
-          <div className="relative z-10 shrink-0">
-            <Link href="/register">
-              <Button variant="primary" className="h-12 px-8 rounded-lg font-semibold text-base transition-all bg-white text-primary-900 hover:bg-neutral-50 border border-neutral-100">
-                Daftar Sekarang
-              </Button>
-            </Link>
-          </div>
-        </section>
-        
+            <div className="relative z-10 flex flex-col gap-3 max-w-2xl text-center md:text-left">
+              <h2 className="text-2xl md:text-3xl font-semibold text-white leading-tight">
+                Punya Peternakan Ayam Petelur?
+              </h2>
+              <p className="text-neutral-200 text-base leading-relaxed">
+                Bergabunglah menjadi Mitra Adatelur. Perluas jangkauan pasar Anda, kelola pesanan dengan mudah, dan tingkatkan penjualan tanpa perantara.
+              </p>
+            </div>
+
+            <div className="relative z-10 shrink-0">
+              <Link href="/register">
+                <Button variant="primary" className="h-12 px-8 rounded-lg font-semibold text-base transition-all bg-white text-primary-900 hover:bg-neutral-50 border border-neutral-100">
+                  Daftar Sekarang
+                </Button>
+              </Link>
+            </div>
+          </section>
+
         </div>
       </div>
 
-      {/* Custom styles for hiding scrollbar but allowing scroll */}
       <style dangerouslySetInnerHTML={{
         __html: `
         .hide-scrollbar::-webkit-scrollbar {

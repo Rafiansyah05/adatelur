@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/Input';
 import { showToast } from '@/components/ui/toast';
 
 type Peternak = {
-  id: string; // profil id
+  id: string;
   full_name: string;
   email: string;
   phone_number: string;
@@ -36,7 +36,6 @@ export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState<'bantuan' | 'verifikasi' | 'aktif' | 'ditolak'>('bantuan');
   const [search, setSearch] = useState('');
 
-  // Modals state
   const [activePeternak, setActivePeternak] = useState<Peternak | null>(null);
   const [isDataModalOpen, setIsDataModalOpen] = useState(false);
   const [isPhotoModalOpen, setIsPhotoModalOpen] = useState(false);
@@ -44,17 +43,12 @@ export default function AdminDashboard() {
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
 
-  // Form states for Data
   const [formData, setFormData] = useState({
     chickenCount: '', eggProd: '', eggBroken: '', eggClean: '', feedType: '', experience: '', hasVehicle: false, vehicleType: ''
   });
-
-  // Form states for Photos
   const [photos, setPhotos] = useState<{ [key: string]: File | null }>({
     kandang_luar: null, kandang_dalam: null, ayam: null, telur: null
   });
-
-  // Reject Reason
   const [rejectReason, setRejectReason] = useState('');
 
   const fetchPeternak = async () => {
@@ -100,8 +94,6 @@ export default function AdminDashboard() {
       return p.verification_status === 'rejected' && matchSearch;
     }
   });
-
-  // --- ACTIONS ---
 
   const handleUpdateData = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -203,7 +195,7 @@ export default function AdminDashboard() {
 
   return (
     <div className="min-h-screen bg-neutral-50 flex flex-col">
-      {/* Navbar */}
+
       <header className="bg-white border-b border-neutral-200 sticky top-0 z-30">
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -259,7 +251,7 @@ export default function AdminDashboard() {
           </button>
         </div>
 
-        {/* Table / Content */}
+
         <div className="bg-white border border-neutral-200 rounded-lg overflow-hidden shadow-sm">
           {loading ? (
             <div className="p-12 flex justify-center text-primary-500"><Loader2 className="w-8 h-8 animate-spin" /></div>
@@ -349,7 +341,7 @@ export default function AdminDashboard() {
         </div>
       </main>
 
-      {/* Modal Lengkapi Data */}
+
       {isDataModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-neutral-900/40 backdrop-blur-sm p-4">
           <div className="bg-white rounded-lg p-6 w-full max-w-lg shadow-xl max-h-[90vh] overflow-y-auto">
@@ -405,7 +397,6 @@ export default function AdminDashboard() {
         </div>
       )}
 
-      {/* Modal Unggah Foto */}
       {isPhotoModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-neutral-900/40 backdrop-blur-sm p-4">
           <div className="bg-white rounded-lg p-6 w-full max-w-lg shadow-xl">
@@ -430,8 +421,6 @@ export default function AdminDashboard() {
           </div>
         </div>
       )}
-
-      {/* Modal Tolak */}
       {isRejectModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-neutral-900/40 backdrop-blur-sm p-4">
           <div className="bg-white rounded-lg p-6 w-full max-w-sm shadow-xl">
@@ -453,7 +442,7 @@ export default function AdminDashboard() {
         </div>
       )}
 
-      {/* Modal Detail Data & Foto */}
+
       {isDetailModalOpen && activePeternak && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-neutral-900/40 backdrop-blur-sm p-4">
           <div className="bg-white rounded-lg p-6 w-full max-w-3xl shadow-xl max-h-[90vh] overflow-y-auto">

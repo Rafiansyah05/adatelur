@@ -38,7 +38,6 @@ export default function HelpCenterPage() {
 
       <div className="grid md:grid-cols-[1fr_300px] gap-8">
 
-        {/* FAQ Section */}
         <div>
           <h2 className="text-h2 text-text-main mb-6">Pertanyaan yang Sering Diajukan (FAQ)</h2>
           <div className="flex flex-col gap-3">
@@ -62,7 +61,6 @@ export default function HelpCenterPage() {
           </div>
         </div>
 
-        {/* Contact Section */}
         <div className="flex flex-col gap-4">
           <Card className="p-6 border border-border bg-primary-50">
             <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white mb-4 text-primary-600">

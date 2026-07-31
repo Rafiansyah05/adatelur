@@ -18,7 +18,6 @@ export function MobileTopNavbar() {
     }
   };
 
-  // 1. Pages without MobileTopNavbar (they have their own headers)
   if (pathname === '/dashboard/wallet') {
     return null;
   }
@@ -26,28 +25,24 @@ export function MobileTopNavbar() {
   if (pathname === '/beranda' || pathname === '/dashboard') {
     return (
       <header className="sticky top-0 z-50 flex h-16 w-full items-center justify-between bg-white px-4 md:hidden">
-        {/* Kiri: Kosong (untuk balance spacing) */}
         <div className="w-10"></div>
-        
-        {/* Tengah: Logo dan Teks */}
+
         <div className="flex flex-1 justify-center items-center gap-2">
-          <Image 
-            src="/icons/icon-512x512.png" 
-            alt="Adatelur" 
-            width={32} 
-            height={32} 
+          <Image
+            src="/icons/icon-512x512.png"
+            alt="Adatelur"
+            width={32}
+            height={32}
             className="object-contain"
           />
           <span className="text-xl font-bold text-text-main tracking-tight">adatelur.</span>
         </div>
-        
-        {/* Kanan: Kosong (untuk balance spacing) */}
+
         <div className="w-10"></div>
       </header>
     );
   }
 
-  // 2. Search Page Navbar
   if (pathname === '/search') {
     return (
       <header className="sticky top-0 z-50 flex h-16 w-full items-center gap-3 bg-white px-4 shadow-sm md:hidden">
@@ -66,7 +61,6 @@ export function MobileTopNavbar() {
     );
   }
 
-  // 3. Dynamic Title Navbars for other pages
   let title = '';
   let backUrl = '';
 
@@ -98,12 +92,12 @@ export function MobileTopNavbar() {
           </button>
         )}
       </div>
-      
+
       <div className="flex flex-1 justify-center">
         <span className="text-h3 font-bold text-text-main">{title}</span>
       </div>
-      
-      <div className="w-10"></div> {/* Spacer for center alignment */}
+
+      <div className="w-10"></div>
     </header>
   );
 }

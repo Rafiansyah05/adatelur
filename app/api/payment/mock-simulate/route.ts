@@ -3,7 +3,6 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { sendOrderPaidNotif } from '@/lib/orderNotif';
 
 export async function POST(req: Request) {
-  // Hanya izinkan di environment non-production atau jika isProduction false
   if (process.env.MIDTRANS_IS_PRODUCTION === 'true') {
     return NextResponse.json({ error: 'Not allowed in production' }, { status: 403 });
   }
@@ -22,7 +21,6 @@ export async function POST(req: Request) {
 
     if (!order) return NextResponse.json({ error: 'Order not found' }, { status: 404 });
 
-    // Update status pesanan jadi paid
     await supabase.from('orders').update({
       payment_status: 'paid'
     }).eq('id', order.id);

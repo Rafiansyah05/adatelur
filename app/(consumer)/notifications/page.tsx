@@ -4,7 +4,6 @@ import { BellRing, CheckCircle2, Clock, XCircle } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 
 export default function NotificationsPage() {
-  // Mock data for MVP as per PRD
   const notifications = [
     {
       id: '1',
@@ -48,16 +47,15 @@ export default function NotificationsPage() {
         {notifications.map((notif) => {
           const Icon = notif.icon;
           return (
-            <Card 
-              key={notif.id} 
+            <Card
+              key={notif.id}
               className={`p-4 transition-colors hover:bg-neutral-50 ${!notif.isRead ? 'border-l-4 border-l-primary-500 bg-primary-50/30' : ''}`}
             >
               <div className="flex gap-4">
-                <div className={`mt-1 flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full ${
-                  notif.type === 'success' ? 'bg-success-bg text-success' :
-                  notif.type === 'error' ? 'bg-danger-light text-danger' :
-                  'bg-primary-100 text-primary-600'
-                }`}>
+                <div className={`mt-1 flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full ${notif.type === 'success' ? 'bg-success-bg text-success' :
+                    notif.type === 'error' ? 'bg-danger-light text-danger' :
+                      'bg-primary-100 text-primary-600'
+                  }`}>
                   <Icon className="h-5 w-5" />
                 </div>
                 <div className="flex-1">

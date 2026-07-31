@@ -17,7 +17,7 @@ export async function POST(request: Request) {
 
       if (error) throw error;
 
-      // Send Email
+
       const { error: emailError } = await resend.emails.send({
         from: 'Adatelur Admin <noreply@pradatelyu.online>',
         to: email,
@@ -39,11 +39,8 @@ export async function POST(request: Request) {
 
       return NextResponse.json({ success: true });
     } else if (action === 'reject') {
-      // 1. Delete user from auth.users (cascade deletes profile and peternak_details)
       const { error } = await adminClient.auth.admin.deleteUser(profileId);
       if (error) throw error;
-
-      // 2. Send Email
       const { error: emailError } = await resend.emails.send({
         from: 'Adatelur Admin <noreply@pradatelyu.online>',
         to: email,

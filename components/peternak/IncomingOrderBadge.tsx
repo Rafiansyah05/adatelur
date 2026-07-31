@@ -10,7 +10,6 @@ export function IncomingOrderBadge() {
   const supabase = createClient();
   const pathname = usePathname();
 
-  // Reset count and update last_seen when on orders page
   useEffect(() => {
     if (pathname === '/dashboard/orders') {
       localStorage.setItem('peternak_last_seen_orders', new Date().toISOString());
@@ -20,17 +19,17 @@ export function IncomingOrderBadge() {
 
   useEffect(() => {
     async function fetchUserAndCount() {
-      if (pathname === '/dashboard/orders') return; // Don't fetch if we're on the page
+      if (pathname === '/dashboard/orders') return;
 
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
-      
+
       const { data: peternak } = await supabase
         .from('peternak_details')
         .select('id')
         .eq('profile_id', user.id)
         .single();
-        
+
       if (!peternak) return;
       setPeternakId(peternak.id);
 
@@ -68,8 +67,8 @@ export function IncomingOrderBadge() {
           filter: `peternak_id=eq.${peternakId}`
         },
         async () => {
-          if (pathname === '/dashboard/orders') return; // Ignore updates if on page
-          
+          if (pathname === '/dashboard/orders') return;
+
           let query = supabase
             .from('orders')
             .select('*', { count: 'exact', head: true })

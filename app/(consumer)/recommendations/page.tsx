@@ -36,13 +36,12 @@ function RecommendationsContent() {
   const [results, setResults] = useState<RecommendationResult[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isError, setIsError] = useState(false);
-  
+
   const [selectedPeternak, setSelectedPeternak] = useState<RecommendationResult | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  
+
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
 
-  // Function to load recommendations
   const loadRecommendations = (qty: number, meth: 'pickup' | 'delivery') => {
     setIsLoading(true);
     setIsError(false);
@@ -71,7 +70,6 @@ function RecommendationsContent() {
             setIsLoading(false);
             setIsError(true);
           } else {
-            // For pickup, proceed without location
             fetchRecommendations({
               rak_quantity: qty,
               fulfillment_method: 'pickup',
@@ -92,7 +90,6 @@ function RecommendationsContent() {
         setIsLoading(false);
         setIsError(true);
       } else {
-        // For pickup, proceed without location
         fetchRecommendations({
           rak_quantity: qty,
           fulfillment_method: 'pickup',
@@ -108,10 +105,9 @@ function RecommendationsContent() {
     }
   };
 
-  // Run on mount based on initial params
   useEffect(() => {
     loadRecommendations(initialRak, initialMethod);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+
   }, []);
 
   const handleApply = (e: React.FormEvent) => {
@@ -120,7 +116,7 @@ function RecommendationsContent() {
       setErrorMsg('Jumlah rak minimal 1');
       return;
     }
-    // Update URL without reloading
+
     router.replace(`/recommendations?rak=${rakQuantity}&method=${method}`);
     loadRecommendations(rakQuantity, method);
   };
@@ -131,7 +127,7 @@ function RecommendationsContent() {
 
   return (
     <div className="flex flex-col w-full min-h-screen pb-10 bg-neutral-50/50">
-      {/* Mobile Header */}
+
       <div className="md:hidden fixed top-0 left-0 right-0 z-50 h-16 bg-white border-b border-neutral-100 px-4 flex items-center shadow-sm">
         <button
           onClick={() => router.back()}
@@ -142,10 +138,8 @@ function RecommendationsContent() {
         <h1 className="text-lg font-bold text-neutral-900 tracking-tight">Rekomendasi Peternak</h1>
       </div>
 
-      {/* Main Grid */}
       <div className="w-full grid grid-cols-1 md:grid-cols-[320px_1fr] lg:grid-cols-[360px_1fr] gap-8 md:mt-4 mt-20 px-4 md:px-0 max-w-7xl mx-auto">
 
-        {/* Left Grid: Sticky Form */}
         <div className="w-full hidden md:block">
           <div className="md:sticky md:top-24 bg-white md:border border-neutral-100 md:shadow-sm rounded-lg p-6 mb-6">
             <h2 className="text-xl font-bold text-neutral-900 mb-5 hidden md:block">Sesuaikan Pesanan</h2>
@@ -194,7 +188,6 @@ function RecommendationsContent() {
           </div>
         </div>
 
-        {/* Right Grid: Results */}
         <div className="w-full flex flex-col gap-6 md:pt-0 pt-2 px-1">
           {isLoading ? (
             <div className="flex flex-col gap-4">
@@ -274,7 +267,7 @@ function RecommendationsContent() {
         />
       )}
 
-      {/* Mobile FAB for Filter */}
+
       <div className="md:hidden fixed bottom-6 right-6 z-40">
         <button
           onClick={() => setIsMobileFilterOpen(true)}
@@ -284,7 +277,7 @@ function RecommendationsContent() {
         </button>
       </div>
 
-      {/* Mobile Filter Modal */}
+
       {isMobileFilterOpen && (
         <div className="md:hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
           <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl animate-in fade-in zoom-in-95">
@@ -294,7 +287,7 @@ function RecommendationsContent() {
                 <X className="h-5 w-5" />
               </button>
             </div>
-            
+
             <form onSubmit={(e) => {
               handleApply(e);
               if (!(rakQuantity === '' || rakQuantity < 1)) {

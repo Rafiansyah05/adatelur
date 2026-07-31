@@ -13,19 +13,17 @@ export function GlobalUnpaidToast() {
   const router = useRouter();
 
   useEffect(() => {
-    // Load dismissed orders from local storage
     try {
       const stored = localStorage.getItem('dismissed_unpaid_orders');
       if (stored) {
         setDismissedOrderIds(JSON.parse(stored));
       }
-    } catch (e) {}
+    } catch (e) { }
 
     const fetchUnpaidOrder = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // Ambil 15 menit yang lalu
       const fifteenMinsAgo = new Date(Date.now() - 15 * 60 * 1000).toISOString();
 
       const { data } = await supabase
@@ -34,7 +32,7 @@ export function GlobalUnpaidToast() {
         .eq('consumer_id', user.id)
         .eq('payment_status', 'unpaid')
         .not('order_status', 'in', '("rejected","expired","cancelled","completed","in_delivery")')
-        .gte('created_at', fifteenMinsAgo) // Hanya pesanan 15 menit terakhir
+        .gte('created_at', fifteenMinsAgo)
         .order('created_at', { ascending: false })
         .limit(1)
         .single();
@@ -42,7 +40,6 @@ export function GlobalUnpaidToast() {
       if (data) {
         setUnpaidOrder(data);
 
-        // Try to read expiry from local storage
         const cachedQris = localStorage.getItem(`qris_data_${data.id}`);
         if (cachedQris) {
           try {
@@ -53,7 +50,7 @@ export function GlobalUnpaidToast() {
             calculateFallbackTime(data.created_at);
           }
         } else {
-           calculateFallbackTime(data.created_at);
+          calculateFallbackTime(data.created_at);
         }
       } else {
         setUnpaidOrder(null);

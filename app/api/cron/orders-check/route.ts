@@ -6,7 +6,6 @@ export async function GET() {
   try {
     const supabase = createClient();
 
-    // expire orders past deadline
     const { data: expiredOrders, error: expErr } = await supabase
       .from('orders')
       .select('id')
@@ -24,7 +23,6 @@ export async function GET() {
 
       if (updateErr) console.error('Failed to mark orders expired', updateErr.message);
 
-      // insert histories
       const histories = ids.map((id: string) => ({
         order_id: id,
         status: 'expired',

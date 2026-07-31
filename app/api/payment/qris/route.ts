@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 
-// @ts-ignore
 import midtransClient from 'midtrans-client';
 
 const coreApi = new midtransClient.CoreApi({
@@ -26,8 +25,6 @@ export async function POST(req: Request) {
     }
 
     const adminSupabase = createAdminClient();
-
-    // Check if order exists and belongs to user
     const { data: order } = await adminSupabase
       .from('orders')
       .select('*, consumer:profiles!orders_consumer_id_fkey(full_name)')
@@ -43,8 +40,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Order is not ready for payment' }, { status: 400 });
     }
 
-    // Midtrans Qris Transaction
-    const grossAmount = Math.round(Number(order.total_amount) * 1.015); // + 1.5% fee
+    const grossAmount = Math.round(Number(order.total_amount) * 1.015);
     const midtransOrderId = `ADT-${order_id.substring(0, 8)}-${Date.now()}`;
 
     const isProduction = process.env.MIDTRANS_IS_PRODUCTION === 'true';
@@ -77,7 +73,6 @@ export async function POST(req: Request) {
       throw new Error('Failed to generate QRIS from Midtrans: ' + chargeResponse.status_message);
     }
 
-    // Update order with midtrans_order_id
     const { error: updateError } = await adminSupabase.from('orders').update({
       payment_reference: midtransOrderId
     }).eq('id', order.id);

@@ -6,7 +6,7 @@ const supabase = createClient(
 
 async function test() {
   const peternakId = 'f450e406-ef67-4f21-a0a5-b55be095bca1';
-  
+
   const [{ data: score }, { data: listing }, { data: wallet }, { data: transactions }] = await Promise.all([
     supabase
       .from('peternak_scores')
@@ -33,14 +33,12 @@ async function test() {
   const txs = transactions ?? [];
   const WEEKS = 12;
   const MS_PER_WEEK = 7 * 24 * 60 * 60 * 1000;
-  
-  // Set current time to Jul 29 2026 (same as now in local system)
+
   const now = Date.now();
   const endOfToday = new Date(now);
   endOfToday.setHours(23, 59, 59, 999);
   const endOfTodayTime = endOfToday.getTime();
 
-  // 1. Daily wallet balance trend data (Last 10 days)
   const DAYS = 10;
   const MS_PER_DAY = 24 * 60 * 60 * 1000;
   const daily = Array.from({ length: DAYS }, (_, index) => {

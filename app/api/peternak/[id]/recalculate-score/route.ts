@@ -6,14 +6,13 @@ export async function POST(request: Request, { params }: { params: { id: string 
   try {
     const supabase = createAdminClient();
     const peternakId = params.id;
-    
-    // Check if peternak exists
+
     const { data: peternak, error } = await supabase
       .from('peternak_details')
       .select('id')
       .eq('id', peternakId)
       .single();
-      
+
     if (error || !peternak) {
       return NextResponse.json({ error: 'Peternak tidak ditemukan' }, { status: 404 });
     }

@@ -29,7 +29,6 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Get peternak detail
     const { data: peternakDetail, error: peternakError } = await supabase
       .from('peternak_details')
       .select('id')
@@ -40,10 +39,8 @@ export async function GET() {
       return NextResponse.json({ error: 'Peternak detail not found' }, { status: 404 });
     }
 
-    // Use admin client to bypass RLS policies
     const adminSupabase = createAdminClient();
 
-    // Fetch orders, ratings, peternak_scores, listings, wallets, and wallet_transactions
     const [
       { data: orders },
       { data: ratings },
@@ -87,18 +84,14 @@ export async function GET() {
     const ratingRows: RatingRow[] = ratings ?? [];
     const txs = transactions ?? [];
 
-    // Total revenue is the sum of all 'credit' transactions (income), so it never decreases when withdrawing
     const totalRevenue = txs.filter(tx => tx.type === 'credit').reduce((sum, tx) => sum + Number(tx.amount), 0);
     const totalRakSold = completedOrders.reduce((sum, order) => sum + Number(order.rak_quantity), 0);
     const totalCompletedOrders = completedOrders.length;
-
-    // Calculate today's stats (WIB / UTC+7)
     const todayStr = new Date(Date.now() + 7 * 60 * 60 * 1000).toISOString().split('T')[0];
     let todayRevenue = 0;
     let todayRakSold = 0;
     let todayCompletedOrders = 0;
 
-    // Today's revenue matches today's credited wallet transactions
     for (const tx of txs) {
       const txDateStr = new Date(new Date(tx.created_at).getTime() + 7 * 60 * 60 * 1000).toISOString().split('T')[0];
       if (txDateStr === todayStr && tx.type === 'credit') {
@@ -138,7 +131,6 @@ export async function GET() {
     const endOfTodayTime = endOfToday.getTime();
     const now = Date.now();
 
-    // 1. Daily wallet balance trend data (Last 10 days)
     const DAYS = 10;
     const MS_PER_DAY = 24 * 60 * 60 * 1000;
     const daily = Array.from({ length: DAYS }, (_, index) => {
@@ -158,7 +150,6 @@ export async function GET() {
       day.revenue = dayTxs.reduce((sum, tx) => sum + Number(tx.amount), 0);
     }
 
-    // 2. Weekly wallet balance trend data (Last 12 weeks)
     const weekly = Array.from({ length: WEEKS }, (_, index) => {
       const weeksAgo = WEEKS - 1 - index;
       const bucketEnd = new Date(endOfTodayTime - weeksAgo * MS_PER_WEEK);
@@ -176,7 +167,6 @@ export async function GET() {
       week.revenue = weekTxs.reduce((sum, tx) => sum + Number(tx.amount), 0);
     }
 
-    // 3. Monthly wallet balance trend data (Last 6 months)
     const MONTHS = 6;
     const monthly = Array.from({ length: MONTHS }, (_, index) => {
       const monthsAgo = MONTHS - 1 - index;
@@ -196,34 +186,30 @@ export async function GET() {
       d.setDate(1);
       d.setHours(0, 0, 0, 0);
       const startOfMonth = d.getTime();
-      
+
       const monthTxs = txs.filter(tx => tx.type === 'credit' && new Date(tx.created_at).getTime() >= startOfMonth && new Date(tx.created_at).getTime() <= month.endTime);
       month.revenue = monthTxs.reduce((sum, tx) => sum + Number(tx.amount), 0);
     }
 
     const monthlyClean = monthly.map(({ label, revenue, rakSold }) => ({ label, revenue, rakSold }));
 
-    // Populate rak sold counts in daily/weekly/monthly trends for consistency
     for (const order of completedOrders) {
       const orderTime = new Date(order.created_at).getTime();
-      
-      // Daily
+
       const daysAgo = Math.floor((now - orderTime) / MS_PER_DAY);
       if (daysAgo >= 0 && daysAgo < DAYS) {
         daily[DAYS - 1 - daysAgo].rakSold += Number(order.rak_quantity);
       }
 
-      // Weekly
       const weeksAgo = Math.floor((now - orderTime) / MS_PER_WEEK);
       if (weeksAgo >= 0 && weeksAgo < WEEKS) {
         weekly[WEEKS - 1 - weeksAgo].rakSold += Number(order.rak_quantity);
       }
 
-      // Monthly
       const orderDate = new Date(order.created_at);
       const orderYear = orderDate.getFullYear();
       const orderMonth = orderDate.getMonth();
-      
+
       const mBucketIndex = monthly.findIndex(
         m => new Date(m.endTime).getFullYear() === orderYear && new Date(m.endTime).getMonth() === orderMonth
       );
@@ -232,14 +218,12 @@ export async function GET() {
       }
     }
 
-    // Sort ratings by date ascending
     const sortedRatings = [...ratingRows].sort(
       (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
     );
 
     const startOfChartTime = now - WEEKS * MS_PER_WEEK;
 
-    // Calculate initial ratings before the chart timeframe
     let runningSum = 0;
     let runningCount = 0;
     for (const r of sortedRatings) {
@@ -254,7 +238,6 @@ export async function GET() {
       const weekStartTime = now - (weeksAgo + 1) * MS_PER_WEEK;
       const weekEndTime = now - weeksAgo * MS_PER_WEEK;
 
-      // Add ratings that fall within this week
       for (const r of sortedRatings) {
         const t = new Date(r.created_at).getTime();
         if (t >= weekStartTime && t < weekEndTime) {

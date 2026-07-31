@@ -56,9 +56,6 @@ export async function GET(request: Request) {
 
     const stockMap = new Map((listings ?? []).map((l) => [l.peternak_id, l.stock_rak]));
 
-    // Removed automatic reset to 0; stock_rak represents the baseline daily capacity
-    // and remaining stock is calculated dynamically based on daily orders.
-
     const { data: completedHistory } = await supabase
       .from('order_status_history')
       .select('order_id')

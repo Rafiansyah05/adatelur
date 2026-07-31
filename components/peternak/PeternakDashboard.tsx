@@ -41,7 +41,7 @@ export function PeternakDashboard({ initialListing, peternakName }: PeternakDash
     }
 
     const newStatus = !isListingActive;
-    // Optimistic UI update
+
     setIsListingActive(newStatus);
     setIsToggling(true);
 
@@ -63,7 +63,6 @@ export function PeternakDashboard({ initialListing, peternakName }: PeternakDash
       router.refresh();
     } catch (error) {
       showToast("Terjadi kesalahan saat merubah status toko.", 'error');
-      // Revert status on error
       setIsListingActive(!newStatus);
     } finally {
       setIsToggling(false);
@@ -92,12 +91,9 @@ export function PeternakDashboard({ initialListing, peternakName }: PeternakDash
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        {/* Kolom Kiri: Dompet */}
         <div className="lg:col-span-4 flex flex-col gap-6">
           <WalletCard />
         </div>
-
-        {/* Kolom Kanan: Analytics */}
         <div className="lg:col-span-8 flex flex-col gap-6 min-w-0">
           <AnalyticsSection />
         </div>

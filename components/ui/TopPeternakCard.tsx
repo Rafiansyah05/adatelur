@@ -34,11 +34,11 @@ const TopPeternakCard = React.forwardRef<HTMLDivElement, TopPeternakCardProps>(
     const getAvatarBorderColor = (rank: number) => {
       switch (rank) {
         case 1:
-          return 'border-yellow-400'; // Gold
+          return 'border-yellow-400';
         case 2:
-          return 'border-gray-300'; // Silver
+          return 'border-gray-300';
         case 3:
-          return 'border-amber-700'; // Bronze
+          return 'border-amber-700';
         default:
           return 'border-neutral-200';
       }
@@ -68,7 +68,6 @@ const TopPeternakCard = React.forwardRef<HTMLDivElement, TopPeternakCardProps>(
           className
         )}
       >
-        {/* Background Watermark */}
         <div className="pointer-events-none absolute -bottom-8 -right-8 z-0 opacity-[0.03]">
           <Image
             src="/icons/icon-512x512.png"
@@ -79,7 +78,6 @@ const TopPeternakCard = React.forwardRef<HTMLDivElement, TopPeternakCardProps>(
           />
         </div>
 
-        {/* Top Badges Area */}
         <div className={cn("absolute top-4 left-4 z-10 flex h-8 w-8 items-center justify-center rounded-full font-black text-sm border-2 border-white", getRankBadgeColor(rank))}>
           {rank}
         </div>
@@ -88,8 +86,6 @@ const TopPeternakCard = React.forwardRef<HTMLDivElement, TopPeternakCardProps>(
           <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
           <span>{ratingText}</span>
         </div>
-
-        {/* Center Big Avatar */}
         <div className={cn("relative z-10 mt-2 mb-4 flex h-24 w-24 shrink-0 items-center justify-center rounded-full bg-primary-50 text-2xl font-bold text-primary-900 overflow-hidden border-4", getAvatarBorderColor(rank))}>
           {avatarUrl ? (
             <img src={avatarUrl} alt={peternakName} className="h-full w-full object-cover" />
@@ -98,7 +94,7 @@ const TopPeternakCard = React.forwardRef<HTMLDivElement, TopPeternakCardProps>(
           )}
         </div>
 
-        {/* Peternak Info */}
+
         <div className="relative z-10 flex flex-col items-center w-full text-center mb-1">
           <h3 className="text-lg font-black text-neutral-900 line-clamp-1 w-full px-2">{peternakName}</h3>
           <div className="flex items-center justify-center gap-1 text-sm text-neutral-500 mt-1 max-w-[90%]">
@@ -107,7 +103,6 @@ const TopPeternakCard = React.forwardRef<HTMLDivElement, TopPeternakCardProps>(
           </div>
         </div>
 
-        {/* Highlight Score */}
         <div className="relative z-10 mt-4 flex items-center gap-2 rounded-full bg-primary-50 px-4 py-2 border border-primary-100 w-full justify-center">
           <span className="text-xs font-medium text-primary-800">Score Sistem:</span>
           <span className="text-lg font-black text-primary-700">

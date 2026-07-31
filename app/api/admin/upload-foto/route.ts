@@ -6,8 +6,7 @@ export async function POST(request: Request) {
     const formData = await request.formData();
     const file = formData.get('file') as File;
     const peternakId = formData.get('peternakId') as string;
-    const type = formData.get('type') as string; // foto_luar, foto_dalam, foto_ayam, foto_telur
-
+    const type = formData.get('type') as string;
     if (!file || !peternakId || !type) {
       return NextResponse.json({ error: 'Data tidak lengkap' }, { status: 400 });
     }
@@ -32,7 +31,6 @@ export async function POST(request: Request) {
 
     const publicUrl = publicUrlData.publicUrl;
 
-    // Simpan ke DB peternak_verification_photos table
     const { error: dbError } = await adminClient
       .from('peternak_verification_photos')
       .insert({

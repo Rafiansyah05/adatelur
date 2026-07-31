@@ -97,8 +97,7 @@ export function WalletView() {
       setMessage({ type: 'success', text: 'Saldo berhasil dicairkan.' });
       setAmountRaw('');
       await load();
-      // Reset wallet card somehow? The wallet card fetches on mount. 
-      // We can trigger a reload by reloading the page if success, so it updates the card too.
+
       window.location.reload();
     } catch (err) {
       setMessage({ type: 'error', text: err instanceof Error ? err.message : 'Terjadi kesalahan' });
@@ -141,7 +140,6 @@ export function WalletView() {
 
   return (
     <div className="flex flex-col lg:grid lg:grid-cols-12 gap-6 items-start">
-      {/* Kolom Kiri: Card Saldo & Form Pencairan */}
       <div className="lg:col-span-5 flex flex-col gap-6 w-full">
         <div className="h-[220px]">
           <WalletCard hideCairkanDana={true} />
@@ -158,7 +156,6 @@ export function WalletView() {
           </div>
         )}
 
-        {/* Cairkan Saldo Section */}
         <div className="bg-white border border-neutral-200 rounded-2xl shadow-sm overflow-hidden">
           <div className="p-5 border-b border-neutral-100">
             <h2 className="text-lg font-bold text-neutral-900">Cairkan Saldo</h2>
@@ -191,23 +188,22 @@ export function WalletView() {
         </div>
       </div>
 
-      {/* Kolom Kanan: Tab Riwayat */}
       <div className="lg:col-span-7 flex flex-col w-full">
         <div className="bg-white border border-neutral-200 rounded-2xl shadow-sm overflow-hidden">
           <div className="flex border-b border-neutral-200 overflow-x-auto hide-scrollbar">
-            <button 
+            <button
               onClick={() => setActiveTab('semua')}
               className={`flex-1 min-w-max py-4 px-4 text-sm font-bold border-b-2 transition-colors ${activeTab === 'semua' ? 'border-primary-500 text-primary-900' : 'border-transparent text-neutral-500 hover:text-neutral-700'}`}
             >
               Semua
             </button>
-            <button 
+            <button
               onClick={() => setActiveTab('mutasi')}
               className={`flex-1 min-w-max py-4 px-4 text-sm font-bold border-b-2 transition-colors ${activeTab === 'mutasi' ? 'border-primary-500 text-primary-900' : 'border-transparent text-neutral-500 hover:text-neutral-700'}`}
             >
               Riwayat Mutasi
             </button>
-            <button 
+            <button
               onClick={() => setActiveTab('pencairan')}
               className={`flex-1 min-w-max py-4 px-4 text-sm font-bold border-b-2 transition-colors ${activeTab === 'pencairan' ? 'border-primary-500 text-primary-900' : 'border-transparent text-neutral-500 hover:text-neutral-700'}`}
             >

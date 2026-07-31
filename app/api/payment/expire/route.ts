@@ -7,8 +7,7 @@ export async function POST(req: Request) {
     if (!order_id) return NextResponse.json({ error: 'Missing order_id' }, { status: 400 });
 
     const supabase = createAdminClient();
-    
-    // Check current status
+
     const { data: order } = await supabase
       .from('orders')
       .select('id, payment_status, order_status')
@@ -16,8 +15,7 @@ export async function POST(req: Request) {
       .single();
 
     if (!order) return NextResponse.json({ error: 'Order not found' }, { status: 404 });
-    
-    // Only expire if it's currently pending/unpaid
+
     if (order.payment_status === 'pending' || order.payment_status === 'unpaid') {
       await supabase.from('orders').update({
         payment_status: 'failed',
@@ -29,7 +27,7 @@ export async function POST(req: Request) {
         status: 'dibatalkan',
         note: 'Pembayaran QRIS kadaluarsa (otomatis dibatalkan)'
       });
-      
+
       return NextResponse.json({ success: true, status: 'expired' });
     }
 
