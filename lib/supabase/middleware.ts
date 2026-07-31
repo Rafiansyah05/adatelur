@@ -63,6 +63,10 @@ export const updateSession = async (request: NextRequest) => {
     return supabaseResponse
   }
 
+  if (pathname === '/') {
+    return supabaseResponse
+  }
+
   const isPublicRoute = publicRoutes.some((route) => pathname.startsWith(route))
 
   if (!user && !isPublicRoute) {

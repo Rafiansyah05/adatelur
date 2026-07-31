@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Label } from '@/components/ui/Label';
 import { ChevronLeft, AlertCircle, SearchX, Search, X } from 'lucide-react';
-import { RecommendParams, RecommendationResult } from '../page'; // Reuse types
+import { RecommendParams, RecommendationResult } from '../beranda/page';
 
 async function fetchRecommendations(params: RecommendParams): Promise<{ data: RecommendationResult[] }> {
   const res = await fetch('/api/orders/recommend', {

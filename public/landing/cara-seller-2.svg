@@ -1,0 +1,16 @@
+<svg viewBox="0 0 360 300" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Dompet dengan uang dan notifikasi">
+              <circle cx="180" cy="150" r="122" fill="#FFF9E1"/>
+              <ellipse cx="180" cy="244" rx="86" ry="14" fill="#422006" opacity=".07"/>
+              <rect x="150" y="100" width="70" height="46" rx="8" fill="#FFDE6B"/>
+              <circle cx="185" cy="123" r="12" fill="#FACC15"/>
+              <rect x="106" y="130" width="150" height="96" rx="16" fill="#854D0E"/>
+              <path d="M106 146a16 16 0 0 1 16-16h118a16 16 0 0 1 16 16v14H106z" fill="#A16207"/>
+              <rect x="196" y="176" width="60" height="30" rx="10" fill="#713F12"/>
+              <circle cx="226" cy="191" r="8" fill="#FFDE6B"/>
+              <circle cx="98" cy="98" r="24" fill="#ffffff" stroke="#E4E7EB" stroke-width="2"/>
+              <path d="M98 88a9 9 0 0 0-9 9c0 6-3 8-3 8h24s-3-2-3-8a9 9 0 0 0-9-9z" fill="#FACC15"/>
+              <path d="M95 110a3.5 3.5 0 0 0 6 0" stroke="#CA8A04" stroke-width="2" stroke-linecap="round"/>
+              <circle cx="112" cy="86" r="7" fill="#E23D28"/>
+              <path d="M262 92a24 24 0 1 0-9 33l14 3-4-13a24 24 0 0 0-1-23z" fill="#E6F6ED"/>
+              <path d="M243 106l6 6 12-12" stroke="#00AA5B" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>

@@ -84,7 +84,7 @@ export default function LoginPage() {
     } else if (profile?.role === 'peternak') {
       router.push('/dashboard');
     } else {
-      router.push('/');
+      router.push('/beranda');
     }
   };
 
