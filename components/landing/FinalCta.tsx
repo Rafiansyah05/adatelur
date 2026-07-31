@@ -1,11 +1,12 @@
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
+import { Reveal } from '@/components/landing/Reveal';
 
 export function FinalCta() {
   return (
     <section className="bg-white py-10">
       <div className="mx-auto max-w-[1160px] px-5 md:px-6">
-        <div className="rounded-lg bg-landing-400 px-6 py-14 text-center md:px-12 md:py-16">
+        <Reveal className="rounded-lg bg-landing-400 px-6 py-14 text-center md:px-12 md:py-16">
           <h2 className="mx-auto max-w-[560px] text-[27px] font-bold leading-tight tracking-tight text-landing-950 md:text-[38px]">
             Siap mulai dengan adatelur?
           </h2>
@@ -27,7 +28,7 @@ export function FinalCta() {
               Jadi Peternak
             </Link>
           </div>
-        </div>
+        </Reveal>
       </div>
     </section>
   );

@@ -46,17 +46,16 @@ export function Faq() {
         </Reveal>
 
         <div className="mx-auto mt-12 flex max-w-[780px] flex-col gap-3">
-          {questions.map((item) => (
-            <details
-              key={item.question}
-              className="group rounded-lg border border-landing-border bg-white"
-            >
-              <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-6 py-5 text-[15px] font-bold text-landing-text">
-                {item.question}
-                <ChevronDown className="h-5 w-5 shrink-0 text-landing-600 transition-transform group-open:rotate-180" />
-              </summary>
-              <p className="px-6 pb-5 text-[14px] leading-relaxed text-landing-desc">{item.answer}</p>
-            </details>
+          {questions.map((item, index) => (
+            <Reveal key={item.question} delay={index * 60}>
+              <details className="group rounded-lg border border-landing-border bg-white">
+                <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-6 py-5 text-[15px] font-bold text-landing-text">
+                  {item.question}
+                  <ChevronDown className="h-5 w-5 shrink-0 text-landing-600 transition-transform group-open:rotate-180" />
+                </summary>
+                <p className="px-6 pb-5 text-[14px] leading-relaxed text-landing-desc">{item.answer}</p>
+              </details>
+            </Reveal>
           ))}
         </div>
       </div>

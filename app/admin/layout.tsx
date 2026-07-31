@@ -1,9 +1,6 @@
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
-import { Inter } from 'next/font/google';
 import '@/app/globals.css';
-
-const inter = Inter({ subsets: ['latin'] });
 
 export const metadata = {
   title: 'Adatelur Admin',
@@ -33,7 +30,7 @@ export default async function AdminLayout({
   }
 
   return (
-    <div className={`${inter.className} min-h-screen bg-neutral-50`}>
+    <div className="min-h-screen bg-neutral-50">
       {children}
     </div>
   );
