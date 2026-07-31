@@ -7,7 +7,7 @@ import { GlobalWaitingModal } from '@/components/ui/GlobalWaitingModal';
 import { GlobalUnpaidToast } from '@/components/ui/GlobalUnpaidToast';
 
 const consumerNavItems: NavItem[] = [
-  { label: 'Home', href: '/', icon: <Home className="h-5 w-5" /> },
+  { label: 'Home', href: '/beranda', icon: <Home className="h-5 w-5" /> },
   { label: 'Search', href: '/search', icon: <Search className="h-5 w-5" /> },
   { label: 'Riwayat Order', href: '/orders', icon: <Package className="h-5 w-5" /> },
   { label: 'Profile', href: '/profile', icon: <User className="h-5 w-5" /> },

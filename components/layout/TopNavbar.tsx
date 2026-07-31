@@ -79,7 +79,7 @@ export function TopNavbar({ items }: { items: NavItem[] }) {
       <div className="hidden md:block h-[76px] w-full shrink-0" />
 
       <header className={`fixed top-0 left-0 right-0 z-40 hidden w-full items-center justify-between bg-white px-6 py-4 md:flex ${!isConsumer ? 'border-b border-border shadow-sm' : ''}`}>
-        <Link href={isConsumer ? '/' : '/dashboard'} className="flex items-center gap-3 hover:opacity-90 transition-opacity">
+        <Link href={isConsumer ? '/beranda' : '/dashboard'} className="flex items-center gap-3 hover:opacity-90 transition-opacity">
           <Image
             src="/icons/icon-512x512.png"
             alt="Adatelur Logo"
@@ -92,7 +92,7 @@ export function TopNavbar({ items }: { items: NavItem[] }) {
 
         <nav className="flex items-center gap-8">
           {(isConsumer
-            ? items.filter((item) => item.href === '/' || item.href === '/orders')
+            ? items.filter((item) => item.href === '/beranda' || item.href === '/orders')
             : items.filter((item) => item.href !== '/dashboard/profile')
           ).map((item) => {
             const isActive =

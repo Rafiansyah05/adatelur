@@ -80,7 +80,7 @@ export default function CheckoutQrisPage() {
         }
 
         if (orderData.payment_status === 'failed' || orderData.order_status === 'dibatalkan') {
-          router.push('/');
+          router.push('/beranda');
           return;
         }
 
@@ -171,7 +171,7 @@ export default function CheckoutQrisPage() {
         } else if (data.status === 'expired' || data.status === 'failed') {
           clearInterval(poll);
           localStorage.removeItem(`qris_data_${orderId}`);
-          router.push('/');
+          router.push('/beranda');
         }
       } catch {}
     }, 3000);
@@ -197,7 +197,7 @@ export default function CheckoutQrisPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ order_id: orderId }),
-      }).finally(() => router.push('/'));
+      }).finally(() => router.push('/beranda'));
       return;
     }
     const timer = setTimeout(() => setTimeLeft((prev) => prev - 1), 1000);
@@ -243,7 +243,7 @@ export default function CheckoutQrisPage() {
           </div>
           <h2 className="text-xl font-bold mb-2 text-text-main">Terjadi Kesalahan</h2>
           <p className="text-neutral-500 mb-6">{errorMsg}</p>
-          <Button onClick={() => router.push('/')} variant="primary" className="w-full">
+          <Button onClick={() => router.push('/beranda')} variant="primary" className="w-full">
             Kembali ke Beranda
           </Button>
         </div>

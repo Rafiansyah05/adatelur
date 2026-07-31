@@ -63,7 +63,7 @@ function VerifyForm() {
         return;
       }
 
-      router.push('/');
+      router.push('/beranda');
     } catch (err) {
       setErrorMessage('Terjadi kesalahan sistem.');
       setIsSubmitting(false);

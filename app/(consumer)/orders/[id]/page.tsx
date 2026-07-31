@@ -123,7 +123,7 @@ export default function OrderTrackingPage({ params }: { params: { id: string } }
         <p className="text-body text-text-desc max-w-md">
           Pesanan yang Anda cari tidak ada atau Anda tidak memiliki akses.
         </p>
-        <Button onClick={() => router.push('/')} variant="primary" className="mt-4">
+        <Button onClick={() => router.push('/beranda')} variant="primary" className="mt-4">
           Kembali ke Beranda
         </Button>
       </div>
@@ -182,7 +182,7 @@ export default function OrderTrackingPage({ params }: { params: { id: string } }
                   : 'Pesanan Anda dibatalkan otomatis karena peternak tidak merespon dalam batas waktu (3 menit).'}
               </p>
             </div>
-            <Button onClick={() => router.push('/')} variant="primary" className="mt-4">
+            <Button onClick={() => router.push('/beranda')} variant="primary" className="mt-4">
               Lihat Rekomendasi Lain
             </Button>
           </div>

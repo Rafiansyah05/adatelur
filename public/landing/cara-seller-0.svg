@@ -1,0 +1,15 @@
+<svg viewBox="0 0 360 300" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Formulir pendaftaran dan lencana verifikasi">
+              <circle cx="180" cy="150" r="122" fill="#FFF9E1"/>
+              <ellipse cx="180" cy="246" rx="80" ry="13" fill="#422006" opacity=".07"/>
+              <rect x="110" y="76" width="140" height="152" rx="16" fill="#ffffff" stroke="#E4E7EB" stroke-width="2"/>
+              <circle cx="150" cy="116" r="20" fill="#FFF2C2"/>
+              <circle cx="150" cy="110" r="7" fill="#CA8A04"/>
+              <path d="M138 126c2-7 22-7 24 0" stroke="#CA8A04" stroke-width="4" stroke-linecap="round"/>
+              <rect x="182" y="104" width="52" height="9" rx="4.5" fill="#E4E7EB"/>
+              <rect x="182" y="121" width="38" height="9" rx="4.5" fill="#EEF0F2"/>
+              <rect x="128" y="156" width="104" height="9" rx="4.5" fill="#EEF0F2"/>
+              <rect x="128" y="176" width="86" height="9" rx="4.5" fill="#EEF0F2"/>
+              <rect x="128" y="196" width="60" height="9" rx="4.5" fill="#EEF0F2"/>
+              <path d="M244 176c22 6 34 8 34 8s12-2 34-8v22c0 20-20 30-34 34-14-4-34-14-34-34z" transform="translate(-18 4) scale(.86)" fill="#00AA5B"/>
+              <path d="M214 196l7 7 13-14" stroke="#ffffff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>

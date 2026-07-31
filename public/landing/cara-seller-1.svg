@@ -1,0 +1,17 @@
+<svg viewBox="0 0 360 300" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Dashboard pengaturan harga dan stok">
+              <circle cx="180" cy="150" r="122" fill="#FFF9E1"/>
+              <ellipse cx="180" cy="244" rx="88" ry="14" fill="#422006" opacity=".07"/>
+              <rect x="92" y="76" width="176" height="152" rx="16" fill="#ffffff" stroke="#E4E7EB" stroke-width="2"/>
+              <rect x="110" y="94" width="64" height="10" rx="5" fill="#212121" opacity=".14"/>
+              <path d="M110 122h50a10 10 0 0 1 10 10v18a10 10 0 0 1-10 10h-50z" fill="#FFDE6B"/>
+              <circle cx="120" cy="141" r="5" fill="#ffffff"/>
+              <rect x="132" y="132" width="30" height="7" rx="3.5" fill="#A16207"/>
+              <rect x="132" y="145" width="20" height="7" rx="3.5" fill="#A16207" opacity=".7"/>
+              <rect x="196" y="158" width="16" height="34" rx="4" fill="#FFEA9D"/>
+              <rect x="218" y="140" width="16" height="52" rx="4" fill="#FFDE6B"/>
+              <rect x="240" y="124" width="16" height="68" rx="4" fill="#00AA5B" opacity=".8"/>
+              <rect x="110" y="196" width="34" height="22" rx="8" fill="#F4F6F8" stroke="#E4E7EB"/>
+              <path d="M120 207h14" stroke="#6C727C" stroke-width="2.5" stroke-linecap="round"/>
+              <rect x="150" y="196" width="34" height="22" rx="8" fill="#F4F6F8" stroke="#E4E7EB"/>
+              <path d="M167 200v14M160 207h14" stroke="#00AA5B" stroke-width="2.5" stroke-linecap="round"/>
+            </svg>

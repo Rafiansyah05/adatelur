@@ -23,8 +23,7 @@ export function MobileTopNavbar() {
     return null;
   }
 
-  // 2. Home Page Navbar
-  if (pathname === '/' || pathname === '/dashboard') {
+  if (pathname === '/beranda' || pathname === '/dashboard') {
     return (
       <header className="sticky top-0 z-50 flex h-16 w-full items-center justify-between bg-white px-4 md:hidden">
         {/* Kiri: Kosong (untuk balance spacing) */}
@@ -84,10 +83,10 @@ export function MobileTopNavbar() {
     title = 'Profile';
   } else if (pathname.startsWith('/notifications')) {
     title = 'Notifikasi';
-    backUrl = '/'; // Sesuai instruksi: ada button backnya kalau diklik mengarah ke home
+    backUrl = '/beranda';
   } else if (pathname.startsWith('/help')) {
     title = 'Bantuan';
-    backUrl = '/';
+    backUrl = '/beranda';
   }
 
   return (

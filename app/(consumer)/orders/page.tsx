@@ -125,7 +125,7 @@ export default function ConsumerOrdersPage() {
               ? 'Anda tidak memiliki pesanan yang sedang diproses. Yuk belanja telur segar sekarang!'
               : 'Anda belum pernah menyelesaikan pesanan apapun sebelumnya.'}
           </p>
-          <Link href="/">
+          <Link href="/beranda">
             <Button variant="primary">Pesan Telur Sekarang</Button>
           </Link>
         </Card>

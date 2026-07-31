@@ -1,0 +1,7 @@
+<svg class="art" viewBox="0 0 150 170" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <rect x="35" y="12" width="82" height="150" rx="20" fill="rgba(255,255,255,0.06)" stroke="rgba(255,222,107,0.45)" stroke-width="2"/>
+          <rect x="44" y="24" width="64" height="126" rx="11" fill="rgba(255,255,255,0.05)"/>
+          <rect x="61" y="60" width="30" height="30" rx="9" fill="#FFDE6B"/>
+          <ellipse cx="76" cy="75" rx="7" ry="9" fill="#FFFDF5"/>
+          <rect x="66" y="98" width="20" height="4" rx="2" fill="rgba(255,222,107,0.4)"/>
+        </svg>
